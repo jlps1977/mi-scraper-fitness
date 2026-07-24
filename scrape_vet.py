@@ -11,7 +11,10 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 from google.oauth2.credentials import Credentials
 
-DRIVE_TEXT_FOLDER_ID = "1ZZy7z37s0TUmmKx-qIsiciS9Xvtwd5Cl"
+DRIVE_VET_ROOT_ID   = "1sypIsu5f1rtKyuLYKgIN9yuSxYIONi7p"   # Proyecto_IA_Veterinaria
+DRIVE_MERCK_ID      = "107q-Vp6aWHR7bUYi7FxEedz1ywULSzNV"   # merck_manual
+DRIVE_AAHA_ID       = "1N0_pVjDE67q3Gcc743aMb1PBQbrs523f"    # aaha
+DRIVE_ACVS_ID       = "1SjE0iSJJBrbFbdmZsFdRMqh27pL7BZO9"    # acvs
 PROGRESS_FILE = "progress_vet.json"
 
 HEADERS = {
@@ -36,6 +39,13 @@ AAHA_SITEMAPS = [
     "https://www.aaha.org/publication-sitemap2.xml",
 ]
 
+ACVS_SITEMAPS = [
+    "https://www.acvs.org/small-animal-sitemap.xml",
+    "https://www.acvs.org/large-animal-sitemap.xml",
+    "https://www.acvs.org/resources-sitemap.xml",
+    "https://www.acvs.org/post-sitemap.xml",
+]
+
 # ── Drive ──────────────────────────────────────────────────────────────────────
 
 def get_drive_service():
@@ -49,10 +59,19 @@ def get_drive_service():
     return build("drive", "v3", credentials=creds)
 
 
-def upload_file(service, name, content):
+def folder_for_url(url):
+    if "merckvetmanual.com" in url:
+        return DRIVE_MERCK_ID
+    if "acvs.org" in url:
+        return DRIVE_ACVS_ID
+    return DRIVE_AAHA_ID
+
+
+def upload_file(service, url, name, content):
+    folder_id = folder_for_url(url)
     media = MediaInMemoryUpload(content.encode("utf-8"), mimetype="text/plain")
     service.files().create(
-        body={"name": name, "parents": [DRIVE_TEXT_FOLDER_ID]},
+        body={"name": name, "parents": [folder_id]},
         media_body=media, fields="id"
     ).execute()
 
@@ -81,6 +100,15 @@ def get_all_urls():
 
     print("Cargando sitemaps de AAHA...", flush=True)
     for sm in AAHA_SITEMAPS:
+        try:
+            urls = fetch_urls_from_sitemap(sm)
+            print(f"  {sm.split('/')[-1]}: {len(urls)} URLs", flush=True)
+            all_urls.extend(urls)
+        except Exception as e:
+            print(f"  ERROR {sm}: {e}", flush=True)
+
+    print("Cargando sitemaps de ACVS...", flush=True)
+    for sm in ACVS_SITEMAPS:
         try:
             urls = fetch_urls_from_sitemap(sm)
             print(f"  {sm.split('/')[-1]}: {len(urls)} URLs", flush=True)
@@ -138,6 +166,8 @@ def url_to_filename(url):
         prefix = "merck"
     elif "aaha.org" in url:
         prefix = "aaha"
+    elif "acvs.org" in url:
+        prefix = "acvs"
     else:
         prefix = "vet"
     path = url.split("//", 1)[-1].replace("/", "__").strip("__")
@@ -183,7 +213,7 @@ if __name__ == "__main__":
         try:
             data = scrape_page(url)
             filename = url_to_filename(url)
-            upload_file(service, filename, data["full_text"])
+            upload_file(service, url, filename, data["full_text"])
             progress["done"].append(url)
             batch_errors = 0
         except Exception as e:
@@ -217,4 +247,4 @@ if __name__ == "__main__":
     print(f"\n✓ Terminado.")
     print(f"  Exitosos : {len(progress['done'])}")
     print(f"  Fallidos : {len(progress['failed'])}")
-    print(f"  Carpeta  : Google Drive → textos_largos/")
+    print(f"  Carpeta  : Google Drive → Proyecto_IA_Veterinaria/")
