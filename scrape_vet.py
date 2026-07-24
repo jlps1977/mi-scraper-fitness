@@ -122,11 +122,23 @@ def upload_file(service, url, name, content):
 
 # ── Helpers de sitemap ─────────────────────────────────────────────────────────
 
-def fetch_urls_from_sitemap(url):
-    r = requests.get(url, headers=HEADERS, timeout=30)
-    root = ET.fromstring(r.text)
-    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-    return [el.text for el in root.findall(".//sm:loc", ns)]
+def fetch_urls_from_sitemap(url, retries=3):
+    for attempt in range(retries):
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        if r.status_code == 429:
+            wait = 30 * (attempt + 1)
+            print(f"    429 en {url.split('/')[-1]}, esperando {wait}s...", flush=True)
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        try:
+            root = ET.fromstring(r.text)
+            ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+            return [el.text for el in root.findall(".//sm:loc", ns)]
+        except ET.ParseError:
+            # Fallback para XML realmente malformado (no 429)
+            return re.findall(r"<loc>\s*(https?://[^<\s]+)\s*</loc>", r.text)
+    return []
 
 
 def _fetch_sitemap_index_urls(index_url, url_filter=None, delay=0.5):
@@ -192,7 +204,7 @@ def fetch_ema_vet_urls():
     return _fetch_sitemap_index_urls(
         EMA_SITEMAP_INDEX,
         url_filter=lambda u: "/veterinary-medicines" in u,
-        delay=0.3,
+        delay=2.0,  # EMA tiene rate-limit agresivo — 2s entre sub-sitemaps
     )
 
 
@@ -329,7 +341,7 @@ def get_all_urls():
     all_urls += _load_source("WSAVA guidelines",         fn=fetch_wsava_guideline_urls)
     all_urls += _load_source("AAVMC",                    fn=fetch_aavmc_urls)
     all_urls += _load_source("NOAH Compendium",          fn=lambda: fetch_urls_from_sitemap(NOAH_SITEMAP))
-    all_urls += _load_source("EMA Veterinary Medicines", fn=fetch_ema_vet_urls)
+    all_urls += _load_source("EMA Veterinary Medicines", fn=fetch_ema_vet_urls)  # lento por rate-limit, ~8 min
     all_urls += _load_source("FDA CVM (crawl)",          fn=fetch_fda_cvm_urls)
     all_urls += _load_source("ASPCA Toxicology",         fn=fetch_aspca_tox_urls)
     all_urls += _load_source("Pet Poison Helpline",      fn=fetch_pph_urls)
