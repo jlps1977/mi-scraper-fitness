@@ -122,23 +122,20 @@ def upload_file(service, url, name, content):
 
 # ── Helpers de sitemap ─────────────────────────────────────────────────────────
 
-def fetch_urls_from_sitemap(url, retries=3):
-    for attempt in range(retries):
-        r = requests.get(url, headers=HEADERS, timeout=30)
-        if r.status_code == 429:
-            wait = 30 * (attempt + 1)
-            print(f"    429 en {url.split('/')[-1]}, esperando {wait}s...", flush=True)
-            time.sleep(wait)
-            continue
-        r.raise_for_status()
-        try:
-            root = ET.fromstring(r.text)
-            ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-            return [el.text for el in root.findall(".//sm:loc", ns)]
-        except ET.ParseError:
-            # Fallback para XML realmente malformado (no 429)
-            return re.findall(r"<loc>\s*(https?://[^<\s]+)\s*</loc>", r.text)
-    return []
+def fetch_urls_from_sitemap(url):
+    r = requests.get(url, headers=HEADERS, timeout=30)
+    if r.status_code == 429:
+        # Rate-limited: skip silently (no reintentar, el siguiente delay ayudará)
+        return []
+    if not r.ok:
+        return []
+    try:
+        root = ET.fromstring(r.text)
+        ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+        return [el.text for el in root.findall(".//sm:loc", ns)]
+    except ET.ParseError:
+        # Fallback regex para XML con caracteres especiales no escapados
+        return re.findall(r"<loc>\s*(https?://[^<\s]+)\s*</loc>", r.text)
 
 
 def _fetch_sitemap_index_urls(index_url, url_filter=None, delay=0.5):
@@ -146,13 +143,10 @@ def _fetch_sitemap_index_urls(index_url, url_filter=None, delay=0.5):
     sub_sitemaps = fetch_urls_from_sitemap(index_url)
     all_urls = []
     for sm in sub_sitemaps:
-        try:
-            urls = fetch_urls_from_sitemap(sm)
-            if url_filter:
-                urls = [u for u in urls if url_filter(u)]
-            all_urls.extend(urls)
-        except Exception as e:
-            print(f"    sub-sitemap error {sm.split('/')[-1]}: {e}", flush=True)
+        urls = fetch_urls_from_sitemap(sm)
+        if url_filter:
+            urls = [u for u in urls if url_filter(u)]
+        all_urls.extend(urls)
         time.sleep(delay)
     return all_urls
 
