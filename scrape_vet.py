@@ -1,5 +1,5 @@
 """
-Scraper veterinario — Merck Veterinary Manual + AAHA
+Scraper veterinario — Merck Veterinary Manual + AAHA + ACVS + MSD Vet Manual + WOAH + WSAVA
 VIN excluido: requiere suscripción de pago.
 Resumible: guarda progreso en progress_vet.json
 Uso: python3 scrape_vet.py
@@ -14,7 +14,10 @@ from google.oauth2.credentials import Credentials
 DRIVE_VET_ROOT_ID   = "1sypIsu5f1rtKyuLYKgIN9yuSxYIONi7p"   # Proyecto_IA_Veterinaria
 DRIVE_MERCK_ID      = "107q-Vp6aWHR7bUYi7FxEedz1ywULSzNV"   # merck_manual
 DRIVE_AAHA_ID       = "1N0_pVjDE67q3Gcc743aMb1PBQbrs523f"    # aaha
-DRIVE_ACVS_ID       = "1SjE0iSJJBrbFbdmZsFdRMqh27pL7BZO9"    # acvs
+DRIVE_ACVS_ID       = "1SjE0iSJJBrbFbdmZsFdRMqh27pL7BZO9"   # acvs
+DRIVE_MSD_ID        = "1p6840PyVvvuSbz05v5V5ZCNhSHpUUy-E"   # msd_manual
+DRIVE_WOAH_ID       = "1lehKe-HXiSTn1SaP1f4Iefs656_y70LW"   # woah
+DRIVE_WSAVA_ID      = "12KhYXEdNAbej2bErtVIwFx6b7A9IT2en"   # wsava
 PROGRESS_FILE = "progress_vet.json"
 
 HEADERS = {
@@ -46,6 +49,16 @@ ACVS_SITEMAPS = [
     "https://www.acvs.org/post-sitemap.xml",
 ]
 
+MSD_SITEMAPS = [
+    "https://www.msdvetmanual.com/sitemaps/veterinary-topic.xml.gz",
+]
+
+# WOAH sitemap index (51 sub-sitemaps) — se filtra a URLs con /en/ en get_all_urls()
+WOAH_SITEMAP_INDEX = "https://www.woah.org/sitemap_index.xml"
+
+# WSAVA no tiene sitemap útil; se descubren los guidelines crawleando la página índice
+WSAVA_GUIDELINES_INDEX = "https://wsava.org/global-guidelines/"
+
 # ── Drive ──────────────────────────────────────────────────────────────────────
 
 def get_drive_service():
@@ -62,6 +75,12 @@ def get_drive_service():
 def folder_for_url(url):
     if "merckvetmanual.com" in url:
         return DRIVE_MERCK_ID
+    if "msdvetmanual.com" in url:
+        return DRIVE_MSD_ID
+    if "woah.org" in url:
+        return DRIVE_WOAH_ID
+    if "wsava.org" in url:
+        return DRIVE_WSAVA_ID
     if "acvs.org" in url:
         return DRIVE_ACVS_ID
     return DRIVE_AAHA_ID
@@ -80,10 +99,51 @@ def upload_file(service, url, name, content):
 
 def fetch_urls_from_sitemap(url):
     r = requests.get(url, headers=HEADERS, timeout=30)
-    content = r.text
-    root = ET.fromstring(content)
+    root = ET.fromstring(r.text)
     ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     return [el.text for el in root.findall(".//sm:loc", ns)]
+
+
+def fetch_woah_urls():
+    """Descarga el índice de sitemaps de WOAH y filtra páginas en inglés."""
+    r = requests.get(WOAH_SITEMAP_INDEX, headers=HEADERS, timeout=30)
+    root = ET.fromstring(r.text)
+    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    sub_sitemaps = [el.text for el in root.findall(".//sm:loc", ns)]
+    print(f"  WOAH: {len(sub_sitemaps)} sub-sitemaps encontrados", flush=True)
+
+    en_urls = []
+    for sm_url in sub_sitemaps:
+        try:
+            urls = fetch_urls_from_sitemap(sm_url)
+            filtered = [u for u in urls if "/en/" in u or u.rstrip("/").endswith("/en")]
+            en_urls.extend(filtered)
+        except Exception as e:
+            print(f"  WOAH sub-sitemap error {sm_url.split('/')[-1]}: {e}", flush=True)
+        time.sleep(0.5)
+    return en_urls
+
+
+def fetch_wsava_guideline_urls():
+    """Crawlea el índice de guidelines de WSAVA para obtener URLs de contenido."""
+    r = requests.get(WSAVA_GUIDELINES_INDEX, headers=HEADERS, timeout=30)
+    soup = BeautifulSoup(r.text, "html.parser")
+    links = set()
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if "wsava.org" in href and href != WSAVA_GUIDELINES_INDEX:
+            if not any(skip in href for skip in ["#", "mailto:", "javascript:"]):
+                links.add(href.rstrip("/"))
+        elif href.startswith("/") and len(href) > 1:
+            links.add("https://wsava.org" + href.rstrip("/"))
+    # Solo páginas con contenido real (excluir categorías genéricas)
+    content_links = [
+        u for u in links
+        if "wsava.org" in u
+        and not u.endswith("wsava.org")
+        and "/global-guidelines" not in u.rstrip("/")
+    ]
+    return content_links
 
 
 def get_all_urls():
@@ -115,6 +175,31 @@ def get_all_urls():
             all_urls.extend(urls)
         except Exception as e:
             print(f"  ERROR {sm}: {e}", flush=True)
+
+    print("Cargando sitemaps de MSD Veterinary Manual...", flush=True)
+    for sm in MSD_SITEMAPS:
+        try:
+            urls = fetch_urls_from_sitemap(sm)
+            print(f"  {sm.split('/')[-1]}: {len(urls)} URLs", flush=True)
+            all_urls.extend(urls)
+        except Exception as e:
+            print(f"  ERROR {sm}: {e}", flush=True)
+
+    print("Cargando URLs de WOAH (OIE)...", flush=True)
+    try:
+        woah_urls = fetch_woah_urls()
+        print(f"  woah.org: {len(woah_urls)} URLs en inglés", flush=True)
+        all_urls.extend(woah_urls)
+    except Exception as e:
+        print(f"  ERROR WOAH: {e}", flush=True)
+
+    print("Descubriendo guidelines de WSAVA...", flush=True)
+    try:
+        wsava_urls = fetch_wsava_guideline_urls()
+        print(f"  wsava.org: {len(wsava_urls)} páginas de guidelines", flush=True)
+        all_urls.extend(wsava_urls)
+    except Exception as e:
+        print(f"  ERROR WSAVA: {e}", flush=True)
 
     print(f"\nTotal URLs objetivo: {len(all_urls)}", flush=True)
     return all_urls
@@ -164,6 +249,12 @@ def url_to_filename(url):
     """Convierte URL a nombre de archivo con prefijo de fuente."""
     if "merckvetmanual.com" in url:
         prefix = "merck"
+    elif "msdvetmanual.com" in url:
+        prefix = "msd"
+    elif "woah.org" in url:
+        prefix = "woah"
+    elif "wsava.org" in url:
+        prefix = "wsava"
     elif "aaha.org" in url:
         prefix = "aaha"
     elif "acvs.org" in url:
@@ -171,7 +262,6 @@ def url_to_filename(url):
     else:
         prefix = "vet"
     path = url.split("//", 1)[-1].replace("/", "__").strip("__")
-    # Truncar si es muy largo
     if len(path) > 180:
         path = path[:180]
     return f"{prefix}__{path}.txt"
