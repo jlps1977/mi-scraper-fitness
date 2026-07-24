@@ -202,32 +202,24 @@ def fetch_ema_vet_urls():
     )
 
 
-def fetch_fda_cvm_urls(max_pages=2000):
-    """BFS crawl del sitio de FDA CVM (no tiene sitemap público)."""
+def fetch_fda_cvm_urls():
+    """Crawl de 1 nivel desde la página principal de FDA CVM."""
+    seed = FDA_CVM_SEED
     prefix_abs = "https://www.fda.gov/animal-veterinary"
     prefix_rel = "/animal-veterinary"
     visited = set()
-    queue = [FDA_CVM_SEED]
-    while queue and len(visited) < max_pages:
-        url = queue.pop(0)
-        clean_url = url.split("#")[0].split("?")[0]
-        if clean_url in visited:
-            continue
-        try:
-            r = requests.get(clean_url, headers=HEADERS, timeout=20)
-            visited.add(clean_url)
-            soup = BeautifulSoup(r.text, "html.parser")
-            for a in soup.find_all("a", href=True):
-                href = a["href"].split("#")[0].split("?")[0]
-                if href.startswith(prefix_rel):
-                    full = "https://www.fda.gov" + href
-                    if full not in visited:
-                        queue.append(full)
-                elif href.startswith(prefix_abs) and href not in visited:
-                    queue.append(href)
-        except Exception:
-            pass
-        time.sleep(1.0)
+    try:
+        r = requests.get(seed, headers=HEADERS, timeout=20)
+        visited.add(seed)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for a in soup.find_all("a", href=True):
+            href = a["href"].split("#")[0].split("?")[0]
+            if href.startswith(prefix_rel):
+                visited.add("https://www.fda.gov" + href)
+            elif href.startswith(prefix_abs):
+                visited.add(href)
+    except Exception as e:
+        print(f"  FDA CVM error: {e}", flush=True)
     return list(visited)
 
 
