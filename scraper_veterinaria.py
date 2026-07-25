@@ -1,9 +1,9 @@
 """
-Scraper veterinario completo — 25 fuentes
-Excluidos (paywall/WAF): VIN, AVMA, BSAVA, ECVIM, IVIS, Vetlexicon,
-  CAB, Wiley, Elsevier, MDPI, BMC/Springer, RVC, Melbourne, Colorado State, USDA, CDC.
+Scraper veterinario completo — 90+ fuentes
+Incluye: manuales, organizaciones, guías, farmacología, toxicología,
+revistas OA, universidades, organizaciones regionales, bases de datos
+clínicas/genéticas/epidemiológicas, y nutrición/bienestar animal.
 Resumible: guarda progreso en progress_vet.json
-Uso: python3 scrape_vet.py
 """
 import os, json, time, random, re, requests
 from bs4 import BeautifulSoup
@@ -40,6 +40,95 @@ DRIVE_PURDUE_ID     = "1Qq5br-xoR-VVe8KdfLwK23yS8tCyYZQK"   # purdue_vet
 DRIVE_TAMU_ID       = "1PZHrQcf8DQGg59pUPWqYJ1bVndg-wgO5"   # texas_am_vet
 DRIVE_OSU_ID        = "17T52a-QfK8P-So9UKppeF78hmre6Bc6q"   # ohio_state_vet
 DRIVE_SYDNEY_ID     = "1-Rl1UMq8px1u3Jw8FugDrohZnNJDLS3X"   # sydney_vet
+
+# ── Drive IDs — batch 4 (90+ fuentes adicionales) ─────────────────────────────
+# A. Sociedades
+DRIVE_ECVIM_CONGRESS_ID        = "11GemfGD3L_Z01ifnHYeucGmMbXbQAcEH"
+DRIVE_ESCCAP_ID                = "1eVVXILqiX-H4xFLVitLWX8RbbVMbEXAD"
+DRIVE_CAPC_ID                  = "1QxLzE5CM3wwqJ18TXRUyTTUJ5dVNywYz"
+DRIVE_TROCCAP_ID               = "1-EyBxFvs8LSEeN55SwA3VzXwh6vB4usm"
+DRIVE_ABCD_CATS_ID             = "1yTXzrVD4keZN-OJlPCbVKE1xHRDYZmbL"
+DRIVE_ISCAID_ID                = "15juVFj1CfNYk7ZViIofOhtbK4EmhYX8L"
+DRIVE_VECCS_RECOVER_ID         = "1AsCcJPp_Q9xbxk2brnwQoEFq6NvOpNWb"
+DRIVE_FECAVA_ID                = "1HalLMs9upepGHcWI8Cx-hqLZs3vwEu4L"
+DRIVE_AAFP_FELINE_ID           = "1BMgATa7fZiQu6QyeWrKoJvKuiXTrwstH"
+DRIVE_LAVECCS_ID               = "13ddiK1Q_tOig5Bm-5lh64i154T3PN6Av"
+DRIVE_CVMA_ID                  = "1FtP6NIfFkVaIJGn-hA0MVwWWtPdwAO24"
+DRIVE_NZVA_ID                  = "1x0OxsHQ1zWpzkuEx-YP0BmtOvlakNvG-"
+DRIVE_WAVMA_ID                 = "1ZwbIhtANDbtiLFbkovnT-hNXInlULyUk"
+DRIVE_AASV_ID                  = "12pnL4VZSLjvrWyCGA9AgUXy8kHuP2CW7"
+DRIVE_AABP_ID                  = "1gwWnzHPSZXiIcxfS28unS0sqptPGoS39"
+DRIVE_AAV_AVIAN_ID             = "1mQIJpoV-sK4iTfmAU8c5OV-QEWTmm5lr"
+# B. Revistas OA adicionales
+DRIVE_EUROPE_PMC_VET_ID        = "110ExE8IdNnmVT3nq0FMvckK4_qB6xjDj"
+DRIVE_VETERINARY_WORLD_ID      = "1ekjVJ-11ID29j7Gl2EIl231d5mN4VXY9"
+DRIVE_VETERINARY_EVIDENCE_ID   = "153cuSYFezDdSUnN_pmhRErONV_BqIwXt"
+DRIVE_OPEN_VET_JOURNAL_ID      = "1oee2JdcGh2l6sjnXeUp2okenWxYUTXgB"
+DRIVE_JSTAGE_JVMS_ID           = "1t35vS-ueslyQCh9eAEL3Jkyhx0-ZUuw4"
+DRIVE_SCIELO_VET_ID            = "18jy5kOJ5c2oMxb54lmMeZ1-kye6O_1Wj"
+DRIVE_JOURNAL_SHELTER_MED_ID   = "1crzQIg0FyFiIKlWsJt_eeZOj1bp0E0BE"
+DRIVE_BMC_VET_RESEARCH_ID      = "1ugJ5NysJlTY-clcWng2J7MemsFzmueTh"
+DRIVE_PARASITES_VECTORS_VET_ID = "1edcqeGEqtlE1PLI18dyoV0d9SEDaD0Gt"
+# C. Farmacología veterinaria
+DRIVE_VMD_UK_ID                = "1e4KOTWwveuvIOIVFqPcW_-debBFpki1X"
+DRIVE_APVMA_AUSTRALIA_ID       = "1ZKc0Vnxn1514t6_bjDZgGVABXmenWhQQ"
+DRIVE_ACVM_NEWZEALAND_ID       = "19qIXNcjM1FZjRzhemXObVrxZ9ZlbabIP"
+DRIVE_HEALTH_CANADA_VET_ID     = "1zT524wBumOLBcWjUdF9d3MRcwGABqvnY"
+DRIVE_UK_VARSS_ID              = "1pEx0W_x0q5spugy6f3dlPIarzRXDvRVb"
+DRIVE_UK_VET_PHARMACOVIGILANCE_ID = "1rM9hfZDLIRWxefkCXNLuiRPQhIQtVlK3"
+DRIVE_DRUGCENTRAL_VET_ID       = "1JYtAKpWS36Y9wt3vJxIGog9FmeOcu1uy"
+DRIVE_CHEMBL_VET_ID            = "1jEQK51z-RE2f5CMaMGthyT4Y_BKrYtLj"
+# D. Universidades adicionales
+DRIVE_RVC_LONDON_ID            = "1Iu5ZAIT7swZEeWh7FrE6Mp9JDnAqy6YF"
+DRIVE_EDINBURGH_VET_ID         = "1R1UHV-RQOUphFtPuRtxhCf1kv8jJvVp2"
+DRIVE_MELBOURNE_VET_ID         = "1ZjOclOWVJ_YkSRyVCfh6CPSRIiXnF4jx"
+DRIVE_UTRECHT_VET_ID           = "1h0Tz7Q7iXXGXUnyrEkwGd-rfmiatR2j9"
+DRIVE_GUELPH_OVC_ID            = "1Zk1IlkCONU_cS0sHTRvqVpvUlnWQfUyj"
+DRIVE_VETMEDUNI_VIENNA_ID      = "1zm5TPWVXqOPGg3n1D7yjylxcdeKstgaj"
+DRIVE_LIVERPOOL_SAVSNET_ID     = "1ElZ75jyXFmq_UIDIngdbQmGSF3iTK67F"
+DRIVE_NOTTINGHAM_CEVM_ID       = "1-w5hAcpyHOv4z3qKZs997_ExPCo49_mD"
+DRIVE_IOWA_CFSPH_ID            = "1NEdxfGRKVF2E3-6i-5CRtE4M5XAnftpW"
+DRIVE_MINNESOTA_CAHFS_ID       = "1ip28i7rZykrpdW3xGwFESyXRllppZxAT"
+DRIVE_TUFTS_VET_ID             = "1-qnEEMah4U7S7c3W7zEHr1-FkR1deuDa"
+DRIVE_GLASGOW_VET_ID           = "18codDRGa1X0kz1uRZJVzQASwiVv2rhiB"
+DRIVE_BRISTOL_VET_ID           = "1eS86ZZEWvifvbYKb34OVi5OIoQq99h3I"
+# E. Organizaciones regionales
+DRIVE_FVE_EUROPE_ID            = "1Qo9k3zhfMK7GU5uoHSkRgTvJNdLxhd1I"
+DRIVE_AVA_AUSTRALIA_ID         = "1gbqTPt3La1deb4ODrz-CZJrkSd4POGFm"
+DRIVE_CAHSS_CANADA_ID          = "1UXWeyJMic3rA-4XfURQl6QnjxPCfg5yZ"
+DRIVE_CFIA_ANIMAL_HEALTH_ID    = "1RBN51bYSYpptk3OOgjjLUnQLjvO1lg87"
+DRIVE_UK_APHA_ID               = "1hmKV4Bj7zISC7TU-3mr2dltizK7OhS6D"
+DRIVE_USDA_APHIS_VET_ID        = "1MLpDBz08LBV9Wg6hRzTVwtdE5m6uB_AY"
+DRIVE_USDA_NAHMS_ID            = "1Nu8KyEJpNcSTa7IFyJIZnfi3EStwb-oq"
+DRIVE_EC_ANIMAL_HEALTH_ID      = "10UfbVDmevi3mBlzz4-YFRDU08B9K8cZl"
+DRIVE_AHA_AUSTRALIA_ID         = "1HhTsZjSkY1FhmOSG45TfTJb4-g0DX9pI"
+DRIVE_AGRICULTURE_VICTORIA_ID  = "1BMdjIn6kczwAwqKKr02KEjF8CDQBKP8_"
+DRIVE_ANIMAL_HEALTH_IRELAND_ID = "1eOwh53eOlEs-wsVy1xydWCwJ3IwqXQN-"
+# F. Bases de datos clínicas
+DRIVE_VETSREV_ID               = "1OpLFrXW2foQirNVKPUMgycMZtlW9GdVu"
+DRIVE_OMIA_ID                  = "1qhSrnsoMYQDJNdB_inwEfwGP13Z9fKrB"
+DRIVE_VETBACT_ID               = "1k0baC6N-3nzsXeSllEPWhzOFA5WdRkpa"
+DRIVE_VETCOMPASS_ID            = "12CP1Jr3AN1439oqobwOCeY3QZzXhCi3P"
+DRIVE_VBO_BREEDS_ID            = "1Woa_WC3ab5gtpr3WqbRIfXoZJnttkrWt"
+DRIVE_GBADS_ID                 = "1mM2G2rESqnAVRm4W3-tLr3qIdspEE8me"
+DRIVE_CIDD_ID                  = "10_ooVGDGAEXygNk1lFe2SnZaKJOQIkGK"
+DRIVE_PENNGEN_ID               = "1FPae9Sr4m2aO489ehgMTMiwpBGa3INc0"
+DRIVE_ANIMAL_QTLDB_ID          = "1wbmXOuKgNzCcbBUjODlIb-rWnvP5dZSi"
+DRIVE_PHI_BASE_ID              = "1PtiS2XSkd8-V__zfqly-l6y1nLzpzDzA"
+DRIVE_UK_VIDA_ID               = "1SyRHQkwBqHKrghAHnZAhq1zYZV73y91o"
+# G. Nutrición y bienestar
+DRIVE_FEDIAF_ID                = "1jjt6go8I71BoNZS6Iz-OBXOeRA1AfQp0"
+DRIVE_PET_NUTRITION_ALLIANCE_ID = "1MeyVqtTFt3bPPxCFaOTdXiOd0Ik9Iqkp"
+DRIVE_TUFTS_PETFOODOLOGY_ID    = "1UXtBYZd0CNsVYCzfx4jnAp4Nw5kHISIa"
+DRIVE_WALTHAM_ID               = "1XsIaLQ-JI1RlFLCsmfxH2TmP_hF_vMRw"
+DRIVE_RSPCA_KNOWLEDGEBASE_ID   = "1nkBFQt6E7NcZvPV0CWdpWD4YNepNmeWj"
+DRIVE_MADDIES_FUND_ID          = "1TNaUqdi4DDEtvCZgNG3-ygzrBJ-BLDwq"
+DRIVE_ASPCAPRO_SHELTER_ID      = "1ydmt6EqepYYVPU3snhJd8s-1ODik59NW"
+DRIVE_AWIN_WELFARE_ID          = "1WxXFVSIb1umLlftGD1wskOza3E_f7OtM"
+DRIVE_ICAM_COALITION_ID        = "1ZvbAQdj9Gd9UWML9WwK_b30ScmCr2Vhf"
+DRIVE_UFAW_ID                  = "1Qv8th7rYSZSQ5z84Yqfh2YIU19XI_0z1"
+DRIVE_NAL_ANIMAL_HEALTH_ID     = "1SWz-WJPuiEgqFECciR3TZ4M246hjGYB1"
+DRIVE_HUMANE_SLAUGHTER_ID      = "1dH4nTl8bSNtdW92G_ViVqVhtFDUOkqdp"
 
 PROGRESS_FILE = "progress_vet.json"
 
@@ -136,6 +225,94 @@ def folder_for_url(url):
     if "vet.osu.edu"        in url:  return DRIVE_OSU_ID
     if "sydney.edu.au"      in url:  return DRIVE_SYDNEY_ID
     if "aaha.org"           in url:  return DRIVE_AAHA_ID
+    # ── batch 4 ───────────────────────────────────────────────────────────────
+    # A. Sociedades
+    if "ecvim.org"          in url:  return DRIVE_ECVIM_CONGRESS_ID
+    if "esccap.org"         in url:  return DRIVE_ESCCAP_ID
+    if "capcvet.org"        in url:  return DRIVE_CAPC_ID
+    if "troccap.com"        in url:  return DRIVE_TROCCAP_ID
+    if "abcdcatsvets.org"   in url:  return DRIVE_ABCD_CATS_ID
+    if "iscaid.org"         in url:  return DRIVE_ISCAID_ID
+    if "veccs.org"          in url or "recover-cpr.org" in url: return DRIVE_VECCS_RECOVER_ID
+    if "fecava.org"         in url:  return DRIVE_FECAVA_ID
+    if "catvets.com"        in url:  return DRIVE_AAFP_FELINE_ID
+    if "laveccs.org"        in url:  return DRIVE_LAVECCS_ID
+    if "canadianveterinarians.net" in url: return DRIVE_CVMA_ID
+    if "nzva.org.nz"        in url:  return DRIVE_NZVA_ID
+    if "wavma.org"          in url:  return DRIVE_WAVMA_ID
+    if "aasv.org"           in url:  return DRIVE_AASV_ID
+    if "aabp.org"           in url:  return DRIVE_AABP_ID
+    if "associationofavianvets.org" in url: return DRIVE_AAV_AVIAN_ID
+    # B. Revistas OA adicionales
+    if "europepmc.org"      in url:  return DRIVE_EUROPE_PMC_VET_ID
+    if "veterinaryworld.org" in url: return DRIVE_VETERINARY_WORLD_ID
+    if "veterinaryevidence.org" in url: return DRIVE_VETERINARY_EVIDENCE_ID
+    if "benthamopen.com/TOVETJ" in url: return DRIVE_OPEN_VET_JOURNAL_ID
+    if "jstage.jst.go.jp"   in url:  return DRIVE_JSTAGE_JVMS_ID
+    if "scielo.org"         in url or "scielo.br" in url: return DRIVE_SCIELO_VET_ID
+    if "sheltervet.org"     in url or "journalofsheltervet" in url: return DRIVE_JOURNAL_SHELTER_MED_ID
+    if "bmcvetres.biomedcentral.com" in url: return DRIVE_BMC_VET_RESEARCH_ID
+    if "parasitesandvectors.com" in url: return DRIVE_PARASITES_VECTORS_VET_ID
+    # C. Farmacología veterinaria
+    if "vmd.defra.gov.uk"   in url:  return DRIVE_VMD_UK_ID
+    if "apvma.gov.au"       in url:  return DRIVE_APVMA_AUSTRALIA_ID
+    if "epa.govt.nz"        in url or "acvm.govt.nz" in url: return DRIVE_ACVM_NEWZEALAND_ID
+    if "canada.ca/en/health-canada" in url and "vet" in url: return DRIVE_HEALTH_CANADA_VET_ID
+    if "vmd.defra.gov.uk/varss" in url: return DRIVE_UK_VARSS_ID
+    if "pharmacovigilance" in url and "vet" in url: return DRIVE_UK_VET_PHARMACOVIGILANCE_ID
+    if "drugcentral.org"    in url:  return DRIVE_DRUGCENTRAL_VET_ID
+    if "ebi.ac.uk/chembl"   in url or "chembl.org" in url: return DRIVE_CHEMBL_VET_ID
+    # D. Universidades adicionales
+    if "rvc.ac.uk"          in url:  return DRIVE_RVC_LONDON_ID
+    if "ed.ac.uk"           in url and "vet" in url: return DRIVE_EDINBURGH_VET_ID
+    if "unimelb.edu.au"     in url and "vet" in url: return DRIVE_MELBOURNE_VET_ID
+    if "uu.nl"              in url and "vet" in url: return DRIVE_UTRECHT_VET_ID
+    if "uoguelph.ca"        in url:  return DRIVE_GUELPH_OVC_ID
+    if "vetmeduni.ac.at"    in url:  return DRIVE_VETMEDUNI_VIENNA_ID
+    if "liverpool.ac.uk"    in url and ("vet" in url or "savsnet" in url): return DRIVE_LIVERPOOL_SAVSNET_ID
+    if "nottingham.ac.uk"   in url and "vet" in url: return DRIVE_NOTTINGHAM_CEVM_ID
+    if "cfsph.iastate.edu"  in url:  return DRIVE_IOWA_CFSPH_ID
+    if "cahfs.umn.edu"      in url:  return DRIVE_MINNESOTA_CAHFS_ID
+    if "tufts.edu"          in url and "vet" in url: return DRIVE_TUFTS_VET_ID
+    if "gla.ac.uk"          in url and "vet" in url: return DRIVE_GLASGOW_VET_ID
+    if "bristol.ac.uk"      in url and "vet" in url: return DRIVE_BRISTOL_VET_ID
+    # E. Organizaciones regionales
+    if "fve.org"            in url:  return DRIVE_FVE_EUROPE_ID
+    if "ava.com.au"         in url:  return DRIVE_AVA_AUSTRALIA_ID
+    if "cahss.org"          in url:  return DRIVE_CAHSS_CANADA_ID
+    if "inspection.canada.ca" in url or "inspection.gc.ca" in url: return DRIVE_CFIA_ANIMAL_HEALTH_ID
+    if "apha.gov.uk"        in url:  return DRIVE_UK_APHA_ID
+    if "aphis.usda.gov"     in url:  return DRIVE_USDA_APHIS_VET_ID
+    if "nahms.usda.gov"     in url:  return DRIVE_USDA_NAHMS_ID
+    if "ec.europa.eu"       in url and "animal" in url: return DRIVE_EC_ANIMAL_HEALTH_ID
+    if "animalhealthaustralia.com.au" in url: return DRIVE_AHA_AUSTRALIA_ID
+    if "agriculture.vic.gov.au" in url: return DRIVE_AGRICULTURE_VICTORIA_ID
+    if "animalhealthireland.ie" in url: return DRIVE_ANIMAL_HEALTH_IRELAND_ID
+    # F. Bases de datos
+    if "vetsrev.nottingham.ac.uk" in url: return DRIVE_VETSREV_ID
+    if "omia.org"           in url:  return DRIVE_OMIA_ID
+    if "vetbact.org"        in url:  return DRIVE_VETBACT_ID
+    if "vetcompass.org"     in url:  return DRIVE_VETCOMPASS_ID
+    if "vbo.org"            in url or "breeds.org" in url: return DRIVE_VBO_BREEDS_ID
+    if "gbads.org"          in url or "animalhealthmetrics.org" in url: return DRIVE_GBADS_ID
+    if "cidd.org"           in url:  return DRIVE_CIDD_ID
+    if "vet.upenn.edu/penngen" in url: return DRIVE_PENNGEN_ID
+    if "animalgenome.org/QTLdb" in url: return DRIVE_ANIMAL_QTLDB_ID
+    if "phi-base.org"       in url:  return DRIVE_PHI_BASE_ID
+    if "vmd.defra.gov.uk/productinformationdatabase" in url: return DRIVE_UK_VIDA_ID
+    # G. Nutrición y bienestar
+    if "fediaf.org"         in url:  return DRIVE_FEDIAF_ID
+    if "petnutritionalliance.org" in url: return DRIVE_PET_NUTRITION_ALLIANCE_ID
+    if "vetnutrition.tufts.edu" in url: return DRIVE_TUFTS_PETFOODOLOGY_ID
+    if "waltham.com"        in url:  return DRIVE_WALTHAM_ID
+    if "kb.rspca.org.au"    in url:  return DRIVE_RSPCA_KNOWLEDGEBASE_ID
+    if "maddiesfund.org"    in url:  return DRIVE_MADDIES_FUND_ID
+    if "aspcapro.org"       in url:  return DRIVE_ASPCAPRO_SHELTER_ID
+    if "awionline.org"      in url or "awin-site.org" in url: return DRIVE_AWIN_WELFARE_ID
+    if "icam-coalition.org" in url:  return DRIVE_ICAM_COALITION_ID
+    if "ufaw.org.uk"        in url:  return DRIVE_UFAW_ID
+    if "nal.usda.gov"       in url and "animal" in url: return DRIVE_NAL_ANIMAL_HEALTH_ID
+    if "hsa.org.uk"         in url or "humane-slaughter.org" in url: return DRIVE_HUMANE_SLAUGHTER_ID
     return DRIVE_AAHA_ID  # fallback
 
 
@@ -347,6 +524,283 @@ def fetch_osu_vet_urls():
     return fetch_urls_from_sitemap(OSU_SITEMAP)
 
 
+# ── Fetchers batch 4 ──────────────────────────────────────────────────────────
+
+# A. Sociedades
+def fetch_ecvim_urls():
+    return _crawl_one_level("https://www.ecvim-ca.org/congress/proceedings", "ecvim-ca.org", delay=3.0)
+
+def fetch_esccap_urls():
+    return _crawl_one_level("https://www.esccap.org/guidelines/", "esccap.org", delay=3.0)
+
+def fetch_capc_urls():
+    return _crawl_one_level("https://capcvet.org/guidelines/", "capcvet.org", delay=3.0)
+
+def fetch_troccap_urls():
+    return _crawl_one_level("https://www.troccap.com/recommendations/", "troccap.com", delay=3.0)
+
+def fetch_abcd_cats_urls():
+    return _crawl_one_level("https://www.abcdcatsvets.org/guidelines/", "abcdcatsvets.org", delay=3.0)
+
+def fetch_iscaid_urls():
+    return _crawl_one_level("https://www.iscaid.org/guidelines/", "iscaid.org", delay=3.0)
+
+def fetch_veccs_recover_urls():
+    urls = _crawl_one_level("https://www.veccs.org/education/", "veccs.org", delay=3.0)
+    urls += _crawl_one_level("https://www.recover-cpr.org/guidelines/", "recover-cpr.org", delay=3.0)
+    return urls
+
+def fetch_fecava_urls():
+    return _crawl_one_level("https://www.fecava.org/policies-actions/", "fecava.org", delay=3.0)
+
+def fetch_aafp_feline_urls():
+    return _crawl_one_level("https://catvets.com/guidelines/practice-guidelines/", "catvets.com", delay=3.0)
+
+def fetch_laveccs_urls():
+    return _crawl_one_level("https://www.laveccs.org/", "laveccs.org", delay=3.0)
+
+def fetch_cvma_urls():
+    return _crawl_one_level("https://www.canadianveterinarians.net/policy-and-outreach/", "canadianveterinarians.net", delay=3.0)
+
+def fetch_nzva_urls():
+    return _crawl_one_level("https://www.nzva.org.nz/page/resources", "nzva.org.nz", delay=3.0)
+
+def fetch_wavma_urls():
+    return _crawl_one_level("https://www.wavma.org/", "wavma.org", delay=3.0)
+
+def fetch_aasv_urls():
+    return _crawl_one_level("https://www.aasv.org/pages/aasv_resources.php", "aasv.org", delay=3.0)
+
+def fetch_aabp_urls():
+    return _crawl_one_level("https://www.aabp.org/resources/", "aabp.org", delay=3.0)
+
+def fetch_aav_avian_urls():
+    return _crawl_one_level("https://www.associationofavianvets.org/resources", "associationofavianvets.org", delay=3.0)
+
+# B. Revistas OA adicionales
+def fetch_europe_pmc_vet_urls():
+    """Europe PMC API — artículos con MeSH veterinario."""
+    base = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
+    params = {"query": "veterinary[MeSH]", "format": "json", "pageSize": 1000, "resultType": "lite"}
+    urls = []
+    cursor = "*"
+    for _ in range(5):  # max 5 páginas
+        params["cursorMark"] = cursor
+        try:
+            r = requests.get(base, params=params, headers=HEADERS, timeout=30)
+            data = r.json()
+        except Exception:
+            break
+        for hit in data.get("resultList", {}).get("result", []):
+            pmid = hit.get("pmid")
+            if pmid:
+                urls.append(f"https://europepmc.org/article/MED/{pmid}")
+        cursor = data.get("nextCursorMark", "")
+        if not cursor or cursor == params["cursorMark"]:
+            break
+        time.sleep(1.0)
+    return urls
+
+def fetch_veterinary_world_urls():
+    return _fetch_sitemap_index_urls("https://www.veterinaryworld.org/sitemap-index.xml", delay=1.0)
+
+def fetch_veterinary_evidence_urls():
+    return _crawl_one_level("https://veterinaryevidence.org/index.php/ve", "veterinaryevidence.org", delay=2.0)
+
+def fetch_open_vet_journal_urls():
+    return _crawl_one_level("https://benthamopen.com/TOVETJ/", "benthamopen.com", delay=2.0)
+
+def fetch_jstage_jvms_urls():
+    return _fetch_sitemap_index_urls(
+        "https://www.jstage.jst.go.jp/sitemap/jvms.xml",
+        url_filter=lambda u: "/jvms/" in u,
+        delay=1.0,
+    )
+
+def fetch_scielo_vet_urls():
+    return _crawl_one_level("https://www.scielo.org/en/journals/?status=current&subject=veterinary-sciences", "scielo.org", delay=2.0)
+
+def fetch_journal_shelter_med_urls():
+    return _crawl_one_level("https://www.sheltervet.org/assets/docs/shelter-medicine-textbook-toc.html", "sheltervet.org", delay=3.0)
+
+def fetch_bmc_vet_research_urls():
+    return _fetch_sitemap_index_urls(
+        "https://bmcvetres.biomedcentral.com/sitemap.xml",
+        delay=1.0,
+    )
+
+def fetch_parasites_vectors_vet_urls():
+    return _fetch_sitemap_index_urls(
+        "https://parasitesandvectors.biomedcentral.com/sitemap.xml",
+        url_filter=lambda u: "article" in u,
+        delay=1.0,
+    )
+
+# C. Farmacología veterinaria
+def fetch_vmd_uk_urls():
+    return _crawl_one_level("https://www.vmd.defra.gov.uk/ProductInformationDatabase/", "vmd.defra.gov.uk", delay=3.0)
+
+def fetch_apvma_urls():
+    return _crawl_one_level("https://apvma.gov.au/node/106", "apvma.gov.au", delay=3.0)
+
+def fetch_acvm_nz_urls():
+    return _crawl_one_level("https://www.epa.govt.nz/database-search/acvm-register/", "epa.govt.nz", delay=3.0)
+
+def fetch_health_canada_vet_urls():
+    return _crawl_one_level("https://www.canada.ca/en/health-canada/services/drugs-health-products/veterinary-drugs.html", "canada.ca", delay=3.0)
+
+def fetch_uk_varss_urls():
+    return _crawl_one_level("https://www.vmd.defra.gov.uk/varss/", "vmd.defra.gov.uk", delay=3.0)
+
+def fetch_drugcentral_vet_urls():
+    return _crawl_one_level("https://drugcentral.org/pharmacology", "drugcentral.org", delay=2.0)
+
+def fetch_chembl_vet_urls():
+    return _crawl_one_level("https://www.ebi.ac.uk/chembl/g/#browse/compounds", "ebi.ac.uk", delay=2.0)
+
+# D. Universidades adicionales
+def fetch_rvc_urls():
+    return _fetch_sitemap_index_urls("https://www.rvc.ac.uk/sitemap.xml", delay=1.0)
+
+def fetch_edinburgh_vet_urls():
+    return _crawl_one_level("https://www.ed.ac.uk/vet/research", "ed.ac.uk", delay=2.0)
+
+def fetch_melbourne_vet_urls():
+    return _crawl_one_level("https://fvas.unimelb.edu.au/research", "unimelb.edu.au", delay=2.0)
+
+def fetch_utrecht_vet_urls():
+    return _crawl_one_level("https://www.uu.nl/en/organisation/faculty-of-veterinary-medicine", "uu.nl", delay=2.0)
+
+def fetch_guelph_ovc_urls():
+    return _fetch_sitemap_index_urls("https://ovc.uoguelph.ca/sitemap.xml", delay=1.0)
+
+def fetch_vetmeduni_vienna_urls():
+    return _crawl_one_level("https://www.vetmeduni.ac.at/en/research/", "vetmeduni.ac.at", delay=2.0)
+
+def fetch_liverpool_savsnet_urls():
+    return _crawl_one_level("https://www.liverpool.ac.uk/savsnet/", "liverpool.ac.uk", delay=2.0)
+
+def fetch_nottingham_cevm_urls():
+    return _crawl_one_level("https://www.nottingham.ac.uk/vet/", "nottingham.ac.uk", delay=2.0)
+
+def fetch_iowa_cfsph_urls():
+    return _crawl_one_level("https://www.cfsph.iastate.edu/Factsheets/", "cfsph.iastate.edu", delay=2.0)
+
+def fetch_minnesota_cahfs_urls():
+    return _crawl_one_level("https://cahfs.umn.edu/", "cahfs.umn.edu", delay=2.0)
+
+def fetch_tufts_vet_urls():
+    return _crawl_one_level("https://vetnutrition.tufts.edu/", "tufts.edu", delay=2.0)
+
+def fetch_glasgow_vet_urls():
+    return _crawl_one_level("https://www.gla.ac.uk/schools/vet/research/", "gla.ac.uk", delay=2.0)
+
+def fetch_bristol_vet_urls():
+    return _crawl_one_level("https://www.bristol.ac.uk/vet-school/research/", "bristol.ac.uk", delay=2.0)
+
+# E. Organizaciones regionales
+def fetch_fve_urls():
+    return _crawl_one_level("https://www.fve.org/publications/", "fve.org", delay=3.0)
+
+def fetch_ava_australia_urls():
+    return _crawl_one_level("https://www.ava.com.au/policy-advocacy/policies/", "ava.com.au", delay=3.0)
+
+def fetch_cahss_canada_urls():
+    return _crawl_one_level("https://cahss.org/publications/", "cahss.org", delay=3.0)
+
+def fetch_cfia_animal_health_urls():
+    return _crawl_one_level("https://inspection.canada.ca/animal-health/eng/1299009566369/1299009642126", "inspection.canada.ca", delay=3.0)
+
+def fetch_uk_apha_urls():
+    return _crawl_one_level("https://www.gov.uk/government/organisations/animal-and-plant-health-agency", "apha.gov.uk", delay=3.0)
+
+def fetch_usda_aphis_vet_urls():
+    return _crawl_one_level("https://www.aphis.usda.gov/aphis/ourfocus/animalhealth", "aphis.usda.gov", delay=3.0)
+
+def fetch_usda_nahms_urls():
+    return _crawl_one_level("https://www.nahms.usda.gov/publications/", "nahms.usda.gov", delay=3.0)
+
+def fetch_ec_animal_health_urls():
+    return _crawl_one_level("https://ec.europa.eu/info/departments/health-and-food-safety_en", "ec.europa.eu", delay=3.0)
+
+def fetch_aha_australia_urls():
+    return _crawl_one_level("https://www.animalhealthaustralia.com.au/publications/", "animalhealthaustralia.com.au", delay=3.0)
+
+def fetch_agriculture_victoria_urls():
+    return _crawl_one_level("https://agriculture.vic.gov.au/livestock-and-animals", "agriculture.vic.gov.au", delay=3.0)
+
+def fetch_animal_health_ireland_urls():
+    return _crawl_one_level("https://www.animalhealthireland.ie/programmes/", "animalhealthireland.ie", delay=3.0)
+
+# F. Bases de datos
+def fetch_vetsrev_urls():
+    return _crawl_one_level("https://vetsrev.nottingham.ac.uk/", "vetsrev.nottingham.ac.uk", delay=3.0)
+
+def fetch_omia_urls():
+    return _crawl_one_level("https://omia.org/home/", "omia.org", delay=2.0)
+
+def fetch_vetbact_urls():
+    return _crawl_one_level("https://www.vetbact.org/vetbact/", "vetbact.org", delay=2.0)
+
+def fetch_vetcompass_urls():
+    return _crawl_one_level("https://www.vetcompass.org/publications/", "vetcompass.org", delay=2.0)
+
+def fetch_vbo_breeds_urls():
+    return _crawl_one_level("https://vbo.com/", "vbo.org", delay=2.0)
+
+def fetch_gbads_urls():
+    return _crawl_one_level("https://www.gbads.org/resources/", "gbads.org", delay=3.0)
+
+def fetch_cidd_urls():
+    return _crawl_one_level("https://www.cidd.org/", "cidd.org", delay=3.0)
+
+def fetch_penngen_urls():
+    return _crawl_one_level("https://www.vet.upenn.edu/research/centers-laboratories/penngen", "vet.upenn.edu", delay=2.0)
+
+def fetch_animal_qtldb_urls():
+    return _crawl_one_level("https://www.animalgenome.org/QTLdb/", "animalgenome.org", delay=2.0)
+
+def fetch_phi_base_urls():
+    return _crawl_one_level("https://www.phi-base.org/searchFacet.htm", "phi-base.org", delay=2.0)
+
+# G. Nutrición y bienestar
+def fetch_fediaf_urls():
+    return _crawl_one_level("https://www.fediaf.org/self-regulation/nutrition-guidelines.html", "fediaf.org", delay=3.0)
+
+def fetch_pet_nutrition_alliance_urls():
+    return _crawl_one_level("https://petnutritionalliance.org/resources.php", "petnutritionalliance.org", delay=3.0)
+
+def fetch_tufts_petfoodology_urls():
+    return _fetch_sitemap_index_urls("https://vetnutrition.tufts.edu/post-sitemap.xml", delay=1.0)
+
+def fetch_waltham_urls():
+    return _crawl_one_level("https://www.waltham.com/resources/", "waltham.com", delay=3.0)
+
+def fetch_rspca_knowledgebase_urls():
+    return _crawl_one_level("https://kb.rspca.org.au/", "kb.rspca.org.au", delay=2.0)
+
+def fetch_maddies_fund_urls():
+    return _crawl_one_level("https://www.maddiesfund.org/resources.htm", "maddiesfund.org", delay=3.0)
+
+def fetch_aspcapro_urls():
+    return _crawl_one_level("https://www.aspcapro.org/resources", "aspcapro.org", delay=3.0)
+
+def fetch_awin_welfare_urls():
+    return _crawl_one_level("https://awionline.org/content/farm-animals", "awionline.org", delay=3.0)
+
+def fetch_icam_urls():
+    return _crawl_one_level("https://www.icam-coalition.org/resources/", "icam-coalition.org", delay=3.0)
+
+def fetch_ufaw_urls():
+    return _crawl_one_level("https://www.ufaw.org.uk/the-ufaw-journal/the-ufaw-journal", "ufaw.org.uk", delay=3.0)
+
+def fetch_nal_animal_health_urls():
+    return _crawl_one_level("https://www.nal.usda.gov/legacy/awic/animal-health-and-welfare", "nal.usda.gov", delay=3.0)
+
+def fetch_humane_slaughter_urls():
+    return _crawl_one_level("https://www.hsa.org.uk/publications/publications", "hsa.org.uk", delay=3.0)
+
+
 def fetch_plos_vet_urls():
     """PLOS API — retorna URLs de artículos sobre veterinaria."""
     params = {
@@ -441,6 +895,92 @@ def get_all_urls():
     all_urls += _load_source("Ohio State Vet",            fn=fetch_osu_vet_urls)
     all_urls += _load_source("Univ. of Sydney Vet",       fn=fetch_sydney_vet_urls)
 
+    # ── batch 4: 70+ nuevas fuentes ──────────────────────────────────────────
+    # A. Sociedades adicionales
+    all_urls += _load_source("ECVIM Congress",             fn=fetch_ecvim_urls)
+    all_urls += _load_source("ESCCAP",                     fn=fetch_esccap_urls)
+    all_urls += _load_source("CAPC",                       fn=fetch_capc_urls)
+    all_urls += _load_source("TroCCAP",                    fn=fetch_troccap_urls)
+    all_urls += _load_source("ABCD Cats",                  fn=fetch_abcd_cats_urls)
+    all_urls += _load_source("ISCAID",                     fn=fetch_iscaid_urls)
+    all_urls += _load_source("VECCS/RECOVER",              fn=fetch_veccs_recover_urls)
+    all_urls += _load_source("FECAVA",                     fn=fetch_fecava_urls)
+    all_urls += _load_source("AAFP Feline",                fn=fetch_aafp_feline_urls)
+    all_urls += _load_source("LAVECCS",                    fn=fetch_laveccs_urls)
+    all_urls += _load_source("CVMA Canada",                fn=fetch_cvma_urls)
+    all_urls += _load_source("NZVA",                       fn=fetch_nzva_urls)
+    all_urls += _load_source("WAVMA",                      fn=fetch_wavma_urls)
+    all_urls += _load_source("AASV",                       fn=fetch_aasv_urls)
+    all_urls += _load_source("AABP",                       fn=fetch_aabp_urls)
+    all_urls += _load_source("AAV Avian",                  fn=fetch_aav_avian_urls)
+    # B. Revistas OA adicionales
+    all_urls += _load_source("Europe PMC Vet",             fn=fetch_europe_pmc_vet_urls)
+    all_urls += _load_source("Veterinary World",           fn=fetch_veterinary_world_urls)
+    all_urls += _load_source("Veterinary Evidence",        fn=fetch_veterinary_evidence_urls)
+    all_urls += _load_source("Open Vet Journal",           fn=fetch_open_vet_journal_urls)
+    all_urls += _load_source("J-STAGE JVMS",               fn=fetch_jstage_jvms_urls)
+    all_urls += _load_source("SciELO Vet",                 fn=fetch_scielo_vet_urls)
+    all_urls += _load_source("Journal Shelter Medicine",   fn=fetch_journal_shelter_med_urls)
+    all_urls += _load_source("BMC Vet Research",           fn=fetch_bmc_vet_research_urls)
+    all_urls += _load_source("Parasites & Vectors Vet",    fn=fetch_parasites_vectors_vet_urls)
+    # C. Farmacología veterinaria
+    all_urls += _load_source("VMD UK",                     fn=fetch_vmd_uk_urls)
+    all_urls += _load_source("APVMA Australia",            fn=fetch_apvma_urls)
+    all_urls += _load_source("ACVM New Zealand",           fn=fetch_acvm_nz_urls)
+    all_urls += _load_source("Health Canada Vet",          fn=fetch_health_canada_vet_urls)
+    all_urls += _load_source("UK VARSS",                   fn=fetch_uk_varss_urls)
+    all_urls += _load_source("DrugCentral Vet",            fn=fetch_drugcentral_vet_urls)
+    all_urls += _load_source("ChEMBL Vet",                 fn=fetch_chembl_vet_urls)
+    # D. Universidades adicionales
+    all_urls += _load_source("RVC London",                 fn=fetch_rvc_urls)
+    all_urls += _load_source("Edinburgh Vet",              fn=fetch_edinburgh_vet_urls)
+    all_urls += _load_source("Melbourne Vet",              fn=fetch_melbourne_vet_urls)
+    all_urls += _load_source("Utrecht Vet",                fn=fetch_utrecht_vet_urls)
+    all_urls += _load_source("Guelph OVC",                 fn=fetch_guelph_ovc_urls)
+    all_urls += _load_source("Vetmeduni Vienna",           fn=fetch_vetmeduni_vienna_urls)
+    all_urls += _load_source("Liverpool SAVSNET",          fn=fetch_liverpool_savsnet_urls)
+    all_urls += _load_source("Nottingham CEVM",            fn=fetch_nottingham_cevm_urls)
+    all_urls += _load_source("Iowa CFSPH",                 fn=fetch_iowa_cfsph_urls)
+    all_urls += _load_source("Minnesota CAHFS",            fn=fetch_minnesota_cahfs_urls)
+    all_urls += _load_source("Tufts Vet",                  fn=fetch_tufts_vet_urls)
+    all_urls += _load_source("Glasgow Vet",                fn=fetch_glasgow_vet_urls)
+    all_urls += _load_source("Bristol Vet",                fn=fetch_bristol_vet_urls)
+    # E. Organizaciones regionales
+    all_urls += _load_source("FVE Europe",                 fn=fetch_fve_urls)
+    all_urls += _load_source("AVA Australia",              fn=fetch_ava_australia_urls)
+    all_urls += _load_source("CAHSS Canada",               fn=fetch_cahss_canada_urls)
+    all_urls += _load_source("CFIA Animal Health",         fn=fetch_cfia_animal_health_urls)
+    all_urls += _load_source("UK APHA",                    fn=fetch_uk_apha_urls)
+    all_urls += _load_source("USDA APHIS Vet",             fn=fetch_usda_aphis_vet_urls)
+    all_urls += _load_source("USDA NAHMS",                 fn=fetch_usda_nahms_urls)
+    all_urls += _load_source("EC Animal Health",           fn=fetch_ec_animal_health_urls)
+    all_urls += _load_source("Animal Health Australia",    fn=fetch_aha_australia_urls)
+    all_urls += _load_source("Agriculture Victoria",       fn=fetch_agriculture_victoria_urls)
+    all_urls += _load_source("Animal Health Ireland",      fn=fetch_animal_health_ireland_urls)
+    # F. Bases de datos
+    all_urls += _load_source("VetSRev",                    fn=fetch_vetsrev_urls)
+    all_urls += _load_source("OMIA",                       fn=fetch_omia_urls)
+    all_urls += _load_source("VetBact",                    fn=fetch_vetbact_urls)
+    all_urls += _load_source("VetCompass",                 fn=fetch_vetcompass_urls)
+    all_urls += _load_source("GBADs",                      fn=fetch_gbads_urls)
+    all_urls += _load_source("CIDD",                       fn=fetch_cidd_urls)
+    all_urls += _load_source("PennGen",                    fn=fetch_penngen_urls)
+    all_urls += _load_source("Animal QTLdb",               fn=fetch_animal_qtldb_urls)
+    all_urls += _load_source("PHI-base",                   fn=fetch_phi_base_urls)
+    # G. Nutrición y bienestar
+    all_urls += _load_source("FEDIAF",                     fn=fetch_fediaf_urls)
+    all_urls += _load_source("Pet Nutrition Alliance",     fn=fetch_pet_nutrition_alliance_urls)
+    all_urls += _load_source("Tufts Petfoodology",         fn=fetch_tufts_petfoodology_urls)
+    all_urls += _load_source("Waltham",                    fn=fetch_waltham_urls)
+    all_urls += _load_source("RSPCA Knowledgebase",        fn=fetch_rspca_knowledgebase_urls)
+    all_urls += _load_source("Maddie's Fund",              fn=fetch_maddies_fund_urls)
+    all_urls += _load_source("ASPCApro",                   fn=fetch_aspcapro_urls)
+    all_urls += _load_source("AWIN Welfare",               fn=fetch_awin_welfare_urls)
+    all_urls += _load_source("ICAM Coalition",             fn=fetch_icam_urls)
+    all_urls += _load_source("UFAW",                       fn=fetch_ufaw_urls)
+    all_urls += _load_source("NAL Animal Health",          fn=fetch_nal_animal_health_urls)
+    all_urls += _load_source("Humane Slaughter Assoc.",    fn=fetch_humane_slaughter_urls)
+
     print(f"\nTotal URLs objetivo: {len(all_urls)}", flush=True)
     return all_urls
 
@@ -504,6 +1044,81 @@ def url_to_filename(url):
     elif "vet.osu.edu"       in url:  prefix = "osu"
     elif "sydney.edu.au"     in url:  prefix = "sydney"
     elif "aaha.org"          in url:  prefix = "aaha"
+    # batch 4
+    elif "ecvim-ca.org"      in url:  prefix = "ecvim"
+    elif "esccap.org"        in url:  prefix = "esccap"
+    elif "capcvet.org"       in url:  prefix = "capc"
+    elif "troccap.com"       in url:  prefix = "troccap"
+    elif "abcdcatsvets.org"  in url:  prefix = "abcd"
+    elif "iscaid.org"        in url:  prefix = "iscaid"
+    elif "veccs.org"         in url or "recover-cpr.org" in url: prefix = "veccs"
+    elif "fecava.org"        in url:  prefix = "fecava"
+    elif "catvets.com"       in url:  prefix = "aafp_feline"
+    elif "laveccs.org"       in url:  prefix = "laveccs"
+    elif "canadianveterinarians.net" in url: prefix = "cvma"
+    elif "nzva.org.nz"       in url:  prefix = "nzva"
+    elif "wavma.org"         in url:  prefix = "wavma"
+    elif "aasv.org"          in url:  prefix = "aasv"
+    elif "aabp.org"          in url:  prefix = "aabp"
+    elif "associationofavianvets.org" in url: prefix = "aav"
+    elif "europepmc.org"     in url:  prefix = "europepmc_vet"
+    elif "veterinaryworld.org" in url: prefix = "vetworld"
+    elif "veterinaryevidence.org" in url: prefix = "vetevidence"
+    elif "benthamopen.com"   in url:  prefix = "openvetj"
+    elif "jstage.jst.go.jp"  in url:  prefix = "jvms"
+    elif "scielo"            in url:  prefix = "scielo_vet"
+    elif "sheltervet.org"    in url:  prefix = "sheltermed"
+    elif "bmcvetres"         in url:  prefix = "bmcvet"
+    elif "parasitesandvectors" in url: prefix = "parasitesvectors"
+    elif "vmd.defra.gov.uk"  in url:  prefix = "vmd_uk"
+    elif "apvma.gov.au"      in url:  prefix = "apvma"
+    elif "epa.govt.nz"       in url:  prefix = "acvm_nz"
+    elif "health-canada"     in url and "vet" in url: prefix = "healthcanada_vet"
+    elif "drugcentral.org"   in url:  prefix = "drugcentral"
+    elif "ebi.ac.uk/chembl"  in url:  prefix = "chembl"
+    elif "rvc.ac.uk"         in url:  prefix = "rvc"
+    elif "ed.ac.uk"          in url:  prefix = "edinburgh_vet"
+    elif "unimelb.edu.au"    in url:  prefix = "melbourne_vet"
+    elif "uu.nl"             in url:  prefix = "utrecht_vet"
+    elif "uoguelph.ca"       in url:  prefix = "guelph_ovc"
+    elif "vetmeduni.ac.at"   in url:  prefix = "vetmeduni"
+    elif "liverpool.ac.uk"   in url:  prefix = "liverpool_vet"
+    elif "nottingham.ac.uk"  in url:  prefix = "nottingham_vet"
+    elif "cfsph.iastate.edu" in url:  prefix = "iowa_cfsph"
+    elif "cahfs.umn.edu"     in url:  prefix = "minnesota_cahfs"
+    elif "vetnutrition.tufts.edu" in url: prefix = "tufts_vet"
+    elif "gla.ac.uk"         in url:  prefix = "glasgow_vet"
+    elif "bristol.ac.uk"     in url:  prefix = "bristol_vet"
+    elif "fve.org"           in url:  prefix = "fve"
+    elif "ava.com.au"        in url:  prefix = "ava_au"
+    elif "cahss.org"         in url:  prefix = "cahss"
+    elif "inspection.canada.ca" in url: prefix = "cfia"
+    elif "apha.gov.uk"       in url or "gov.uk/government/organisations/animal" in url: prefix = "uk_apha"
+    elif "aphis.usda.gov"    in url:  prefix = "usda_aphis"
+    elif "nahms.usda.gov"    in url:  prefix = "usda_nahms"
+    elif "animalhealthaustralia.com.au" in url: prefix = "aha_au"
+    elif "agriculture.vic.gov.au" in url: prefix = "agvic"
+    elif "animalhealthireland.ie" in url: prefix = "ahi"
+    elif "vetsrev.nottingham.ac.uk" in url: prefix = "vetsrev"
+    elif "omia.org"          in url:  prefix = "omia"
+    elif "vetbact.org"       in url:  prefix = "vetbact"
+    elif "vetcompass.org"    in url:  prefix = "vetcompass"
+    elif "animalgenome.org"  in url:  prefix = "animal_qtldb"
+    elif "phi-base.org"      in url:  prefix = "phi_base"
+    elif "gbads.org"         in url:  prefix = "gbads"
+    elif "cidd.org"          in url:  prefix = "cidd"
+    elif "vet.upenn.edu"     in url:  prefix = "penngen"
+    elif "fediaf.org"        in url:  prefix = "fediaf"
+    elif "petnutritionalliance.org" in url: prefix = "pna"
+    elif "waltham.com"       in url:  prefix = "waltham"
+    elif "kb.rspca.org.au"   in url:  prefix = "rspca"
+    elif "maddiesfund.org"   in url:  prefix = "maddies"
+    elif "aspcapro.org"      in url:  prefix = "aspcapro"
+    elif "awionline.org"     in url:  prefix = "awin"
+    elif "icam-coalition.org" in url: prefix = "icam"
+    elif "ufaw.org.uk"       in url:  prefix = "ufaw"
+    elif "nal.usda.gov"      in url:  prefix = "nal_animal"
+    elif "hsa.org.uk"        in url:  prefix = "humane_slaughter"
     else:                             prefix = "vet"
     path = re.sub(r"[?=&]", "_", url.split("//", 1)[-1]).replace("/", "__").strip("__")
     return f"{prefix}__{path[:180]}.txt"
