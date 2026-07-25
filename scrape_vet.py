@@ -1,9 +1,7 @@
 """
-Scraper veterinario — Merck + AAHA + ACVS + MSD + WOAH + WSAVA
-  + ACVIM + AAVMC + NOAH Compendium + EMA Vet + FDA CVM
-  + ASPCA Toxicology + Pet Poison Helpline
-  + Frontiers Vet Science + PLOS ONE (vía API)
-VIN / AVMA / BSAVA / ECVIM / Wiley / Elsevier excluidos (paywall o WAF).
+Scraper veterinario completo — 25 fuentes
+Excluidos (paywall/WAF): VIN, AVMA, BSAVA, ECVIM, IVIS, Vetlexicon,
+  CAB, Wiley, Elsevier, MDPI, BMC/Springer, RVC, Melbourne, Colorado State, USDA, CDC.
 Resumible: guarda progreso en progress_vet.json
 Uso: python3 scrape_vet.py
 """
@@ -32,6 +30,16 @@ DRIVE_ASPCA_ID      = "13QEwv1X496Qp73FT6S7IXCYitfiGZDvs"   # aspca_toxicology
 DRIVE_PPH_ID        = "1IWMPqwucjt9TCsMCAVXiD1XPTZZh3Hkm"   # pet_poison_helpline
 DRIVE_FRONTIERS_ID  = "1BV1jUxsrwETuMZWj1x-UHc-AEKFBrwCy"   # frontiers_veterinary
 DRIVE_PLOS_ID       = "14r1wc4gXMOzo7kbtE5cimjEPVFya3Z_R"    # plos_veterinary
+DRIVE_CB_ID         = "1IDQuSWGnG2cX0lMGk7BBwi3WeW-uSH7E"   # clinicians_brief
+DRIVE_TVP_ID        = "1fNU5Jjaz4d26dsEdQxjJE-OTrE714eVW"   # todays_vet_practice
+DRIVE_EFSA_ID2      = "181t6H-_m4Elj9_boIQYHTOS_Eajur1to"   # efsa
+DRIVE_FAO_ID        = "1Ls66EIg1rY-0IkLebsXDrjdZRYo1eBp-"   # fao_animal_health
+DRIVE_CORNELL_ID    = "10kssTKPoLHItZfK1YXYWStmqlnHWZaSa"   # cornell_vet
+DRIVE_UCDAVIS_ID    = "1cHlmGAVCnVxbn2UWZ4Bu1TvximsaaWmR"   # uc_davis_vet
+DRIVE_PURDUE_ID     = "1Qq5br-xoR-VVe8KdfLwK23yS8tCyYZQK"   # purdue_vet
+DRIVE_TAMU_ID       = "1PZHrQcf8DQGg59pUPWqYJ1bVndg-wgO5"   # texas_am_vet
+DRIVE_OSU_ID        = "17T52a-QfK8P-So9UKppeF78hmre6Bc6q"   # ohio_state_vet
+DRIVE_SYDNEY_ID     = "1-Rl1UMq8px1u3Jw8FugDrohZnNJDLS3X"   # sydney_vet
 
 PROGRESS_FILE = "progress_vet.json"
 
@@ -67,6 +75,16 @@ MSD_SITEMAPS = [
 ACVIM_SITEMAPS = [
     "https://acvim.org/sitemap.xml",
 ]
+CB_SITEMAP_INDEX  = "https://www.cliniciansbrief.com/sitemap.xml"
+TVP_SITEMAP_INDEX = "https://todaysveterinarypractice.com/sitemap.xml"
+FAO_SITEMAP_INDEX = "https://www.fao.org/sitemap.xml"
+CORNELL_SITEMAP_INDEX  = "https://www.vet.cornell.edu/sitemap.xml"
+PURDUE_SITEMAP_INDEX   = "https://vet.purdue.edu/sitemap.xml"
+TAMU_SITEMAP_INDEX     = "https://vetmed.tamu.edu/sitemap.xml"
+OSU_SITEMAP            = "https://vet.osu.edu/sitemap.xml"
+SYDNEY_SITEMAP_INDEX   = "https://www.sydney.edu.au/sitemap.xml"
+EFSA_SEED    = "https://www.efsa.europa.eu/en/topics/topic/animal-health"
+UCDAVIS_SEED = "https://www.vetmed.ucdavis.edu"
 
 WOAH_SITEMAP_INDEX      = "https://www.woah.org/sitemap_index.xml"
 AAVMC_SITEMAP_INDEX     = "https://aavmc.org/sitemap_index.xml"
@@ -107,6 +125,16 @@ def folder_for_url(url):
     if "petpoisonhelpline"  in url:  return DRIVE_PPH_ID
     if "frontiersin.org"    in url:  return DRIVE_FRONTIERS_ID
     if "plos.org"           in url:  return DRIVE_PLOS_ID
+    if "cliniciansbrief"    in url:  return DRIVE_CB_ID
+    if "todaysveterinary"   in url:  return DRIVE_TVP_ID
+    if "efsa.europa.eu"     in url:  return DRIVE_EFSA_ID2
+    if "fao.org"            in url:  return DRIVE_FAO_ID
+    if "vet.cornell.edu"    in url:  return DRIVE_CORNELL_ID
+    if "vetmed.ucdavis"     in url:  return DRIVE_UCDAVIS_ID
+    if "vet.purdue.edu"     in url:  return DRIVE_PURDUE_ID
+    if "vetmed.tamu.edu"    in url:  return DRIVE_TAMU_ID
+    if "vet.osu.edu"        in url:  return DRIVE_OSU_ID
+    if "sydney.edu.au"      in url:  return DRIVE_SYDNEY_ID
     if "aaha.org"           in url:  return DRIVE_AAHA_ID
     return DRIVE_AAHA_ID  # fallback
 
@@ -250,6 +278,75 @@ def fetch_frontiers_vet_urls():
     )
 
 
+def _crawl_one_level(seed, domain_prefix, delay=2.0):
+    """Crawl de 1 nivel: recoge todos los links del seed dentro del mismo dominio."""
+    visited = set()
+    try:
+        r = requests.get(seed, headers=HEADERS, timeout=20)
+        visited.add(seed)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for a in soup.find_all("a", href=True):
+            href = a["href"].split("#")[0].split("?")[0]
+            if href.startswith(domain_prefix):
+                visited.add(href if href.startswith("http") else "https://" + href.lstrip("/"))
+            elif href.startswith("/") and domain_prefix in seed:
+                base = seed.split("/")[0] + "//" + seed.split("/")[2]
+                visited.add(base + href)
+    except Exception as e:
+        print(f"  crawl error {seed}: {e}", flush=True)
+    time.sleep(delay)
+    return list(visited)
+
+
+def fetch_efsa_urls():
+    return _crawl_one_level(EFSA_SEED, "efsa.europa.eu", delay=10.0)
+
+
+def fetch_ucdavis_urls():
+    return _crawl_one_level(UCDAVIS_SEED, "vetmed.ucdavis.edu", delay=2.0)
+
+
+def fetch_sydney_vet_urls():
+    """Sydney tiene sitemap universitario grande; filtra a la escuela de veterinaria."""
+    return _fetch_sitemap_index_urls(
+        SYDNEY_SITEMAP_INDEX,
+        url_filter=lambda u: "veterinary-science" in u or "/vet/" in u,
+        delay=1.0,
+    )
+
+
+def fetch_clinicians_brief_urls():
+    return _fetch_sitemap_index_urls(CB_SITEMAP_INDEX, delay=1.0)
+
+
+def fetch_tvp_urls():
+    return _fetch_sitemap_index_urls(TVP_SITEMAP_INDEX, delay=1.0)
+
+
+def fetch_fao_animal_health_urls():
+    return _fetch_sitemap_index_urls(
+        FAO_SITEMAP_INDEX,
+        url_filter=lambda u: "animal-health" in u or "animal-disease" in u or "animal-production" in u,
+        delay=1.0,
+    )
+
+
+def fetch_cornell_vet_urls():
+    return _fetch_sitemap_index_urls(CORNELL_SITEMAP_INDEX, delay=1.0)
+
+
+def fetch_purdue_vet_urls():
+    return _fetch_sitemap_index_urls(PURDUE_SITEMAP_INDEX, delay=1.0)
+
+
+def fetch_tamu_vet_urls():
+    return _fetch_sitemap_index_urls(TAMU_SITEMAP_INDEX, delay=1.0)
+
+
+def fetch_osu_vet_urls():
+    return fetch_urls_from_sitemap(OSU_SITEMAP)
+
+
 def fetch_plos_vet_urls():
     """PLOS API — retorna URLs de artículos sobre veterinaria."""
     params = {
@@ -333,6 +430,16 @@ def get_all_urls():
     all_urls += _load_source("Pet Poison Helpline",      fn=fetch_pph_urls)
     all_urls += _load_source("Frontiers Vet Science",    fn=fetch_frontiers_vet_urls)
     all_urls += _load_source("PLOS ONE Veterinary",      fn=fetch_plos_vet_urls)
+    all_urls += _load_source("Clinician's Brief",         fn=fetch_clinicians_brief_urls)
+    all_urls += _load_source("Today's Vet Practice",      fn=fetch_tvp_urls)
+    all_urls += _load_source("EFSA Animal Health",        fn=fetch_efsa_urls)
+    all_urls += _load_source("FAO Animal Health",         fn=fetch_fao_animal_health_urls)
+    all_urls += _load_source("Cornell Vet",               fn=fetch_cornell_vet_urls)
+    all_urls += _load_source("UC Davis Vet",              fn=fetch_ucdavis_urls)
+    all_urls += _load_source("Purdue Vet",                fn=fetch_purdue_vet_urls)
+    all_urls += _load_source("Texas A&M Vet",             fn=fetch_tamu_vet_urls)
+    all_urls += _load_source("Ohio State Vet",            fn=fetch_osu_vet_urls)
+    all_urls += _load_source("Univ. of Sydney Vet",       fn=fetch_sydney_vet_urls)
 
     print(f"\nTotal URLs objetivo: {len(all_urls)}", flush=True)
     return all_urls
@@ -386,6 +493,16 @@ def url_to_filename(url):
     elif "petpoisonhelpline" in url:  prefix = "pph"
     elif "frontiersin.org"   in url:  prefix = "frontiers"
     elif "plos.org"          in url:  prefix = "plos"
+    elif "cliniciansbrief"   in url:  prefix = "cb"
+    elif "todaysveterinary"  in url:  prefix = "tvp"
+    elif "efsa.europa.eu"    in url:  prefix = "efsa"
+    elif "fao.org"           in url:  prefix = "fao"
+    elif "vet.cornell.edu"   in url:  prefix = "cornell"
+    elif "vetmed.ucdavis"    in url:  prefix = "ucdavis"
+    elif "vet.purdue.edu"    in url:  prefix = "purdue"
+    elif "vetmed.tamu.edu"   in url:  prefix = "tamu"
+    elif "vet.osu.edu"       in url:  prefix = "osu"
+    elif "sydney.edu.au"     in url:  prefix = "sydney"
     elif "aaha.org"          in url:  prefix = "aaha"
     else:                             prefix = "vet"
     path = re.sub(r"[?=&]", "_", url.split("//", 1)[-1]).replace("/", "__").strip("__")
