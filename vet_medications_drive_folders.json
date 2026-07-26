@@ -1,0 +1,20 @@
+{
+  "root_name": "vet_medications_mexico_phase0",
+  "root_id": "1MOwRuP-NihH_tg3xjp0U8-keiYLmu2L9",
+  "folders": {
+    "source_policies": "10e4OPfujGSm5KCXRZatmwFvwr_q2HS3Y",
+    "senasica_regulatory": "1VEcj-iHnz4dNxnBOnSyCK3RGwCJlKgr4",
+    "sader_reference": "1CM61c0t3Uo1kLcdEU9QwihEwT_xtwCjB",
+    "zoetis_mexico": "1-_l12INHBeMOjvcHub4mJaN13fJCZdqi",
+    "msd_animal_health_mexico": "1xLNqPvPq0WaTslKzQJ53uVXpQeVAfUEG",
+    "boehringer_animal_health_mexico": "1Xtc-OaBMWbbQo__DagxNf7wpB2kHO_qK",
+    "elanco_mexico": "1N86H08qqhDCBTvXmSuZnuMHdPdHBJhBd",
+    "virbac_mexico": "1br_5hR3yQUNcPoGw2H0w_K5qih67CXqr",
+    "ceva_mexico": "1hKKUREOg3eqlrnRt4MtlaY1X6TlWobuI",
+    "vetoquinol_mexico": "1d-79R5vMDP1N_XDxiQ82SJm2O7nAFmWQ",
+    "chinoin_veterinaria": "1be5cDmBJYbQZQh96AA45WRKhQyXSCwmF",
+    "pisa_agropecuaria": "1oOcYiw7styni2vRUjg5wUgTDLLT6UVgM",
+    "restricted_sources": "1vh-kRiPdJycC67LsEa-HUjZKAPuZyuf6",
+    "manifests": "1HDHzKNDL0PJJflTdq1q2EQUFkEy8HPMX"
+  }
+}
