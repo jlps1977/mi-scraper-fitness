@@ -1,0 +1,22 @@
+{
+  "root_name": "medications_mexico_phase0",
+  "root_id": "1AZHjNKUh0Q_0qcDZre8NpOmxHsk9EAs_",
+  "folders": {
+    "source_policies": "124zQClq0LtYLi-xeRF52qNKczD1o7fiP",
+    "cofepris_reference": "1kl_a04hjSdNtD3mahPBBisCiOov-m-wc",
+    "plm_mexico": "1iAUvQFUBK6zL3k4vNKZy40aPVmM4O7TJ",
+    "vademecum_vidal_mexico": "1GffgLChPNhSrLyNa58KYouIpweH--tDJ",
+    "mi_vademecum_mexico": "1UKEpNTLVly1NUgGCWsLTSgWz00Shgve2",
+    "farmacias_guadalajara": "14DNJMxwmrw6be72K0dtOfztNPdqb9OCk",
+    "farmacias_del_ahorro": "1Kqkux4pxEu-e6Kq5lhEbOaQUVUK6Gjz1",
+    "farmacia_san_pablo": "1QQOjyPjyQVqiJM871EpJV3K2liKVwOxW",
+    "farmacias_benavides": "1u0CUNq5_Eam-88PZqjUg0spjKrzmWGDi",
+    "prixz": "1eDggeTz3xOMHqwErworBYfpgTgbyjOy7",
+    "walmart_farmacia_mexico": "1Jv0uZBwJ5f9_bPLXqtv7XaK-mAjwpHU-",
+    "amazon_mexico_otc": "1ACdnazxQvo0eyfNamogPkNC2jWbRk22Q",
+    "nadro": "1e-gVtBd8ELWFa2gJ5OQvqRQt3P0Zi9F-",
+    "marzam": "14BgQY6nRm5Ou7k7M9qHpUmUIQLHBZhnR",
+    "levic": "1-dy8T-8Tn5EgRTb667NICz0T8zlm5zAo",
+    "manifests": "16GAnUuZveSUg9x5h2EeVgXfdFkLFlnCM"
+  }
+}
