@@ -130,6 +130,31 @@ DRIVE_UFAW_ID                  = "1Qv8th7rYSZSQ5z84Yqfh2YIU19XI_0z1"
 DRIVE_NAL_ANIMAL_HEALTH_ID     = "1SWz-WJPuiEgqFECciR3TZ4M246hjGYB1"
 DRIVE_HUMANE_SLAUGHTER_ID      = "1dH4nTl8bSNtdW92G_ViVqVhtFDUOkqdp"
 
+# ── Nuevas (Inventario Complementario 2026-07-26) ──────────────────────────────
+DRIVE_BEVA_EQUINE_ID           = "1PmXfr_bxDXS6q-D4JKZLXVJOZq9Ys21Z"
+DRIVE_AAEP_EQUINE_ID           = "15WhG3s9uJ0ZkHVDxJdGHXeqsG0gdCVfE"
+DRIVE_BSAVA_METADATA_ID        = "1P1f45o_ScE3Q3osk6bLdrXFhRamm4zAU"
+DRIVE_IVIS_METADATA_ID         = "1aDENIEEowH0BXIEtMaqvjPb0QGTWWh4u"
+DRIVE_VETERINARY_RESEARCH_SPRINGER_ID = "1GqbbkYaRM5QcIfvWha9lrZd1NNV27Zdw"
+DRIVE_ACTA_VET_SCANDINAVICA_ID = "1bouC_Y062AIReq_NJwRN9tW8ZRB018SN"
+DRIVE_ANIMALS_MDPI_ID          = "1W_9makR1WmbZU2modWfNvGIJ4eT36LGJ"
+DRIVE_VETSCI_MDPI_ID           = "1bwjb-fCVfJGQN-pYZGHLq-EFHiD__Dj3"
+DRIVE_IRISH_VET_JOURNAL_ID     = "1HK5nnHF5GzIpotW9waystv5_P1Vu-ZWW"
+DRIVE_CANINE_MEDICINE_GENETICS_ID = "1OXPWqaDN5sYhQNUjXd326Ymfz-HaDMjy"
+DRIVE_JVETRES_POLAND_ID        = "1TWf6hvJ3LE2avDF7plgD5VO78otO9Dtz"
+DRIVE_BJVRAS_BRAZIL_ID         = "1L9tV4bhB5MhAE07WFSspnPtFySXfxXCm"
+DRIVE_JVS_KOREA_ID             = "1b-FxfHDl1p4Co1z2rowpEGljksrJetwe"
+DRIVE_HYBRID_VET_JOURNALS_OA_ID = "1hCdPRdHPPAovR_Qjkz8xsCUezSz8zvAL"
+DRIVE_FARAD_ID                 = "1StwBk-kALjQA3AKA4JucNcge7oQtdCRr"
+DRIVE_NVAL_JAPAN_ID            = "1Z06JZBRa8rWaLDNzcoTXSCw-n-5o1WJK"
+DRIVE_FAANG_DATA_PORTAL_ID     = "1BCAN_WObajqdYtgs_Sf9d6Eb69SBNlYe"
+DRIVE_ASSOC_SHELTER_VETS_GUIDELINES_ID = "1_5LyPNSdvD132yWKWSTVq0pE6zJXTIco"
+DRIVE_RSPCA_SCIENCE_REPORTS_ID = "12xzGZuEa_jLvsOJjDG3XRuLat54LuVjk"
+DRIVE_SHELTER_ANIMALS_COUNT_ID = "119cPcb5MHpd71n0vSxU3o6Nqf8go2lFA"
+# Nota: "Animal Welfare Institute" ya cubierto por DRIVE_AWIN_WELFARE_ID (awionline.org).
+# "Veterinary Breed Ontology" y "UK VIDA surveillance" reutilizan folders ya
+# existentes (DRIVE_VBO_BREEDS_ID, DRIVE_UK_VIDA_ID) que estaban huérfanos/rotos.
+
 PROGRESS_FILE = "progress_vet.json"
 
 HEADERS = {
@@ -293,13 +318,13 @@ def folder_for_url(url):
     if "omia.org"           in url:  return DRIVE_OMIA_ID
     if "vetbact.org"        in url:  return DRIVE_VETBACT_ID
     if "vetcompass.org"     in url:  return DRIVE_VETCOMPASS_ID
-    if "vbo.org"            in url or "breeds.org" in url: return DRIVE_VBO_BREEDS_ID
+    if "vbo.org" in url or "breeds.org" in url or "vertebrate-breed-ontology" in url: return DRIVE_VBO_BREEDS_ID
     if "gbads.org"          in url or "animalhealthmetrics.org" in url: return DRIVE_GBADS_ID
     if "cidd.org"           in url:  return DRIVE_CIDD_ID
     if "vet.upenn.edu/penngen" in url: return DRIVE_PENNGEN_ID
     if "animalgenome.org/QTLdb" in url: return DRIVE_ANIMAL_QTLDB_ID
     if "phi-base.org"       in url:  return DRIVE_PHI_BASE_ID
-    if "vmd.defra.gov.uk/productinformationdatabase" in url: return DRIVE_UK_VIDA_ID
+    if "gov.uk" in url and "scanning-surveillance" in url: return DRIVE_UK_VIDA_ID
     # G. Nutrición y bienestar
     if "fediaf.org"         in url:  return DRIVE_FEDIAF_ID
     if "petnutritionalliance.org" in url: return DRIVE_PET_NUTRITION_ALLIANCE_ID
@@ -313,6 +338,29 @@ def folder_for_url(url):
     if "ufaw.org.uk"        in url:  return DRIVE_UFAW_ID
     if "nal.usda.gov"       in url and "animal" in url: return DRIVE_NAL_ANIMAL_HEALTH_ID
     if "hsa.org.uk"         in url or "humane-slaughter.org" in url: return DRIVE_HUMANE_SLAUGHTER_ID
+
+    # ── Nuevas (Inventario Complementario 2026-07-26) ───────────────────────────
+    if "beva.org.uk"        in url:  return DRIVE_BEVA_EQUINE_ID
+    if "aaep.org"           in url:  return DRIVE_AAEP_EQUINE_ID
+    if "bsavalibrary.com"   in url:  return DRIVE_BSAVA_METADATA_ID
+    if "ivis.org"           in url:  return DRIVE_IVIS_METADATA_ID
+    if "link.springer.com/journal/13567" in url: return DRIVE_VETERINARY_RESEARCH_SPRINGER_ID
+    if "actavetscand.biomedcentral.com" in url: return DRIVE_ACTA_VET_SCANDINAVICA_ID
+    if "mdpi.com" in url and "/animals/" in url: return DRIVE_ANIMALS_MDPI_ID
+    if "mdpi.com" in url and "/vetsci/" in url: return DRIVE_VETSCI_MDPI_ID
+    if "irishvetjournal.biomedcentral.com" in url: return DRIVE_IRISH_VET_JOURNAL_ID
+    if "cgejournal.biomedcentral.com" in url: return DRIVE_CANINE_MEDICINE_GENETICS_ID
+    if "sciendo.com" in url and "jvetres" in url.lower(): return DRIVE_JVETRES_POLAND_ID
+    if "revistas.usp.br/bjvras" in url: return DRIVE_BJVRAS_BRAZIL_ID
+    if "vetsci.org"         in url:  return DRIVE_JVS_KOREA_ID
+    if "|HYBRID_VET_OA|"    in url:  return DRIVE_HYBRID_VET_JOURNALS_OA_ID
+    if "farad.org"          in url:  return DRIVE_FARAD_ID
+    if "maff.go.jp/nval"    in url:  return DRIVE_NVAL_JAPAN_ID
+    if "faang" in url and "data.faang.org" in url: return DRIVE_FAANG_DATA_PORTAL_ID
+    if "shelterstandards" in url or "sheltervetstandards" in url: return DRIVE_ASSOC_SHELTER_VETS_GUIDELINES_ID
+    if "rspca.org.uk" in url and ("science" in url or "research" in url): return DRIVE_RSPCA_SCIENCE_REPORTS_ID
+    if "shelteranimalscount.org" in url: return DRIVE_SHELTER_ANIMALS_COUNT_ID
+
     return DRIVE_AAHA_ID  # fallback
 
 
@@ -746,7 +794,11 @@ def fetch_vetcompass_urls():
     return _crawl_one_level("https://www.vetcompass.org/publications/", "vetcompass.org", delay=2.0)
 
 def fetch_vbo_breeds_urls():
-    return _crawl_one_level("https://vbo.com/", "vbo.org", delay=2.0)
+    # BUGFIX 2026-07-26: la URL "vbo.com" era incorrecta y no correspondía a la
+    # Vertebrate Breed Ontology real (alojada en GitHub, monarch-initiative).
+    return _crawl_one_level(
+        "https://github.com/monarch-initiative/vertebrate-breed-ontology",
+        "github.com/monarch-initiative/vertebrate-breed-ontology", delay=2.0)
 
 def fetch_gbads_urls():
     return _crawl_one_level("https://www.gbads.org/resources/", "gbads.org", delay=3.0)
@@ -841,6 +893,140 @@ def fetch_plos_vet_urls():
             break
         time.sleep(2.0)
     return article_urls
+
+
+# ── Fetchers nuevos (Inventario Complementario, 2026-07-26) ────────────────────
+
+def fetch_beva_urls():
+    return _crawl_one_level("https://www.beva.org.uk/Guidance", "beva.org.uk", delay=5.0)
+
+def fetch_aaep_urls():
+    return _crawl_one_level("https://aaep.org/resource-repository", "aaep.org", delay=5.0)
+
+def _make_vet_metadata_record(source_url, title, notes):
+    payload = {"title": title, "notes": notes}
+    return f"{source_url}|VET_METADATA|{json.dumps(payload, ensure_ascii=False)}"
+
+def fetch_bsava_metadata_urls():
+    return [_make_vet_metadata_record(
+        "https://www.bsavalibrary.com/", "BSAVA Library",
+        "Biblioteca extensa con libros/proceedings mayormente para miembros o compra; "
+        "el sitio reserva derechos de text and data mining e IA. Solo metadata/abstracts públicos.")]
+
+def fetch_ivis_metadata_urls():
+    return [_make_vet_metadata_record(
+        "https://www.ivis.org/", "International Veterinary Information Service",
+        "Gran biblioteca veterinaria; parte pública, parte con login y derechos propietarios. "
+        "Solo metadata por defecto.")]
+
+def fetch_veterinary_research_springer_urls():
+    return _crawl_one_level(
+        "https://link.springer.com/journal/13567/articles", "link.springer.com/journal/13567", delay=2.5)
+
+def fetch_acta_vet_scandinavica_urls():
+    return _crawl_one_level(
+        "https://actavetscand.biomedcentral.com/articles", "actavetscand.biomedcentral.com", delay=2.5)
+
+def fetch_animals_mdpi_urls():
+    return _fetch_sitemap_index_urls(
+        "https://www.mdpi.com/sitemap/sitemap-animals.xml",
+        url_filter=lambda u: "/animals/" in u and "/article" in u, delay=1.0)
+
+def fetch_vetsci_mdpi_urls():
+    return _fetch_sitemap_index_urls(
+        "https://www.mdpi.com/sitemap/sitemap-vetsci.xml",
+        url_filter=lambda u: "/vetsci/" in u and "/article" in u, delay=1.0)
+
+def fetch_irish_vet_journal_urls():
+    return _crawl_one_level(
+        "https://irishvetjournal.biomedcentral.com/articles", "irishvetjournal.biomedcentral.com", delay=2.5)
+
+def fetch_canine_medicine_genetics_urls():
+    return _crawl_one_level(
+        "https://cgejournal.biomedcentral.com/articles", "cgejournal.biomedcentral.com", delay=2.5)
+
+def fetch_jvetres_poland_urls():
+    return _crawl_one_level("https://sciendo.com/journal/JVETRES", "sciendo.com", delay=3.0)
+
+def fetch_bjvras_brazil_urls():
+    return _crawl_one_level("https://www.revistas.usp.br/bjvras", "revistas.usp.br/bjvras", delay=2.5)
+
+def fetch_jvs_korea_urls():
+    return _crawl_one_level("https://vetsci.org/", "vetsci.org", delay=2.5)
+
+HYBRID_VET_JOURNALS = [
+    "Journal of Veterinary Internal Medicine", "Veterinary Medicine and Science",
+    "Veterinary Record Open", "Journal of Feline Medicine and Surgery Open Reports",
+    "Veterinary and Animal Science", "Preventive Veterinary Medicine",
+    "Veterinary Parasitology: Regional Studies and Reports",
+    "Transboundary and Emerging Diseases",
+]
+
+def _fetch_crossref_unpaywall_oa_vet(journal_name, marker, rows=40):
+    urls = []
+    try:
+        r = requests.get("https://api.crossref.org/works",
+                          params={"query.container-title": journal_name, "rows": rows,
+                                   "filter": "has-full-text:true"},
+                          headers=HEADERS, timeout=30)
+        items = r.json().get("message", {}).get("items", [])
+        for it in items:
+            doi = it.get("DOI", "")
+            if not doi:
+                continue
+            try:
+                ur = requests.get(f"https://api.unpaywall.org/v2/{doi}",
+                                   params={"email": "jlps1977@gmail.com"}, headers=HEADERS, timeout=15)
+                data = ur.json()
+                if data.get("is_oa"):
+                    best = data.get("best_oa_location") or {}
+                    oa_url = best.get("url_for_pdf") or best.get("url") or ""
+                    if oa_url:
+                        urls.append(f"{oa_url}|{marker}|"
+                                    f"{json.dumps({'title': data.get('title', ''), 'doi': doi, 'journal': journal_name})}")
+                time.sleep(1.0)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return urls
+
+def fetch_hybrid_vet_journals_urls():
+    urls = []
+    for journal in HYBRID_VET_JOURNALS:
+        urls += _fetch_crossref_unpaywall_oa_vet(journal, "HYBRID_VET_OA")
+    return urls
+
+def fetch_farad_urls():
+    return _crawl_one_level("https://www.farad.org/publications/", "farad.org", delay=5.0)
+
+def fetch_nval_japan_urls():
+    return _crawl_one_level("https://www.maff.go.jp/nval/english/", "maff.go.jp/nval", delay=5.0)
+
+def fetch_uk_vet_pharmacovigilance_urls():
+    return _crawl_one_level(
+        "https://www.gov.uk/government/collections/veterinary-pharmacovigilance",
+        "gov.uk", delay=3.0)
+
+def fetch_uk_vida_urls():
+    return _crawl_one_level(
+        "https://www.gov.uk/government/collections/animal-diseases-scanning-surveillance",
+        "gov.uk", delay=3.0)
+
+def fetch_faang_data_portal_urls():
+    return _crawl_one_level("https://data.faang.org/", "data.faang.org", delay=3.0)
+
+def fetch_assoc_shelter_vets_guidelines_urls():
+    return [_make_vet_metadata_record(
+        "https://www.sheltervet.org/assets/docs/shelter-standards-oct2011-wforward.pdf",
+        "Guidelines for Standards of Care in Animal Shelters (2nd ed.)",
+        "Documento único principal + anexos; referencia directa en vez de crawl.")]
+
+def fetch_rspca_science_reports_urls():
+    return _crawl_one_level("https://science.rspca.org.uk/", "rspca.org.uk", delay=5.0)
+
+def fetch_shelter_animals_count_urls():
+    return _crawl_one_level("https://www.shelteranimalscount.org/data/", "shelteranimalscount.org", delay=3.0)
 
 
 # ── Carga de todas las URLs ────────────────────────────────────────────────────
@@ -981,6 +1167,35 @@ def get_all_urls():
     all_urls += _load_source("NAL Animal Health",          fn=fetch_nal_animal_health_urls)
     all_urls += _load_source("Humane Slaughter Assoc.",    fn=fetch_humane_slaughter_urls)
 
+    # ── Nuevas (Inventario Complementario 2026-07-26) ───────────────────────────
+    # A.2 — condicionales
+    all_urls += _load_source("BEVA",                       fn=fetch_beva_urls)
+    all_urls += _load_source("AAEP",                       fn=fetch_aaep_urls)
+    all_urls += _load_source("BSAVA (metadata)",           fn=fetch_bsava_metadata_urls)
+    all_urls += _load_source("IVIS (metadata)",            fn=fetch_ivis_metadata_urls)
+    # B.2 — revistas OA nuevas
+    all_urls += _load_source("Veterinary Research (Springer)", fn=fetch_veterinary_research_springer_urls)
+    all_urls += _load_source("Acta Veterinaria Scandinavica", fn=fetch_acta_vet_scandinavica_urls)
+    all_urls += _load_source("Animals (MDPI)",             fn=fetch_animals_mdpi_urls)
+    all_urls += _load_source("Veterinary Sciences (MDPI)", fn=fetch_vetsci_mdpi_urls)
+    all_urls += _load_source("Irish Veterinary Journal",   fn=fetch_irish_vet_journal_urls)
+    all_urls += _load_source("Canine Medicine and Genetics", fn=fetch_canine_medicine_genetics_urls)
+    all_urls += _load_source("J Veterinary Research Poland", fn=fetch_jvetres_poland_urls)
+    all_urls += _load_source("Brazilian J Vet Research (USP)", fn=fetch_bjvras_brazil_urls)
+    all_urls += _load_source("J Veterinary Science (Korea)", fn=fetch_jvs_korea_urls)
+    all_urls += _load_source("Revistas híbridas veterinaria (Crossref/Unpaywall)", fn=fetch_hybrid_vet_journals_urls)
+    # C — farmacología adicional
+    all_urls += _load_source("FARAD",                      fn=fetch_farad_urls)
+    all_urls += _load_source("National Vet Assay Lab Japón", fn=fetch_nval_japan_urls)
+    all_urls += _load_source("UK Vet Pharmacovigilance",   fn=fetch_uk_vet_pharmacovigilance_urls)
+    all_urls += _load_source("UK VIDA Surveillance",       fn=fetch_uk_vida_urls)
+    # F — genómica adicional
+    all_urls += _load_source("FAANG Data Portal",          fn=fetch_faang_data_portal_urls)
+    # G — bienestar/refugios adicional
+    all_urls += _load_source("Assoc. Shelter Vets Guidelines", fn=fetch_assoc_shelter_vets_guidelines_urls)
+    all_urls += _load_source("RSPCA Science Reports",      fn=fetch_rspca_science_reports_urls)
+    all_urls += _load_source("Shelter Animals Count",      fn=fetch_shelter_animals_count_urls)
+
     print(f"\nTotal URLs objetivo: {len(all_urls)}", flush=True)
     return all_urls
 
@@ -988,6 +1203,19 @@ def get_all_urls():
 # ── Scraping de páginas HTML ───────────────────────────────────────────────────
 
 def scrape_page(url):
+    if "|HYBRID_VET_OA|" in url or "|VET_METADATA|" in url:
+        real_url, marker, payload_str = url.split("|", 2)
+        try:
+            payload = json.loads(payload_str)
+        except Exception:
+            payload = {}
+        title = payload.get("title") or real_url.split("/")[-1][:80]
+        lines = [title, "=" * len(title), "", f"URL: {real_url}"]
+        for k, v in payload.items():
+            if k != "title":
+                lines.append(f"{k}: {v}")
+        return {"title": title, "full_text": "\n".join(lines)}
+
     resp = requests.get(url, headers=HEADERS, timeout=25)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -1119,6 +1347,29 @@ def url_to_filename(url):
     elif "ufaw.org.uk"       in url:  prefix = "ufaw"
     elif "nal.usda.gov"      in url:  prefix = "nal_animal"
     elif "hsa.org.uk"        in url:  prefix = "humane_slaughter"
+    elif "|HYBRID_VET_OA|"   in url:  prefix = "hybrid_vet_oa"
+    elif "|VET_METADATA|"    in url:  prefix = "vet_metadata"
+    elif "beva.org.uk"       in url:  prefix = "beva"
+    elif "aaep.org"          in url:  prefix = "aaep"
+    elif "bsavalibrary.com"  in url:  prefix = "bsava"
+    elif "ivis.org"          in url:  prefix = "ivis"
+    elif "link.springer.com/journal/13567" in url: prefix = "vet_research"
+    elif "actavetscand.biomedcentral.com" in url: prefix = "acta_vet_scand"
+    elif "mdpi.com" in url and "/animals/" in url: prefix = "animals_mdpi"
+    elif "mdpi.com" in url and "/vetsci/" in url: prefix = "vetsci_mdpi"
+    elif "irishvetjournal.biomedcentral.com" in url: prefix = "irish_vet_j"
+    elif "cgejournal.biomedcentral.com" in url: prefix = "canine_med_genetics"
+    elif "sciendo.com"       in url:  prefix = "jvetres_poland"
+    elif "revistas.usp.br/bjvras" in url: prefix = "bjvras"
+    elif "vetsci.org"        in url:  prefix = "jvs_korea"
+    elif "farad.org"         in url:  prefix = "farad"
+    elif "maff.go.jp/nval"   in url:  prefix = "nval_japan"
+    elif "gov.uk" in url and "pharmacovigilance" in url: prefix = "uk_vet_pharmacovigilance"
+    elif "gov.uk" in url and "scanning-surveillance" in url: prefix = "uk_vida"
+    elif "data.faang.org"    in url:  prefix = "faang"
+    elif "shelteranimalscount.org" in url: prefix = "shelter_animals_count"
+    elif "rspca.org.uk"      in url:  prefix = "rspca_science"
+    elif "vertebrate-breed-ontology" in url: prefix = "vbo_breeds"
     else:                             prefix = "vet"
     path = re.sub(r"[?=&]", "_", url.split("//", 1)[-1]).replace("/", "__").strip("__")
     return f"{prefix}__{path[:180]}.txt"
