@@ -154,6 +154,27 @@ DRIVE_EFSA_COMPENDIUM_BOTANICALS_ID = "1x6Jun0q6vY447F_nfCaOsosBNQvmPuOY"
 DRIVE_ARTG_AUSTRALIA_ID             = "16g4e7d5K2t7YMZi5kmzXwiaT6Epc_wNs"
 DRIVE_MSK_ABOUT_HERBS_ID            = "1KtHEr0B_4VVoDZm_MPE11IXwtZck-U9O"
 
+# ── Nuevas (Inventario Complementario 2026-07-26) ──────────────────────────────
+DRIVE_NEVO_NETHERLANDS_ID           = "1Nhn7K5HqBKs_2aUWVc-kEIoVz-Gvzzse"
+DRIVE_SWISS_FOOD_COMPOSITION_ID     = "1XHFiIjKefM0XYrr0wIpKs1dA60Ui5Ck_"
+DRIVE_ASEAN_FOOD_COMPOSITION_ID     = "1uYw-Q6Lp_fq72eMVvF22HS1aU8qqhcSZ"
+DRIVE_LANGUAL_TAXONOMY_ID           = "11McpywRRcD9yJmVUsITBeFmBabG07s7D"
+DRIVE_FOODB_COMPOUNDS_ID            = "170B0JWvrRi_Ti5m97UDtijbGdF0UiUhP"
+DRIVE_FOODREPO_ID                   = "1aM3flpF29fzj-pJBMQPqa0wzdqjrpowo"
+DRIVE_GLOBAL_DIETARY_DATABASE_ID    = "1zbMvl8dIo2jNnCjjPQ_smNPHday4Wak5"
+DRIVE_GLOBAL_PERSPECTIVES_NUTRITION_ID = "1Kn5yyDnmh45EflrQwfh9l--KwB0mKsoB"
+DRIVE_MATERNAL_HEALTH_NEONATOLOGY_NUTR_ID = "1AZUFl_i7RVyNP3eI0lUdnr35F8LN1suv"
+DRIVE_HYBRID_NUTRITION_JOURNALS_OA_ID = "1Lv45jSCyCU8DMnfw_lC7FRIqdKhXD8Gk"
+DRIVE_KDOQI_KIDNEY_NUTRITION_ID     = "16-KMUA351Hr037ps9mSNa8VhiTuP3UAx"
+DRIVE_EASL_LIVER_NUTRITION_ID       = "1nc7yH6ufq2zNk4agPut20Ahe9Xu0DI6S"
+DRIVE_CYSTIC_FIBROSIS_NUTRITION_ID  = "1KXzFe21xf0PjRNFTvHNO5CCtg5c4v3z6"
+DRIVE_CROHNS_COLITIS_NUTRITION_ID   = "1yNRJ87FamZFc_MprIKFENh1fa0azxDPh"
+DRIVE_NATIONAL_LIPID_ASSOC_ID       = "1wtpolVBTxXjZcys2XxUs8Y8ewrPz8K4Y"
+DRIVE_CURATED_METAGENOMIC_DATA_ID   = "1JobDCK7x3vRuu01luNQrJL_8t-FF429O"
+DRIVE_MICROBIOMEDB_ID               = "1p7tubZ4EQPsvQ70Shy8fNFoY5kQrosst"
+DRIVE_DISBIOME_MICROBIOME_ID        = "19VNKRDNOQPLuvQZoRFIqznmoox6JVgBn"
+DRIVE_CAM_CANCER_SUMMARIES_ID       = "1DafF-OhX7pi_zFOovUAjhqlX3g-LE6-9"
+
 PROGRESS_FILE = "progress_nutricion.json"
 
 HEADERS = {
@@ -296,6 +317,31 @@ def folder_for_url(url):
     if "efsa.europa.eu" in url and "botanical" in url: return DRIVE_EFSA_COMPENDIUM_BOTANICALS_ID
     if "tga.gov.au/resources/artg" in url:  return DRIVE_ARTG_AUSTRALIA_ID
     if "mskcc.org" in url and "herb" in url: return DRIVE_MSK_ABOUT_HERBS_ID
+
+    # ── Nuevas (Inventario Complementario 2026-07-26) ───────────────────────────
+    if "|CDN_OA|"                  in url:  return DRIVE_CURRENT_DEV_NUTRITION_ID
+    if "|CNOS_OA|"                 in url:  return DRIVE_CLINICAL_NUTRITION_OPEN_ID
+    if "|HYBRID_NUTR_OA|"          in url:  return DRIVE_HYBRID_NUTRITION_JOURNALS_OA_ID
+    if "|NUTR_METADATA|"           in url:  return DRIVE_NUTRICION_ROOT_ID  # sobreescrito por caller si aplica
+    if "rivm.nl"                   in url:  return DRIVE_NEVO_NETHERLANDS_ID
+    if "naehrwertdaten.ch"         in url:  return DRIVE_SWISS_FOOD_COMPOSITION_ID
+    if "aseanfoods" in url or "inmu.mahidol" in url: return DRIVE_ASEAN_FOOD_COMPOSITION_ID
+    if "langual.org"               in url:  return DRIVE_LANGUAL_TAXONOMY_ID
+    if "foodb.ca"                  in url:  return DRIVE_FOODB_COMPOUNDS_ID
+    if "foodrepo.org"              in url:  return DRIVE_FOODREPO_ID
+    if "globaldietarydatabase.org" in url:  return DRIVE_GLOBAL_DIETARY_DATABASE_ID
+    if "academic.oup.com/gpn"      in url:  return DRIVE_GLOBAL_PERSPECTIVES_NUTRITION_ID
+    if "mhnpjournal.biomedcentral.com" in url: return DRIVE_MATERNAL_HEALTH_NEONATOLOGY_NUTR_ID
+    if "kidney.org"                in url:  return DRIVE_KDOQI_KIDNEY_NUTRITION_ID
+    if "easl.eu"                   in url:  return DRIVE_EASL_LIVER_NUTRITION_ID
+    if "cff.org"                   in url:  return DRIVE_CYSTIC_FIBROSIS_NUTRITION_ID
+    if "crohnscolitisfoundation.org" in url: return DRIVE_CROHNS_COLITIS_NUTRITION_ID
+    if "lipid.org"                 in url:  return DRIVE_NATIONAL_LIPID_ASSOC_ID
+    if "waldronlab.io"             in url:  return DRIVE_CURATED_METAGENOMIC_DATA_ID
+    if "microbiomedb.org"          in url:  return DRIVE_MICROBIOMEDB_ID
+    if "disbiome.ugent.be"         in url:  return DRIVE_DISBIOME_MICROBIOME_ID
+    if "cam-cancer.org"            in url:  return DRIVE_CAM_CANCER_SUMMARIES_ID
+
     return DRIVE_NUTRICION_ROOT_ID  # fallback
 
 
@@ -918,6 +964,165 @@ def fetch_msk_herbs_urls():
     )
 
 
+# ── Fetchers nuevos (Inventario Complementario, 2026-07-26) ────────────────────
+
+def _make_nutr_metadata_record(source_url, title, notes):
+    payload = {"title": title, "source_url": source_url, "notes": notes}
+    return f"{source_url}|NUTR_METADATA|{json.dumps(payload, ensure_ascii=False)}"
+
+
+def _fetch_crossref_unpaywall_oa(journal_name, marker, rows=40):
+    """Resuelve DOI/PMID vía Crossref y localiza copia OA vía Unpaywall — evita
+    crawling directo de publishers híbridos (ScienceDirect, Wiley, OUP, etc.)."""
+    urls = []
+    try:
+        r = requests.get("https://api.crossref.org/works",
+                          params={"query.container-title": journal_name, "rows": rows,
+                                   "filter": "has-full-text:true"},
+                          headers=HEADERS, timeout=30)
+        items = r.json().get("message", {}).get("items", [])
+        for it in items:
+            doi = it.get("DOI", "")
+            if not doi:
+                continue
+            try:
+                ur = requests.get(f"https://api.unpaywall.org/v2/{doi}",
+                                   params={"email": "jlps1977@gmail.com"}, headers=HEADERS, timeout=15)
+                data = ur.json()
+                if data.get("is_oa"):
+                    best = data.get("best_oa_location") or {}
+                    oa_url = best.get("url_for_pdf") or best.get("url") or ""
+                    if oa_url:
+                        urls.append(f"{oa_url}|{marker}|"
+                                    f"{json.dumps({'title': data.get('title', ''), 'doi': doi, 'journal': journal_name})}")
+                time.sleep(1.0)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return urls
+
+def fetch_current_dev_nutrition_oa_urls():
+    return _fetch_crossref_unpaywall_oa("Current Developments in Nutrition", "CDN_OA")
+
+def fetch_clinical_nutrition_open_oa_urls():
+    return _fetch_crossref_unpaywall_oa("Clinical Nutrition Open Science", "CNOS_OA")
+
+HYBRID_NUTRITION_JOURNALS_B2 = [
+    "American Journal of Clinical Nutrition", "The Journal of Nutrition",
+    "Advances in Nutrition", "British Journal of Nutrition",
+    "Public Health Nutrition", "Nutrition Reviews",
+    "European Journal of Clinical Nutrition", "Maternal & Child Nutrition",
+    "Clinical Nutrition", "Journal of Parenteral and Enteral Nutrition",
+    "Food & Function", "Nutrition, Metabolism and Cardiovascular Diseases",
+]
+
+def fetch_hybrid_nutrition_journals_urls():
+    urls = []
+    for journal in HYBRID_NUTRITION_JOURNALS_B2:
+        urls += _fetch_crossref_unpaywall_oa(journal, "HYBRID_NUTR_OA")
+    return urls
+
+# C. Bases de composición — folders ya reservados, sin fetcher hasta ahora
+def fetch_afcd_australia_urls():
+    return _crawl_one_level(
+        "https://www.foodstandards.gov.au/science-data/monitoringnutrients/afcd",
+        "foodstandards.gov.au", delay=3.0)
+
+def fetch_foodfiles_nz_urls():
+    return _crawl_one_level(
+        "https://www.foodcomposition.co.nz/foodfiles", "foodcomposition.co.nz", delay=3.0)
+
+def fetch_cofid_uk_urls():
+    return _crawl_one_level(
+        "https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid",
+        "gov.uk", delay=3.0)
+
+def fetch_livsmedelsverket_sweden_urls():
+    return _crawl_one_level(
+        "https://dataportal.livsmedelsverket.se/livsmedel/swagger/index.html",
+        "livsmedelsverket.se", delay=2.0)
+
+def fetch_foodon_urls():
+    return _crawl_one_level("https://foodon.org/", "foodon.org", delay=2.0)
+
+def fetch_journal_eating_disorders_urls():
+    return _crawl_one_level(
+        "https://jeatdisord.biomedcentral.com/articles", "jeatdisord.biomedcentral.com", delay=2.0)
+
+# C.2 Bases de composición — genuinamente nuevas
+def fetch_nevo_netherlands_urls():
+    return _crawl_one_level("https://www.rivm.nl/en/dutch-food-composition-database", "rivm.nl", delay=3.0)
+
+def fetch_swiss_food_composition_urls():
+    return _crawl_one_level("https://naehrwertdaten.ch/", "naehrwertdaten.ch", delay=3.0)
+
+def fetch_canadian_nutrient_file_urls():
+    return _crawl_one_level(
+        "https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/nutrient-data/canadian-nutrient-file-about-us/download-files.html",
+        "canada.ca", delay=3.0)
+
+def fetch_foodrepo_urls():
+    return _crawl_one_level("https://www.foodrepo.org/", "foodrepo.org", delay=3.0)
+
+def fetch_global_dietary_database_urls():
+    return _crawl_one_level("https://www.globaldietarydatabase.org/", "globaldietarydatabase.org", delay=3.0)
+
+# B. Revistas — genuinamente nuevas
+def fetch_global_perspectives_nutrition_urls():
+    return _crawl_one_level("https://academic.oup.com/gpn", "academic.oup.com/gpn", delay=5.0)
+
+def fetch_maternal_health_neonatology_nutr_urls():
+    return _crawl_one_level(
+        "https://mhnpjournal.biomedcentral.com/articles", "mhnpjournal.biomedcentral.com", delay=2.0)
+
+# F. Nutrición clínica — genuinamente nuevas
+def fetch_kdoqi_kidney_nutrition_urls():
+    return _crawl_one_level("https://www.kidney.org/professionals/guidelines", "kidney.org", delay=3.0)
+
+def fetch_easl_liver_nutrition_urls():
+    return _crawl_one_level("https://easl.eu/publication/", "easl.eu", delay=3.0)
+
+def fetch_cystic_fibrosis_nutrition_urls():
+    return _crawl_one_level(
+        "https://www.cff.org/medical-professionals/clinical-care-guidelines", "cff.org", delay=3.0)
+
+def fetch_crohns_colitis_nutrition_urls():
+    return _crawl_one_level(
+        "https://www.crohnscolitisfoundation.org/patientsandcaregivers/diet-and-nutrition",
+        "crohnscolitisfoundation.org", delay=3.0)
+
+def fetch_national_lipid_assoc_urls():
+    return _crawl_one_level("https://www.lipid.org/recommendations", "lipid.org", delay=3.0)
+
+# I. Microbioma — genuinamente nuevas
+def fetch_curated_metagenomic_data_urls():
+    return _crawl_one_level("https://waldronlab.io/curatedMetagenomicData/", "waldronlab.io", delay=2.0)
+
+def fetch_microbiomedb_urls():
+    return _crawl_one_level("https://microbiomedb.org/", "microbiomedb.org", delay=2.0)
+
+# J. Suplementos — genuinamente nuevas
+def fetch_cam_cancer_summaries_urls():
+    return _crawl_one_level("https://cam-cancer.org/en/summaries", "cam-cancer.org", delay=5.0)
+
+# Fuentes con licencia/uso restringido — solo metadata, sin crawl masivo
+def fetch_langual_metadata_urls():
+    return [_make_nutr_metadata_record(
+        "https://www.langual.org/", "LanguaL Thesaurus",
+        "Descargas gratuitas pero material protegido por copyright; solo referencia, no bulk download.")]
+
+def fetch_foodb_metadata_urls():
+    return [_make_nutr_metadata_record(
+        "https://foodb.ca/", "FooDB Compounds Database",
+        "Consulta pública permitida; explotación comercial requiere licencia separada. No scraping masivo.")]
+
+def fetch_disbiome_metadata_urls():
+    return [_make_nutr_metadata_record(
+        "https://disbiome.ugent.be/", "Disbiome Microbiome-Disease Database",
+        "Uso personal/no comercial; uso comercial de este corpus requiere aprobación expresa de Disbiome/UGent.")]
+
+
 # ── Delay por fuente ──────────────────────────────────────────────────────────
 
 def delay_for_url(url):
@@ -925,7 +1130,10 @@ def delay_for_url(url):
     if any(d in url for d in ["mayoclinic.org", "hopkinsmedicine.org", "tufts.edu",
                                "harvard.edu", "mskcc.org", "mdpi.com"]):  return 5.0
     if any(d in url for d in ["fao.org", "wfp.org", "unicef.org", "paho.org",
-                               "espen.org", "nutritioncare.org", "bda.uk.com"]): return 4.0
+                               "espen.org", "nutritioncare.org", "bda.uk.com",
+                               "kidney.org", "easl.eu", "cff.org",
+                               "crohnscolitisfoundation.org", "lipid.org",
+                               "cam-cancer.org", "academic.oup.com"]): return 4.0
     if any(d in url for d in ["efsa.europa.eu", "nutrition.gov", "gov.uk",
                                "bapen.org.uk", "canada.ca", "eatforhealth.gov.au"]): return 3.0
     if "biomedcentral.com" in url or "springeropen.com" in url:           return 2.0
@@ -1068,6 +1276,41 @@ def get_all_urls():
     all_urls += _load_source("ARTG Australia",              fn=fetch_artg_australia_urls)
     all_urls += _load_source("MSK About Herbs",             fn=fetch_msk_herbs_urls)
 
+    # ── Nuevas (Inventario Complementario 2026-07-26) ───────────────────────────
+    # C. Bases de composición — folders ya reservados, activando fetcher
+    all_urls += _load_source("AFCD Australia",              fn=fetch_afcd_australia_urls)
+    all_urls += _load_source("FOODfiles Nueva Zelanda",     fn=fetch_foodfiles_nz_urls)
+    all_urls += _load_source("CoFID UK",                    fn=fetch_cofid_uk_urls)
+    all_urls += _load_source("Livsmedelsverket Suecia",     fn=fetch_livsmedelsverket_sweden_urls)
+    all_urls += _load_source("FoodOn Ontología",            fn=fetch_foodon_urls)
+    all_urls += _load_source("Journal of Eating Disorders", fn=fetch_journal_eating_disorders_urls)
+    # C.2 — genuinamente nuevas
+    all_urls += _load_source("NEVO Países Bajos",           fn=fetch_nevo_netherlands_urls)
+    all_urls += _load_source("Base Suiza de Composición",   fn=fetch_swiss_food_composition_urls)
+    all_urls += _load_source("Canadian Nutrient File",      fn=fetch_canadian_nutrient_file_urls)
+    all_urls += _load_source("FoodRepo",                    fn=fetch_foodrepo_urls)
+    all_urls += _load_source("Global Dietary Database",     fn=fetch_global_dietary_database_urls)
+    # B. Revistas — genuinamente nuevas + híbridas vía Crossref/Unpaywall
+    all_urls += _load_source("Global Perspectives on Nutrition", fn=fetch_global_perspectives_nutrition_urls)
+    all_urls += _load_source("Maternal Health Neonatology Perinatology", fn=fetch_maternal_health_neonatology_nutr_urls)
+    all_urls += _load_source("Current Developments in Nutrition (OA)", fn=fetch_current_dev_nutrition_oa_urls)
+    all_urls += _load_source("Clinical Nutrition Open Science (OA)", fn=fetch_clinical_nutrition_open_oa_urls)
+    all_urls += _load_source("Revistas híbridas nutrición (Crossref/Unpaywall)", fn=fetch_hybrid_nutrition_journals_urls)
+    # F. Nutrición clínica — genuinamente nuevas
+    all_urls += _load_source("KDOQI Kidney Nutrition",      fn=fetch_kdoqi_kidney_nutrition_urls)
+    all_urls += _load_source("EASL Liver Nutrition",        fn=fetch_easl_liver_nutrition_urls)
+    all_urls += _load_source("Cystic Fibrosis Foundation Nutrition", fn=fetch_cystic_fibrosis_nutrition_urls)
+    all_urls += _load_source("Crohn's & Colitis Foundation Nutrition", fn=fetch_crohns_colitis_nutrition_urls)
+    all_urls += _load_source("National Lipid Association",  fn=fetch_national_lipid_assoc_urls)
+    # I. Microbioma — genuinamente nuevas
+    all_urls += _load_source("curatedMetagenomicData",      fn=fetch_curated_metagenomic_data_urls)
+    all_urls += _load_source("MicrobiomeDB",                fn=fetch_microbiomedb_urls)
+    all_urls += _load_source("Disbiome (metadata, no comercial)", fn=fetch_disbiome_metadata_urls)
+    # J. Suplementos — genuinamente nuevas
+    all_urls += _load_source("CAM-Cancer Summaries",        fn=fetch_cam_cancer_summaries_urls)
+    all_urls += _load_source("LanguaL (metadata)",          fn=fetch_langual_metadata_urls)
+    all_urls += _load_source("FooDB (metadata)",            fn=fetch_foodb_metadata_urls)
+
     print(f"\nTotal URLs/registros objetivo: {len(all_urls)}", flush=True)
     return all_urls
 
@@ -1077,7 +1320,9 @@ def get_all_urls():
 def scrape_page(url):
     # Registros inline de APIs (contienen "|TYPE|")
     if "|FDC_FOOD|" in url or "|OFF_PRODUCT|" in url or "|NORWAY_FOOD|" in url \
-            or "|LNHPD_PRODUCT|" in url or "|MGNIFY_STUDY|" in url:
+            or "|LNHPD_PRODUCT|" in url or "|MGNIFY_STUDY|" in url \
+            or "|CDN_OA|" in url or "|CNOS_OA|" in url or "|HYBRID_NUTR_OA|" in url \
+            or "|NUTR_METADATA|" in url:
         text = extract_inline_content(url)
         real_url = url.split("|")[0]
         return {"title": real_url.split("/")[-1][:80], "full_text": text}
@@ -1204,6 +1449,32 @@ def url_to_filename(url):
     elif "efsa.europa.eu" in base_url and "botanical" in base_url: prefix = "efsa_botanicals"
     elif "tga.gov.au"             in base_url:  prefix = "artg_au"
     elif "mskcc.org"              in base_url:  prefix = "msk_herbs"
+    elif "|CDN_OA|"                in url:      prefix = "current_dev_nutr_oa"
+    elif "|CNOS_OA|"               in url:      prefix = "clin_nutr_open_oa"
+    elif "|HYBRID_NUTR_OA|"        in url:      prefix = "hybrid_nutr_oa"
+    elif "|NUTR_METADATA|"         in url:      prefix = "nutr_metadata"
+    elif "rivm.nl"                 in base_url: prefix = "nevo_nl"
+    elif "naehrwertdaten.ch"       in base_url: prefix = "swiss_food_comp"
+    elif "foodb.ca"                in base_url: prefix = "foodb"
+    elif "foodrepo.org"            in base_url: prefix = "foodrepo"
+    elif "globaldietarydatabase.org" in base_url: prefix = "global_dietary_db"
+    elif "academic.oup.com/gpn"    in base_url: prefix = "gpn_journal"
+    elif "mhnpjournal.biomedcentral.com" in base_url: prefix = "mhnp_journal"
+    elif "kidney.org"              in base_url: prefix = "kdoqi"
+    elif "easl.eu"                 in base_url: prefix = "easl"
+    elif "cff.org"                 in base_url: prefix = "cff_nutr"
+    elif "crohnscolitisfoundation.org" in base_url: prefix = "crohns_colitis"
+    elif "lipid.org"               in base_url: prefix = "lipid_assoc"
+    elif "waldronlab.io"           in base_url: prefix = "curated_metagenomic"
+    elif "microbiomedb.org"        in base_url: prefix = "microbiomedb"
+    elif "cam-cancer.org"          in base_url: prefix = "cam_cancer"
+    elif "foodstandards.gov.au"    in base_url: prefix = "afcd_au"
+    elif "foodcomposition.co.nz"   in base_url: prefix = "foodfiles_nz"
+    elif "gov.uk" in base_url and "composition-of-foods" in base_url: prefix = "cofid_uk"
+    elif "livsmedelsverket.se"     in base_url: prefix = "sweden_food"
+    elif "foodon.org"              in base_url: prefix = "foodon"
+    elif "jeatdisord.biomedcentral.com" in base_url: prefix = "eating_disorders"
+    elif "canada.ca" in base_url and "nutrient" in base_url: prefix = "canadian_nutrient_file"
     else:                                        prefix = "nutricion"
     path = re.sub(r"[?=&]", "_", base_url.split("//", 1)[-1]).replace("/", "__").strip("__")
     return f"{prefix}__{path[:160]}.txt"
