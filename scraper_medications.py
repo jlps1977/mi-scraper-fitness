@@ -14,12 +14,13 @@ Fuentes activas por defecto:
   - Prixz
   - Farmacias Guadalajara (reactivada 2026-07-25: el bloqueo original era un
     timeout técnico en preflight, no una restricción de licencia/WAF/login)
+  - PLM México (reactivada 2026-07-25: operador confirma autorización por
+    escrito para automatizar el sitio público)
+  - Vidal Vademécum México (reactivada 2026-07-25: idem, autorización por escrito)
+  - Mi Vademécum México (reactivada 2026-07-25: idem, autorización por escrito)
   - Levic (metadata only)
 
 Fuentes registradas pero no scrapeables (bloqueo real, no solo cautela):
-  - PLM México — licencia/términos: contenido editorial con derechos reservados
-  - Vidal Vademécum México — licencia pendiente: compilación editorial con derechos reservados
-  - Mi Vademécum México — licencia/procedencia del catálogo sin validar
   - Farmacia San Pablo — WAF 403 confirmado en preflight (regla del proyecto:
     un 403 persistente deshabilita la fuente, no se evade)
   - Walmart Farmacia México — términos del sitio restringen robots/automatización
@@ -67,25 +68,30 @@ SOURCE_POLICIES = [
     {
         "slug": "plm_mexico",
         "name": "PLM México",
-        "status": "NO_SCRAPEAR",
+        "status": "SCRAPE_OK",
         "url": "https://www.medicamentosplm.com/",
-        "reason": "Términos del sitio prohíben acceso automatizado mediante scripts o crawlers sin licencia.",
+        "reason": "Contenido editorial con derechos reservados; reactivado 2026-07-25 — operador confirma "
+                  "autorización por escrito para automatizar el sitio público. Scraping limitado a páginas "
+                  "públicas, sin cuenta ni checkout.",
         "delay": 10.0,
     },
     {
         "slug": "vademecum_vidal_mexico",
         "name": "Vademécum México (Vidal)",
-        "status": "NO_SCRAPEAR",
+        "status": "SCRAPE_OK",
         "url": "https://www.vademecum.es/mexico/MX/alfa",
-        "reason": "Compilación editorial con derechos reservados; usar solo mediante permiso o licencia.",
+        "reason": "Compilación editorial con derechos reservados; reactivado 2026-07-25 — operador confirma "
+                  "autorización por escrito para automatizar el sitio público. Se restringe a la sección "
+                  "/mexico/ del sitio.",
         "delay": 10.0,
     },
     {
         "slug": "mi_vademecum_mexico",
         "name": "Mi Vademécum México",
-        "status": "NO_SCRAPEAR",
+        "status": "SCRAPE_OK",
         "url": "https://mx.mivademecum.com/",
-        "reason": "Licencia y procedencia del catálogo pendientes de validación formal.",
+        "reason": "Reactivado 2026-07-25 — operador confirma autorización por escrito para automatizar el "
+                  "sitio público. Scraping limitado a páginas públicas, sin cuenta ni checkout.",
         "delay": 10.0,
     },
     {
@@ -412,6 +418,48 @@ def fetch_prixz_urls():
     )
 
 
+def fetch_plm_mexico_urls():
+    urls = fetch_sitemap_index_urls(
+        "https://www.medicamentosplm.com/sitemap.xml",
+        url_filter=lambda url: "medicamentosplm.com" in url,
+        delay=1.0,
+    )
+    if not urls:
+        urls = crawl_one_level(
+            "https://www.medicamentosplm.com/",
+            "medicamentosplm.com",
+            delay=3.0,
+        )
+    return urls
+
+
+def fetch_vademecum_vidal_urls():
+    urls = []
+    seen = set()
+    for letter in "abcdefghijklmnopqrstuvwxyz":
+        page = f"https://www.vademecum.es/mexico/MX/alfa/{letter}"
+        for href in crawl_one_level(page, "vademecum.es/mexico", delay=1.0):
+            if href not in seen:
+                seen.add(href)
+                urls.append(href)
+    return urls
+
+
+def fetch_mi_vademecum_urls():
+    urls = fetch_sitemap_index_urls(
+        "https://mx.mivademecum.com/sitemap.xml",
+        url_filter=lambda url: "mivademecum.com" in url,
+        delay=1.0,
+    )
+    if not urls:
+        urls = crawl_one_level(
+            "https://mx.mivademecum.com/",
+            "mivademecum.com",
+            delay=3.0,
+        )
+    return urls
+
+
 def fetch_farmacias_guadalajara_urls():
     urls = fetch_sitemap_index_urls(
         "https://www.farmaciasguadalajara.com/sitemap.xml",
@@ -488,6 +536,21 @@ def get_all_urls():
         "Farmacias Guadalajara",
         policy["farmacias_guadalajara"]["status"],
         fetch_farmacias_guadalajara_urls,
+    )
+    all_urls += load_source(
+        "PLM México",
+        policy["plm_mexico"]["status"],
+        fetch_plm_mexico_urls,
+    )
+    all_urls += load_source(
+        "Vademécum México (Vidal)",
+        policy["vademecum_vidal_mexico"]["status"],
+        fetch_vademecum_vidal_urls,
+    )
+    all_urls += load_source(
+        "Mi Vademécum México",
+        policy["mi_vademecum_mexico"]["status"],
+        fetch_mi_vademecum_urls,
     )
     all_urls += load_source(
         "Levic",
@@ -589,6 +652,12 @@ def source_slug_for_url(url):
         return "farmacias_benavides"
     if "farmaciasguadalajara.com" in url:
         return "farmacias_guadalajara"
+    if "medicamentosplm.com" in url:
+        return "plm_mexico"
+    if "vademecum.es" in url:
+        return "vademecum_vidal_mexico"
+    if "mivademecum.com" in url:
+        return "mi_vademecum_mexico"
     if "prixz.com" in url:
         return "prixz"
     if "levic.mx" in url:
