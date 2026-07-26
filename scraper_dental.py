@@ -1,21 +1,41 @@
 #!/usr/bin/env python3
 """
 Scraper de Odontología — corpus para IA de Dental OS (dentistas y consultorios).
-14 secciones, 100+ fuentes:
-  A) Organismos internacionales (FDI, WHO, PAHO, IAPD)
-  B) Asociaciones nacionales (ADA USA, BDA UK, CDA, ADC Australia, SEOC, COEM, CFO, CMD)
-  C) Guías clínicas (SDCEP, NICE, AAPD, AAE, AAP, AAOMS, IADT, EFP, EAPD, AAO, AAOMR)
-  D) Revistas OA (BMC Oral Health, MDPI Dentistry, Open Dentistry, Frontiers Dental, BDJ Open)
-  E) Bases de datos API (PubMed MeSH dental, OpenAlex, Crossref, DOAJ, Zenodo, Semantic Scholar)
-  F) Diagnóstico y radiología oral (Radiopaedia dental, CDC oral DX, atlas patología oral)
-  G) Farmacología y materiales (DailyMed dental, FDA dental devices, COFEPRIS, INVIMA)
-  H) Especialidades (AAE endo, AAP perio, AAO ortho, ITI implantes, EAO, ACP, AAOMFS)
-  I) Control de infecciones (CDC infection control dental, OSHA, OSAP)
-  J) Codificación y gestión (ADA practice, Dental Economics, NHS BSA, NOM-013)
-  K) Educación al paciente (MouthHealthy ADA, CDC oral public, WHO, PAHO, NHS patient)
-  L) Tecnología dental (AI in dentistry papers, CBCT, CAD/CAM, flujo digital)
-  M) Institutos de investigación (NIDCR NIH, Forsyth, KCL, UCL Eastman, UNAM Estoma)
-  N) Repositorios OA y preprints (medRxiv dental, OSF, Figshare, Europe PMC)
+v2 (2026-07-25) — Inventario Maestro de Fuentes para IA Dental: 122 fuentes/endpoints
+cargados (52 de v1 + 70 nuevos), cubriendo las 14 secciones del inventario:
+  1) Organismos internacionales y regulación (FDI, WHO, PAHO, IAPD, ISO metadata, UNEP)
+  2) Asociaciones nacionales (ADA USA/Australia, BDA, CDA, SEOC/COEM/Consejo España,
+     CFO Brasil, CMD/ADM México, NZDA, CORA Argentina, Colegio Dentistas Chile)
+  3) Guías clínicas (SDCEP, NICE, AAPD, AAE, AAP, AAOMS, IADT, EFP, EAPD, AAO, AAOMR,
+     ADA Evidence-Based, CGDent UK, RCS England)
+  4) Revistas OA (BMC Oral Health, MDPI, Open Dentistry, Frontiers, BDJ Open,
+     J Clin Exp Dentistry, EJOMR, J Dental Sciences, J Oral Bio Craniofacial,
+     Saudi Dental Journal, Wiley Dental OA)
+  5) APIs de literatura (PubMed, Europe PMC, OpenAlex, Crossref, Unpaywall, DOAJ,
+     Zenodo, Semantic Scholar, CORE, OpenAIRE)
+  6) Diagnóstico, radiología y patología oral (Radiopaedia, CDC oral DX, atlas patología,
+     Univ Iowa oral lesions, Oral Cancer Foundation, ADA radiation guidance)
+  7) Farmacología y materiales (DailyMed, FDA dental devices, openFDA drug/510k/MAUDE/recall,
+     RxNorm, PubChem, NIST dental materials, COFEPRIS, INVIMA)
+  8) Especialidades (AAE, AAP, AAO, ITI, EAO, ACP, AAOMFS, ESCD, WFO, EACMFS, AAED)
+  9) Infecciones y bioseguridad (CDC, OSHA, OSAP, ECDC, eCFR bloodborne, NHS HTM 01-05,
+     PAHO IPC, ADA infection control)
+  10) Codificación, facturación y gestión (ADA practice mgmt, Dental Economics, NHS BSA,
+      NOM-013, CMS HCPCS, NLM HCPCS API, HIPAA Security/Privacy, HL7 FHIR Dental,
+      Consejo Dentistas docs, IMSS, ADA CDT metadata)
+  11) Educación al paciente (MouthHealthy, CDC/WHO/PAHO/NHS oral público, Oral Health
+      Foundation, Healthdirect Australia, Better Health Vic, Colgate metadata, NIDCR health-info)
+  12) Tecnología dental (AI dentistry papers, CBCT, CAD/CAM, DICOM, 3Shape, iTero, exocad,
+      Open-Ortho, 3D Slicer, MONAI, ITK-SNAP, Open Dental)
+  13) Institutos de investigación (NIDCR NIH + DDS Hub, Forsyth, KCL, UCL Eastman,
+      Karolinska + Open Archive, UNAM, UFES, UAM, USP, U Michigan Deep Blue)
+  14) Repositorios abiertos y preprints (medRxiv, OSF, Figshare, Europe PMC, bioRxiv,
+      DataCite, arXiv, Mendeley Data, ResearchGate metadata)
+
+Respeta exclusiones del Inventario Maestro: sin CAPTCHA (INVIMA), sin evasión de WAF/login,
+sin PHI de pacientes, sin texto completo de code sets propietarios (CDT/CPT) ni normas ISO,
+solo metadata para fuentes [NO AI TRAIN] (Radiopaedia) o [PAYWALL] (Quintessence, catálogos
+de implantes, plataformas educativas cerradas).
 
 Uso: .venv/bin/python scraper_dental.py
 Reanuda desde progress_dental.json (crea si no existe).
@@ -147,6 +167,92 @@ DRIVE_OSF_DENTAL_ID               = "1iC_BemYoew7-y1EHH0kuGWJmc68qeYr3"
 DRIVE_FIGSHARE_DENTAL_ID          = "1Xrr0nvigLEfMnBbLEPe4YplOZj4Lwjxi"
 DRIVE_EUROPE_PMC_DENTAL_REPO_ID   = "1P_LjucevQpb4YVtZmw3ErctntO8vpmEd"
 
+# ── Nuevas (Inventario Maestro 2026-07-25, v2) ─────────────────────────────────
+# 1. Organismos internacionales
+DRIVE_ISO_DENTAL_METADATA_ID      = "1rK2NWYskoET5mWnqbtjV8mj3oaahrwZm"
+DRIVE_UNEP_DENTAL_ID              = "1hju01184jaFyInbgDdnTTXfBgC3aJzGV"
+# 2. Asociaciones nacionales
+DRIVE_CONSEJO_DENTISTAS_SPAIN_ID  = "1dw9Dt1Msg3OxbqhFIAUPtfqLVaDLFmuZ"
+DRIVE_ADM_MEXICO_ID               = "1VtaoWmCv1tTHywcE82QGAAljls6w5eYN"
+DRIVE_CORA_ARGENTINA_ID           = "1x43FqH9OKIGmbvYEFUKZpUzcOl1UDSAB"
+DRIVE_COLEGIO_DENTISTAS_CHILE_ID  = "1A1rLoRTbndJi4RWvuPV-rCdSoq7ZvkIc"
+# 3. Guías clínicas
+DRIVE_ADA_EVIDENCE_GUIDELINES_ID  = "1yeV6-_KCKQmsZSE4bGSWcj480A3vok2P"
+DRIVE_CGDENT_UK_ID                = "133muZFzNhsbN1d-DU1H24LMot9OeZqAh"
+DRIVE_RCS_ENGLAND_DENTAL_ID       = "1lAIvOQQWIq3yd2YAszTZXx3tWbVk0Mlq"
+# 4. Revistas OA
+DRIVE_J_CLINICAL_EXP_DENTISTRY_ID    = "1FoRtryOHmL6LOAALE6z4cioQ1saxsuxu"
+DRIVE_J_ORAL_MAXILLOFAC_RESEARCH_ID  = "1vjpad9sNxWzrbDnbQnhdIxqXuyzwNyoI"
+DRIVE_J_DENTAL_SCIENCES_ID           = "1rCPym2XP_7tHpZXFi2LcY22XMFr5Ykta"
+DRIVE_J_ORAL_BIO_CRANIOFACIAL_ID     = "14xBKmDKvtrx7zGbgQL5kdgTuSkbaTrYN"
+DRIVE_SAUDI_DENTAL_JOURNAL_ID        = "1lEPS83jj0gw830lPGoTrwNsoce3xlMtM"
+DRIVE_WILEY_DENTAL_OA_ID             = "1_7F86KO9eNJcPxbd5UByFBYtDi9kYrWD"
+# 5. APIs de literatura
+DRIVE_UNPAYWALL_DENTAL_ID         = "1Y-NpoBHArtx0TZOdgScZ5WbuBLV5I_Il"
+DRIVE_CORE_DENTAL_ID              = "1AYfigqXj9NB8LesfLKKVcdFVMC81UmBk"
+DRIVE_OPENAIRE_DENTAL_ID          = "1rm6-rbendG0TzmP6WlAEzIGMyZ5im7wJ"
+# 6. Diagnóstico, radiología y patología
+DRIVE_UNIV_IOWA_ORAL_ID           = "1eVRCRFtv5WcsclGHbDhfrLjuHsNGLRv3"
+DRIVE_ORAL_CANCER_FOUNDATION_ID   = "1ouoRsIxQvB21dxWh00leS7rHZd4CxDCZ"
+DRIVE_ADA_RADIATION_GUIDANCE_ID   = "10d4qIKv8saH_lqfkTEln1TCeXQZeEnk1"
+# 7. Farmacología y materiales
+DRIVE_OPENFDA_DRUG_DENTAL_ID      = "1UHV02qPQTHXd-Oc5qMi4k436qV3KHnek"
+DRIVE_OPENFDA_510K_DENTAL_ID      = "1A-_jyrHQLtBy_qoi44SYqhCLaL_VEnMi"
+DRIVE_OPENFDA_MAUDE_DENTAL_ID     = "1SNBZ84dO-RiedHQ7LZ74njl7QZJ6RdfD"
+DRIVE_OPENFDA_RECALL_DENTAL_ID    = "1FcdQ6QKWIoROszwyInakwuwoNoytEaNJ"
+DRIVE_RXNORM_DENTAL_ID            = "1muspQc_NrdqWZ4yZt9CIV05TMs_HSmod"
+DRIVE_PUBCHEM_DENTAL_ID           = "1CsMfuFMB3TUtqItxmbxdHisfcUIv6Y_H"
+DRIVE_NIST_DENTAL_MATERIALS_ID    = "1zJq91Dgzg1cfbDfNrizUBcJwHMJIyMl1"
+# 8. Especialidades
+DRIVE_WFO_ORTHODONTICS_ID         = "1MFYDmXt9CeuGlOStDuVsBo3UTFMbuUOK"
+DRIVE_EACMFS_SURGERY_ID           = "1rp1KX1i2EMzRohe_9cLckZObVY_K8Mpk"
+DRIVE_AAED_ESTHETIC_DENTAL_ID     = "1bft1ZaqLDd_kOcwF-zX7FqTeLCXjV37j"
+# 9. Infecciones y bioseguridad
+DRIVE_ECFR_BLOODBORNE_ID          = "1iT2dHFc-qHMm5Q15romNHcxjoGmwYEK6"
+DRIVE_NHS_HTM0105_DECONTAM_ID     = "1NNwOgEe7lQ9i9RAGcOKcRPJqelnnvT_n"
+DRIVE_PAHO_IPC_DENTAL_ID          = "1Wk3N1YWYVVpj0CquzT-xDi6Y-Ekl7j8j"
+DRIVE_ADA_INFECTION_CONTROL_ID    = "1MZXwh7CTo-1mCtXN9n1Nk9OqzRW4w7d-"
+# 10. Codificación, facturación y gestión
+DRIVE_CMS_HCPCS_DENTAL_ID         = "17C4kSa2hGinUpe22kchykdpXgJJ3SI50"
+DRIVE_NLM_HCPCS_API_ID            = "1YSZwYfH1DZP-ZWGfCu23uY-OqB59M9_1"
+DRIVE_HIPAA_SECURITY_DENTAL_ID    = "1uKVasS_doSgWGQTLuZi7TM7TKmjowRz9"
+DRIVE_HIPAA_PRIVACY_DENTAL_ID     = "1szqEb1RvO_1-QfQqrhebWwWTbvw2d65K"
+DRIVE_HL7_FHIR_DENTAL_ID          = "1pi0WeyTgpWOb1PO5pV3zUIdQYbq9SwGe"
+DRIVE_CONSEJO_DENTISTAS_DOCS_ID   = "12TNzHVwUxnBdZ42YVo0CWVWXnu_i5jDx"
+DRIVE_IMSS_PROCEDIMIENTO_DENTAL_ID = "1MACANKDmw9YaSskPozdbwd6pem9080YI"
+DRIVE_ADA_CDT_METADATA_ID         = "1rYIZctEz2PW7ThqWT1NMXLVRcI-bh_k2"
+# 11. Educación al paciente
+DRIVE_ORAL_HEALTH_FOUNDATION_ID   = "11zstJ-vk1LbUt0EQ1RaC9MW5mOsUbC3U"
+DRIVE_HEALTHDIRECT_AUSTRALIA_ID   = "1jhYU5yH5B1PxWiLAh1Sh7tWKS1_mcGb_"
+DRIVE_BETTER_HEALTH_VIC_ID        = "1HE9cVjHnaK2Tu8NqmxfagAn4VhClFGcO"
+DRIVE_COLGATE_METADATA_ID         = "1IPOmLrDNAI4FFc_7myYiQzUXnw5aKWUV"
+DRIVE_NIDCR_HEALTH_INFO_ID        = "1ziFKtaPEvfKBWU5dxqWEbH9SGwKbKIg3"
+# 12. Tecnología dental
+DRIVE_DICOM_STANDARD_ID           = "1Ixe83L8MV74iMXnRGwv0bojPjbua8ln2"
+DRIVE_3SHAPE_DENTAL_ID            = "1WUnnMIWnr-5nj9tNRVXo72-aAE17LMOy"
+DRIVE_ITERO_DENTAL_ID             = "10B2ZTCPHaT4jiaY2GFs5N1rqho3LTQay"
+DRIVE_EXOCAD_DENTAL_ID            = "1VqYczwlAeeO-zx0vEHs5sKtkmJEjy0Un"
+DRIVE_OPEN_ORTHO_ID               = "1JqBWfido73vZ_uFVlnrxr2BBu38jIZNt"
+DRIVE_SLICER_DOCS_ID              = "1s5x9g5iR0gZCECy-oT13uAkdJWPtpgE7"
+DRIVE_MONAI_DOCS_ID               = "1Py16xCiwspUm9HKZzQ-rsQ2XgAA3--Sa"
+DRIVE_ITKSNAP_DOCS_ID             = "1AURKeW8J9qvdbqMdF-fd69yOt5YvtfZQ"
+DRIVE_OPENDENTAL_SOFTWARE_ID      = "1uCADicIpV5kJXEG9E3FBdzTuXSXoP26W"
+# 13. Institutos de investigación
+DRIVE_NIDCR_DDS_HUB_ID            = "1EF-O-6RdVJls4pXgHqra14Jb_1qs6A98"
+DRIVE_KAROLINSKA_DENTAL_ID        = "16UsoZ6xo5XX389j0Tlj_yANQim1RhWxW"
+DRIVE_KAROLINSKA_OPEN_ID          = "1eRc4ER0QvO-TY5erW5C-2hRALEFWp4Se"
+DRIVE_UNAM_REPOSITORIO_ID         = "1XC9KDq60cYWrtI2XbdBmEfwVTW7cK8Fw"
+DRIVE_UFES_REPOSITORIO_ID         = "1EzUaylj7KRYeW903lR9QsYDAWc67rnJ_"
+DRIVE_UAM_BIBLOS_ID               = "14Sc2Rah4FwlxBbNMMkFy9DNNTngeyxg3"
+DRIVE_USP_TESES_ID                = "1l1bsP2SRf-ZmghCvhHYH3V20aVVullPf"
+DRIVE_UMICH_DEEP_BLUE_ID          = "1uTUD_46wMtO1l3AgMw41bGZu-XHj61wc"
+# 14. Repositorios abiertos y preprints
+DRIVE_BIORXIV_DENTAL_ID           = "1jqPq3dl-oeWocWxzzBZpzKd2QpumDWyE"
+DRIVE_DATACITE_DENTAL_ID          = "1Bf2a2Z3DbTN8PYwXmuaWLa7iZPvdqpeJ"
+DRIVE_ARXIV_DENTAL_ID             = "1H0gGSKhVI2iQz0hXkkcI7MaXSsABI0Uw"
+DRIVE_MENDELEY_DENTAL_ID          = "1J3e4NWbvnURMuh4Geef1yIuuiVZkXPGT"
+DRIVE_RESEARCHGATE_METADATA_ID    = "1yGeGpB4L-aqtCtiH5nChErWRRcOp85A6"
+
 PROGRESS_FILE = "progress_dental.json"
 
 HEADERS = {
@@ -168,6 +274,18 @@ def get_drive_service():
 
 
 def folder_for_url(url):
+    # ── Overrides específicas — DEBEN evaluarse antes que los genéricos de dominio,
+    # porque comparten host con reglas más amplias definidas más abajo.
+    if "ada.org/resources/practice/practice-management" in url: return DRIVE_ADA_PRACTICE_MGMT_ID
+    if "ada.org/resources/practice/legal-and-regulatory/infection" in url: return DRIVE_ADA_INFECTION_CONTROL_ID
+    if "ada.org/resources/research"      in url: return DRIVE_ADA_EVIDENCE_GUIDELINES_ID
+    if "ada.org/resources/ada-library/oral-health-topics/x-rays" in url: return DRIVE_ADA_RADIATION_GUIDANCE_ID
+    if "ada.org/publications/cdt"        in url: return DRIVE_ADA_CDT_METADATA_ID
+    if "iris.paho.org"                   in url: return DRIVE_PAHO_IPC_DENTAL_ID
+    if "nidcr.nih.gov/health-info"       in url: return DRIVE_NIDCR_HEALTH_INFO_ID
+    if "3shape.com"                      in url: return DRIVE_3SHAPE_DENTAL_ID
+    if "exocad.com"                      in url: return DRIVE_EXOCAD_DENTAL_ID
+
     # A. Organismos internacionales
     if "fdiworlddental.org"        in url: return DRIVE_FDI_WORLD_DENTAL_ID
     if "who.int" in url and "oral" in url: return DRIVE_WHO_ORAL_HEALTH_ID
@@ -269,6 +387,106 @@ def folder_for_url(url):
     if "medrxiv.org"               in url: return DRIVE_MEDRXIV_DENTAL_ID
     if "osf.io"                    in url: return DRIVE_OSF_DENTAL_ID
     if "figshare.com"              in url: return DRIVE_FIGSHARE_DENTAL_ID
+
+    # ── Nuevas (Inventario Maestro v2) ──────────────────────────────────────────
+    # 1. Organismos internacionales
+    if "iso.org"                   in url: return DRIVE_ISO_DENTAL_METADATA_ID
+    if "unep.org"                  in url: return DRIVE_UNEP_DENTAL_ID
+    # 2. Asociaciones nacionales
+    if "consejodentistas.es" in url and "documentacion" in url: return DRIVE_CONSEJO_DENTISTAS_DOCS_ID
+    if "consejodentistas.es"       in url: return DRIVE_CONSEJO_DENTISTAS_SPAIN_ID
+    if "adm.org.mx"                in url: return DRIVE_ADM_MEXICO_ID
+    if "cora.org.ar"                in url: return DRIVE_CORA_ARGENTINA_ID
+    if "colegiodentistas.cl"       in url: return DRIVE_COLEGIO_DENTISTAS_CHILE_ID
+    # 3. Guías clínicas
+    if "ada.org/resources/research" in url: return DRIVE_ADA_EVIDENCE_GUIDELINES_ID
+    if "cgdent.uk"                 in url: return DRIVE_CGDENT_UK_ID
+    if "rcseng.ac.uk"              in url: return DRIVE_RCS_ENGLAND_DENTAL_ID
+    # 4. Revistas OA
+    if "medicinaoral.com"          in url: return DRIVE_J_CLINICAL_EXP_DENTISTRY_ID
+    if "ejomr.org"                 in url: return DRIVE_J_ORAL_MAXILLOFAC_RESEARCH_ID
+    if "sciencedirect.com" in url and "journal-of-dental-sciences" in url: return DRIVE_J_DENTAL_SCIENCES_ID
+    if "sciencedirect.com" in url and "craniofacial" in url: return DRIVE_J_ORAL_BIO_CRANIOFACIAL_ID
+    if "sciencedirect.com" in url and "saudi-dental" in url: return DRIVE_SAUDI_DENTAL_JOURNAL_ID
+    if "onlinelibrary.wiley.com"   in url: return DRIVE_WILEY_DENTAL_OA_ID
+    # 5. APIs de literatura
+    if "|UNPAYWALL_DENTAL|"        in url: return DRIVE_UNPAYWALL_DENTAL_ID
+    if "|CORE_DENTAL|"             in url: return DRIVE_CORE_DENTAL_ID
+    if "|OPENAIRE_DENTAL|"         in url: return DRIVE_OPENAIRE_DENTAL_ID
+    if "api.unpaywall.org"         in url: return DRIVE_UNPAYWALL_DENTAL_ID
+    if "core.ac.uk"                in url: return DRIVE_CORE_DENTAL_ID
+    if "openaire.eu" in url or "explore.openaire.eu" in url: return DRIVE_OPENAIRE_DENTAL_ID
+    # 6. Diagnóstico, radiología y patología
+    if "medicine.uiowa.edu"        in url: return DRIVE_UNIV_IOWA_ORAL_ID
+    if "oralcancerfoundation.org"  in url: return DRIVE_ORAL_CANCER_FOUNDATION_ID
+    if "ada.org/resources/ada-library/oral-health-topics/x-rays" in url: return DRIVE_ADA_RADIATION_GUIDANCE_ID
+    # 7. Farmacología y materiales
+    if "|OPENFDA_DRUG|"            in url: return DRIVE_OPENFDA_DRUG_DENTAL_ID
+    if "|OPENFDA_510K|"            in url: return DRIVE_OPENFDA_510K_DENTAL_ID
+    if "|OPENFDA_MAUDE|"           in url: return DRIVE_OPENFDA_MAUDE_DENTAL_ID
+    if "|OPENFDA_RECALL|"          in url: return DRIVE_OPENFDA_RECALL_DENTAL_ID
+    if "|RXNORM_DENTAL|"           in url: return DRIVE_RXNORM_DENTAL_ID
+    if "|PUBCHEM_DENTAL|"          in url: return DRIVE_PUBCHEM_DENTAL_ID
+    if "api.fda.gov/drug"          in url: return DRIVE_OPENFDA_DRUG_DENTAL_ID
+    if "api.fda.gov/device/510k"   in url: return DRIVE_OPENFDA_510K_DENTAL_ID
+    if "api.fda.gov/device/event"  in url: return DRIVE_OPENFDA_MAUDE_DENTAL_ID
+    if "api.fda.gov/device/recall" in url: return DRIVE_OPENFDA_RECALL_DENTAL_ID
+    if "rxnav.nlm.nih.gov"         in url: return DRIVE_RXNORM_DENTAL_ID
+    if "pubchem.ncbi.nlm.nih.gov"  in url: return DRIVE_PUBCHEM_DENTAL_ID
+    if "nist.gov"                  in url: return DRIVE_NIST_DENTAL_MATERIALS_ID
+    # 8. Especialidades
+    if "wfo.org"                   in url: return DRIVE_WFO_ORTHODONTICS_ID
+    if "eacmfs.org"                in url: return DRIVE_EACMFS_SURGERY_ID
+    if "aaed.com"                  in url: return DRIVE_AAED_ESTHETIC_DENTAL_ID
+    # 9. Infecciones y bioseguridad
+    if "ecfr.gov"                  in url: return DRIVE_ECFR_BLOODBORNE_ID
+    if "gov.uk" in url and "decontamination" in url: return DRIVE_NHS_HTM0105_DECONTAM_ID
+    if "iris.paho.org"             in url: return DRIVE_PAHO_IPC_DENTAL_ID
+    if "ada.org/resources/practice/legal-and-regulatory/infection" in url: return DRIVE_ADA_INFECTION_CONTROL_ID
+    # 10. Codificación, facturación y gestión
+    if "cms.gov"                   in url: return DRIVE_CMS_HCPCS_DENTAL_ID
+    if "|NLM_HCPCS|"               in url: return DRIVE_NLM_HCPCS_API_ID
+    if "clinicaltables.nlm.nih.gov" in url: return DRIVE_NLM_HCPCS_API_ID
+    if "hhs.gov" in url and "security" in url: return DRIVE_HIPAA_SECURITY_DENTAL_ID
+    if "hhs.gov" in url and "privacy" in url: return DRIVE_HIPAA_PRIVACY_DENTAL_ID
+    if "build.fhir.org"             in url: return DRIVE_HL7_FHIR_DENTAL_ID
+    if "reposipot.imss.gob.mx"     in url: return DRIVE_IMSS_PROCEDIMIENTO_DENTAL_ID
+    if "ada.org/publications/cdt"  in url: return DRIVE_ADA_CDT_METADATA_ID
+    # 11. Educación al paciente
+    if "dentalhealth.org"          in url: return DRIVE_ORAL_HEALTH_FOUNDATION_ID
+    if "healthdirect.gov.au"       in url: return DRIVE_HEALTHDIRECT_AUSTRALIA_ID
+    if "betterhealth.vic.gov.au"   in url: return DRIVE_BETTER_HEALTH_VIC_ID
+    if "colgate.com"               in url: return DRIVE_COLGATE_METADATA_ID
+    if "nidcr.nih.gov/health-info" in url: return DRIVE_NIDCR_HEALTH_INFO_ID
+    # 12. Tecnología dental
+    if "dicom.nema.org"            in url: return DRIVE_DICOM_STANDARD_ID
+    if "3shape.com" in url or "learn.3shape.com" in url: return DRIVE_3SHAPE_DENTAL_ID
+    if "itero.com"                 in url: return DRIVE_ITERO_DENTAL_ID
+    if "exocad.com"                in url: return DRIVE_EXOCAD_DENTAL_ID
+    if "open-ortho.org"            in url: return DRIVE_OPEN_ORTHO_ID
+    if "slicer.readthedocs.io"     in url: return DRIVE_SLICER_DOCS_ID
+    if "docs.monai.io"             in url: return DRIVE_MONAI_DOCS_ID
+    if "itksnap.org"               in url: return DRIVE_ITKSNAP_DOCS_ID
+    if "opendental.com"            in url: return DRIVE_OPENDENTAL_SOFTWARE_ID
+    # 13. Institutos de investigación
+    if "ddshub.nih.gov"            in url: return DRIVE_NIDCR_DDS_HUB_ID
+    if "openarchive.ki.se"         in url: return DRIVE_KAROLINSKA_OPEN_ID
+    if "ki.se"                     in url: return DRIVE_KAROLINSKA_DENTAL_ID
+    if "repositorio.unam.mx"       in url: return DRIVE_UNAM_REPOSITORIO_ID
+    if "repositorio.ufes.br"       in url: return DRIVE_UFES_REPOSITORIO_ID
+    if "repositorio.uam.es"        in url: return DRIVE_UAM_BIBLOS_ID
+    if "teses.usp.br"              in url: return DRIVE_USP_TESES_ID
+    if "deepblue.lib.umich.edu"    in url: return DRIVE_UMICH_DEEP_BLUE_ID
+    # 14. Repositorios abiertos y preprints
+    if "|BIORXIV_DENTAL|"          in url: return DRIVE_BIORXIV_DENTAL_ID
+    if "|DATACITE_DENTAL|"         in url: return DRIVE_DATACITE_DENTAL_ID
+    if "|ARXIV_DENTAL|"            in url: return DRIVE_ARXIV_DENTAL_ID
+    if "api.biorxiv.org"           in url: return DRIVE_BIORXIV_DENTAL_ID
+    if "api.datacite.org"          in url: return DRIVE_DATACITE_DENTAL_ID
+    if "arxiv.org"                 in url: return DRIVE_ARXIV_DENTAL_ID
+    if "data.mendeley.com"         in url: return DRIVE_MENDELEY_DENTAL_ID
+    if "researchgate.net"          in url: return DRIVE_RESEARCHGATE_METADATA_ID
+
     return DRIVE_BMC_ORAL_HEALTH_ID  # fallback
 
 
@@ -827,6 +1045,251 @@ def fetch_figshare_dental_urls():
         return []
 
 
+# ── Fetchers nuevos (Inventario Maestro v2, 2026-07-25) ────────────────────────
+
+def _fetch_oai_pmh(base_url, metadata_prefix="oai_dc", set_spec=None, max_records=300, delay=1.0):
+    """Cosecha identificadores vía OAI-PMH; usado por repositorios institucionales."""
+    urls, resumption_token = [], None
+    ns = {"oai": "http://www.openarchives.org/OAI/2.0/",
+          "dc": "http://purl.org/dc/elements/1.1/"}
+    while len(urls) < max_records:
+        try:
+            params = {"verb": "ListRecords", "resumptionToken": resumption_token} if resumption_token \
+                else {"verb": "ListRecords", "metadataPrefix": metadata_prefix, **({"set": set_spec} if set_spec else {})}
+            r = requests.get(base_url, params=params, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            root = ET.fromstring(r.text)
+            for rec in root.findall(".//oai:record", ns):
+                for ident in rec.findall(".//dc:identifier", ns):
+                    if ident.text and ident.text.startswith("http"):
+                        urls.append(ident.text)
+                        break
+            token_el = root.find(".//oai:resumptionToken", ns)
+            resumption_token = token_el.text if token_el is not None and token_el.text else None
+            if not resumption_token:
+                break
+            time.sleep(delay)
+        except Exception:
+            break
+    return urls[:max_records]
+
+
+def _fetch_openfda(endpoint, search, marker, limit=100):
+    try:
+        r = requests.get(f"https://api.fda.gov/{endpoint}.json",
+                          params={"search": search, "limit": limit}, headers=HEADERS, timeout=30)
+        results = r.json().get("results", [])
+        urls = []
+        for it in results:
+            rid = (it.get("id") or it.get("k_number") or it.get("recall_number")
+                   or it.get("mdr_report_key") or it.get("report_number") or "")
+            title = it.get("device_name") or it.get("generic_name") or endpoint
+            if isinstance(title, list):
+                title = title[0] if title else endpoint
+            urls.append(f"https://api.fda.gov/{endpoint}.json?search=id:{rid}|{marker}|"
+                        f"{json.dumps({'title': str(title), 'id': str(rid)})}")
+        return urls
+    except Exception:
+        return []
+
+
+# 7. Farmacología y materiales — openFDA / RxNorm / PubChem
+def fetch_openfda_drug_dental_urls():
+    urls = []
+    for q in ['openfda.pharm_class_epc:"Local Anesthetic"', 'openfda.pharm_class_epc:"Penicillin-class Antibacterial"',
+              'active_ingredient:"chlorhexidine"', 'active_ingredient:"sodium fluoride"']:
+        urls += _fetch_openfda("drug/label", q, "OPENFDA_DRUG", limit=50)
+        time.sleep(0.5)
+    return urls
+
+def fetch_openfda_510k_dental_urls():
+    return _fetch_openfda("device/510k", 'device_name:"dental"', "OPENFDA_510K", limit=100)
+
+def fetch_openfda_maude_dental_urls():
+    return _fetch_openfda("device/event", 'device.generic_name:"dental"', "OPENFDA_MAUDE", limit=100)
+
+def fetch_openfda_recall_dental_urls():
+    return _fetch_openfda("device/recall", 'product_description:"dental"', "OPENFDA_RECALL", limit=100)
+
+def fetch_rxnorm_dental_urls():
+    drugs = ["lidocaine", "articaine", "mepivacaine", "bupivacaine", "prilocaine", "epinephrine",
+             "amoxicillin", "penicillin V", "azithromycin", "metronidazole", "clindamycin",
+             "ibuprofen", "acetaminophen", "naproxen", "chlorhexidine", "sodium fluoride",
+             "stannous fluoride", "silver diamine fluoride", "sodium hypochlorite"]
+    urls = []
+    for name in drugs:
+        try:
+            r = requests.get("https://rxnav.nlm.nih.gov/REST/rxcui.json",
+                              params={"name": name}, headers=HEADERS, timeout=20)
+            for rxcui in r.json().get("idGroup", {}).get("rxnormId", []):
+                urls.append(f"https://rxnav.nlm.nih.gov/REST/rxcui/{rxcui}|RXNORM_DENTAL|"
+                            f"{json.dumps({'title': name, 'rxcui': rxcui})}")
+            time.sleep(0.5)
+        except Exception:
+            pass
+    return urls
+
+def fetch_pubchem_dental_urls():
+    compounds = ["lidocaine", "articaine", "chlorhexidine", "sodium fluoride", "stannous fluoride",
+                 "silver diamine fluoride", "sodium hypochlorite", "eugenol", "calcium hydroxide",
+                 "mineral trioxide aggregate", "bisphenol A glycidyl methacrylate", "triethylene glycol dimethacrylate"]
+    urls = []
+    for name in compounds:
+        try:
+            r = requests.get(
+                f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{name}/property/"
+                f"IUPACName,MolecularFormula,MolecularWeight/JSON",
+                headers=HEADERS, timeout=20)
+            props = (r.json().get("PropertyTable", {}).get("Properties") or [{}])[0]
+            cid = props.get("CID", "")
+            urls.append(f"https://pubchem.ncbi.nlm.nih.gov/compound/{cid}|PUBCHEM_DENTAL|"
+                        f"{json.dumps({'title': name, **{k: v for k, v in props.items() if k != 'CID'}})}")
+            time.sleep(0.34)
+        except Exception:
+            pass
+    return urls
+
+# 5. APIs de literatura — Unpaywall / CORE / OpenAIRE
+def fetch_unpaywall_dental_urls():
+    try:
+        r = requests.get("https://api.crossref.org/works",
+                          params={"query": "dental oral health dentistry", "rows": 60,
+                                   "filter": "has-full-text:true"},
+                          headers=HEADERS, timeout=30)
+        items = r.json().get("message", {}).get("items", [])
+        urls = []
+        for it in items:
+            doi = it.get("DOI", "")
+            if not doi:
+                continue
+            try:
+                ur = requests.get(f"https://api.unpaywall.org/v2/{doi}",
+                                   params={"email": "jlps1977@gmail.com"}, headers=HEADERS, timeout=15)
+                data = ur.json()
+                if data.get("is_oa"):
+                    best = data.get("best_oa_location") or {}
+                    oa_url = best.get("url_for_pdf") or best.get("url") or ""
+                    if oa_url:
+                        urls.append(f"{oa_url}|UNPAYWALL_DENTAL|"
+                                    f"{json.dumps({'title': data.get('title', ''), 'doi': doi})}")
+                time.sleep(1.0)
+            except Exception:
+                continue
+        return urls
+    except Exception:
+        return []
+
+def fetch_core_dental_urls():
+    try:
+        r = requests.get("https://api.core.ac.uk/v3/search/works",
+                          params={"q": 'dental OR dentistry OR "oral health"', "limit": 100},
+                          headers=HEADERS, timeout=30)
+        results = r.json().get("results", [])
+        urls = []
+        for it in results:
+            urls.append(f"https://core.ac.uk/works/{it.get('id', '')}|CORE_DENTAL|"
+                        f"{json.dumps({'title': it.get('title', ''), 'doi': it.get('doi', '')})}")
+        return urls
+    except Exception:
+        return []
+
+def fetch_openaire_dental_urls():
+    try:
+        r = requests.get("https://api.openaire.eu/search/publications",
+                          params={"keywords": "dental dentistry oral health", "format": "json", "size": 100},
+                          headers=HEADERS, timeout=30)
+        results = r.json().get("response", {}).get("results", {}).get("result", [])
+        urls = []
+        for it in results:
+            md = it.get("metadata", {}).get("oaf:entity", {}).get("oaf:result", {})
+            title = md.get("title", "")
+            if isinstance(title, dict):
+                title = title.get("$", "")
+            urls.append(f"https://explore.openaire.eu/search/publication|OPENAIRE_DENTAL|"
+                        f"{json.dumps({'title': str(title)})}")
+        return urls
+    except Exception:
+        return []
+
+# 10. NLM HCPCS Clinical Tables API
+def fetch_nlm_hcpcs_urls():
+    try:
+        r = requests.get("https://clinicaltables.nlm.nih.gov/api/hcpcs/v3/search",
+                          params={"terms": "dental", "maxList": 200}, headers=HEADERS, timeout=20)
+        data = r.json()
+        codes = data[1] if len(data) > 1 else []
+        extra = data[3] if len(data) > 3 else []
+        urls = []
+        for i, code in enumerate(codes):
+            desc = extra[i][0] if i < len(extra) and extra[i] else ""
+            urls.append(f"https://clinicaltables.nlm.nih.gov/api/hcpcs/v3/search?code={code}|NLM_HCPCS|"
+                        f"{json.dumps({'title': desc, 'code': code})}")
+        return urls
+    except Exception:
+        return []
+
+def fetch_imss_procedimiento_urls():
+    return ["https://reposipot.imss.gob.mx/normatividad/DNMR/Procedimiento/0730-003-006.pdf"]
+
+# 14. Repositorios y preprints — bioRxiv / DataCite / arXiv
+def fetch_biorxiv_dental_urls():
+    keywords = ["dental", "dentistry", "oral microbiome", "periodont", "tooth", "craniofacial", "odontogenesis"]
+    urls = []
+    try:
+        for page in range(0, 3):
+            r = requests.get(f"https://api.biorxiv.org/details/biorxiv/2025-01-01/2026-07-25/{page*100}",
+                              headers=HEADERS, timeout=30)
+            items = r.json().get("collection", [])
+            if not items:
+                break
+            for it in items:
+                title = (it.get("title") or "").lower()
+                if any(k in title for k in keywords):
+                    doi = it.get("doi", "")
+                    urls.append(f"https://www.biorxiv.org/content/{doi}v1|BIORXIV_DENTAL|"
+                                f"{json.dumps({'title': it.get('title', ''), 'doi': doi, 'abstract': (it.get('abstract') or '')[:500]})}")
+            time.sleep(1.0)
+    except Exception:
+        pass
+    return urls
+
+def fetch_datacite_dental_urls():
+    try:
+        r = requests.get("https://api.datacite.org/dois",
+                          params={"query": 'dental OR dentistry OR "oral health"', "page[size]": 200},
+                          headers=HEADERS, timeout=30)
+        items = r.json().get("data", [])
+        urls = []
+        for it in items:
+            attrs = it.get("attributes", {})
+            doi = attrs.get("doi", "")
+            title = (attrs.get("titles") or [{}])[0].get("title", "")
+            urls.append(f"https://doi.org/{doi}|DATACITE_DENTAL|{json.dumps({'title': title, 'doi': doi})}")
+        return urls
+    except Exception:
+        return []
+
+def fetch_arxiv_dental_urls():
+    try:
+        r = requests.get("https://export.arxiv.org/api/query",
+                          params={"search_query": 'all:(dental OR dentistry OR "panoramic radiograph" OR "tooth segmentation")',
+                                   "start": 0, "max_results": 100},
+                          headers=HEADERS, timeout=30)
+        root = ET.fromstring(r.text)
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        urls = []
+        for entry in root.findall("a:entry", ns):
+            title_el, id_el = entry.find("a:title", ns), entry.find("a:id", ns)
+            title = title_el.text.strip() if title_el is not None else ""
+            aid = id_el.text.strip() if id_el is not None else ""
+            if aid:
+                urls.append(f"{aid}|ARXIV_DENTAL|{json.dumps({'title': title})}")
+        return urls
+    except Exception:
+        return []
+
+
 # ── Carga uniforme ─────────────────────────────────────────────────────────────
 
 def _load_source(name, sitemaps=None, fn=None):
@@ -954,21 +1417,196 @@ def get_all_urls():
     all_urls += _load_source("OSF Dental",                fn=fetch_osf_dental_urls)
     all_urls += _load_source("Figshare Dental",           fn=fetch_figshare_dental_urls)
 
+    # ── Nuevas (Inventario Maestro v2, 2026-07-25) ──────────────────────────────
+    # 1. Organismos internacionales
+    all_urls += _load_source("ISO TC106 Catálogo (metadata)", fn=lambda: _crawl_one_level(
+        "https://www.iso.org/committee/51218/x/catalogue/", "iso.org/committee/51218", delay=5.0))
+    all_urls += _load_source("UNEP Minamata — Amalgama Dental", fn=lambda: _crawl_one_level(
+        "https://www.unep.org/globalmercurypartnership/resources/other/minamata-convention-topic-dental-amalgam",
+        "unep.org", delay=3.0))
+
+    # 2. Asociaciones nacionales
+    all_urls += _load_source("Consejo Gral. Dentistas España — Guías", fn=lambda: _crawl_one_level(
+        "https://consejodentistas.es/comunicacion/publicaciones/guias-y-materiales/", "consejodentistas.es", delay=3.0))
+    all_urls += _load_source("ADM México", fn=lambda: _crawl_one_level(
+        "https://adm.org.mx/descargas.php", "adm.org.mx", delay=5.0))
+    all_urls += _load_source("CORA Argentina", fn=lambda: _crawl_one_level(
+        "https://www.cora.org.ar/", "cora.org.ar", delay=5.0))
+    all_urls += _load_source("Colegio Dentistas Chile", fn=lambda: _crawl_one_level(
+        "https://www.colegiodentistas.cl/", "colegiodentistas.cl", delay=5.0))
+
+    # 3. Guías clínicas
+    all_urls += _load_source("ADA Evidence-Based Guidelines", fn=lambda: _crawl_one_level(
+        "https://www.ada.org/resources/research/science/evidence-based-dental-research",
+        "ada.org/resources/research", delay=5.0))
+    all_urls += _load_source("CGDent UK Standards", fn=lambda: _crawl_one_level(
+        "https://cgdent.uk/standards-guidance/", "cgdent.uk", delay=5.0))
+    all_urls += _load_source("RCS England Dental Guidelines", fn=lambda: _crawl_one_level(
+        "https://www.rcseng.ac.uk/dental-faculties/fds/publications-guidelines/clinical-guidelines/",
+        "rcseng.ac.uk", delay=5.0))
+
+    # 4. Revistas OA
+    all_urls += _load_source("J Clinical Exp Dentistry", fn=lambda: _crawl_one_level(
+        "https://www.medicinaoral.com/odo/indice.htm", "medicinaoral.com", delay=3.0))
+    all_urls += _load_source("J Oral Maxillofac Research", fn=lambda: _crawl_one_level(
+        "https://www.ejomr.org/", "ejomr.org", delay=3.0))
+    all_urls += _load_source("J Dental Sciences", fn=lambda: _crawl_one_level(
+        "https://www.sciencedirect.com/journal/journal-of-dental-sciences", "sciencedirect.com", delay=5.0))
+    all_urls += _load_source("J Oral Biology & Craniofacial Research", fn=lambda: _crawl_one_level(
+        "https://www.sciencedirect.com/journal/journal-of-oral-biology-and-craniofacial-research",
+        "sciencedirect.com", delay=5.0))
+    all_urls += _load_source("Saudi Dental Journal", fn=lambda: _crawl_one_level(
+        "https://www.sciencedirect.com/journal/the-saudi-dental-journal", "sciencedirect.com", delay=5.0))
+    all_urls += _load_source("Wiley Dental OA (Clin Exp Dent Res + Intl J Dentistry)", fn=lambda: (
+        _crawl_one_level("https://onlinelibrary.wiley.com/journal/20574347", "onlinelibrary.wiley.com", delay=5.0) +
+        _crawl_one_level("https://onlinelibrary.wiley.com/journal/16878733", "onlinelibrary.wiley.com", delay=5.0)))
+
+    # 5. APIs de literatura
+    all_urls += _load_source("Unpaywall Dental",          fn=fetch_unpaywall_dental_urls)
+    all_urls += _load_source("CORE Dental",               fn=fetch_core_dental_urls)
+    all_urls += _load_source("OpenAIRE Dental",           fn=fetch_openaire_dental_urls)
+
+    # 6. Diagnóstico, radiología y patología
+    all_urls += _load_source("Univ Iowa — Oral Cavity Lesions", fn=lambda: _crawl_one_level(
+        "https://medicine.uiowa.edu/iowaprotocols/oral-cavity-lesions", "medicine.uiowa.edu", delay=3.0))
+    all_urls += _load_source("Oral Cancer Foundation", fn=lambda: _crawl_one_level(
+        "https://oralcancerfoundation.org/", "oralcancerfoundation.org", delay=5.0))
+    all_urls += _load_source("ADA Radiation Safety Guidance", fn=lambda: _crawl_one_level(
+        "https://www.ada.org/resources/ada-library/oral-health-topics/x-rays-radiographs",
+        "ada.org/resources/ada-library", delay=5.0))
+
+    # 7. Farmacología y materiales
+    all_urls += _load_source("openFDA Drug Label (dental)", fn=fetch_openfda_drug_dental_urls)
+    all_urls += _load_source("openFDA Device 510(k) (dental)", fn=fetch_openfda_510k_dental_urls)
+    all_urls += _load_source("openFDA MAUDE (dental)",    fn=fetch_openfda_maude_dental_urls)
+    all_urls += _load_source("openFDA Device Recall (dental)", fn=fetch_openfda_recall_dental_urls)
+    all_urls += _load_source("RxNorm Dental",             fn=fetch_rxnorm_dental_urls)
+    all_urls += _load_source("PubChem Dental",            fn=fetch_pubchem_dental_urls)
+    all_urls += _load_source("NIST Dental Materials", fn=lambda: _crawl_one_level(
+        "https://www.nist.gov/programs-projects/dental-and-medical-materials", "nist.gov", delay=3.0))
+
+    # 8. Especialidades
+    all_urls += _load_source("WFO — World Federation Orthodontists", fn=lambda: _crawl_one_level(
+        "https://www.wfo.org/", "wfo.org", delay=5.0))
+    all_urls += _load_source("EACMFS Surgery", fn=lambda: _crawl_one_level(
+        "https://www.eacmfs.org/", "eacmfs.org", delay=5.0))
+    all_urls += _load_source("AAED Esthetic Dentistry (metadata)", fn=lambda: _crawl_one_level(
+        "https://aaed.com/", "aaed.com", delay=8.0))
+
+    # 9. Infecciones y bioseguridad
+    all_urls += _load_source("eCFR Bloodborne Pathogens", fn=lambda: _crawl_one_level(
+        "https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XVII/part-1910/subpart-Z/section-1910.1030",
+        "ecfr.gov", delay=2.0))
+    all_urls += _load_source("NHS HTM 01-05 Decontamination", fn=lambda: _crawl_one_level(
+        "https://www.gov.uk/government/publications/decontamination-in-primary-care-dental-practices",
+        "gov.uk", delay=2.5))
+    all_urls += _load_source("PAHO IRIS — IPC Dental", fn=lambda: _crawl_one_level(
+        "https://iris.paho.org/", "iris.paho.org", delay=2.5))
+    all_urls += _load_source("ADA Infection Control & Sterilization", fn=lambda: _crawl_one_level(
+        "https://www.ada.org/resources/practice/legal-and-regulatory/infection-control-and-sterilization",
+        "ada.org/resources/practice", delay=5.0))
+
+    # 10. Codificación, facturación y gestión
+    all_urls += _load_source("CMS HCPCS Quarterly Update", fn=lambda: _crawl_one_level(
+        "https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system/quarterly-update",
+        "cms.gov", delay=2.5))
+    all_urls += _load_source("NLM HCPCS API",             fn=fetch_nlm_hcpcs_urls)
+    all_urls += _load_source("HHS HIPAA Security Rule", fn=lambda: _crawl_one_level(
+        "https://www.hhs.gov/hipaa/for-professionals/security/index.html", "hhs.gov", delay=2.5))
+    all_urls += _load_source("HHS HIPAA Privacy Rule", fn=lambda: _crawl_one_level(
+        "https://www.hhs.gov/hipaa/for-professionals/privacy/index.html", "hhs.gov", delay=2.5))
+    all_urls += _load_source("HL7 FHIR Dental Data Exchange IG", fn=lambda: _crawl_one_level(
+        "https://build.fhir.org/ig/HL7/dental-data-exchange/", "build.fhir.org", delay=1.5))
+    all_urls += _load_source("Consejo Gral. Dentistas — Documentación", fn=lambda: _crawl_one_level(
+        "https://consejodentistas.es/dentistas/documentacion/", "consejodentistas.es", delay=3.0))
+    all_urls += _load_source("IMSS Procedimiento Estomatológico", fn=fetch_imss_procedimiento_urls)
+    all_urls += _load_source("ADA CDT Overview (metadata)", fn=lambda: _crawl_one_level(
+        "https://www.ada.org/publications/cdt", "ada.org/publications/cdt", delay=5.0))
+
+    # 11. Educación al paciente
+    all_urls += _load_source("Oral Health Foundation", fn=lambda: _crawl_one_level(
+        "https://www.dentalhealth.org/oral-health-information", "dentalhealth.org", delay=5.0))
+    all_urls += _load_source("Healthdirect Australia — Dental", fn=lambda: _crawl_one_level(
+        "https://www.healthdirect.gov.au/dental-health", "healthdirect.gov.au", delay=3.0))
+    all_urls += _load_source("Better Health Channel — Teeth", fn=lambda: _crawl_one_level(
+        "https://www.betterhealth.vic.gov.au/health/conditionsandtreatments/teeth-and-mouth",
+        "betterhealth.vic.gov.au", delay=3.0))
+    all_urls += _load_source("Colgate Oral Care (metadata)", fn=lambda: _crawl_one_level(
+        "https://www.colgate.com/en-us/oral-health", "colgate.com", delay=10.0))
+    all_urls += _load_source("NIDCR Health Information", fn=lambda: _crawl_one_level(
+        "https://www.nidcr.nih.gov/health-info", "nidcr.nih.gov/health-info", delay=2.5))
+
+    # 12. Tecnología dental
+    all_urls += _load_source("DICOM Standard", fn=lambda: _crawl_one_level(
+        "https://dicom.nema.org/medical/dicom/current/output/html/", "dicom.nema.org", delay=2.5))
+    all_urls += _load_source("3Shape Learn & Support (propietario)", fn=lambda: _crawl_one_level(
+        "https://learn.3shape.com/en/support/all-products/3shape-dental-system", "3shape.com", delay=8.0))
+    all_urls += _load_source("iTero Guides (propietario)", fn=lambda: _crawl_one_level(
+        "https://guides.itero.com/", "itero.com", delay=8.0))
+    all_urls += _load_source("exocad Wiki (propietario)", fn=lambda: _crawl_one_level(
+        "https://wiki.exocad.com/wiki/index.php/Main_Page", "exocad.com", delay=5.0))
+    all_urls += _load_source("Open-Ortho", fn=lambda: _crawl_one_level(
+        "https://open-ortho.org/resources/", "open-ortho.org", delay=3.0))
+    all_urls += _load_source("3D Slicer Docs", fn=lambda: _crawl_one_level(
+        "https://slicer.readthedocs.io/", "slicer.readthedocs.io", delay=1.5))
+    all_urls += _load_source("MONAI Docs", fn=lambda: _crawl_one_level(
+        "https://docs.monai.io/", "docs.monai.io", delay=1.5))
+    all_urls += _load_source("ITK-SNAP Docs", fn=lambda: _crawl_one_level(
+        "https://www.itksnap.org/pmwiki/pmwiki.php", "itksnap.org", delay=2.0))
+    all_urls += _load_source("Open Dental Software Manual (propietario)", fn=lambda: _crawl_one_level(
+        "https://www.opendental.com/manual/", "opendental.com", delay=5.0))
+
+    # 13. Institutos de investigación
+    all_urls += _load_source("NIDCR Dental Data Science Hub", fn=lambda: _crawl_one_level(
+        "https://www.ddshub.nih.gov/", "ddshub.nih.gov", delay=2.5))
+    all_urls += _load_source("Karolinska — Dept. Dental Medicine", fn=lambda: _crawl_one_level(
+        "https://ki.se/en/dentmed", "ki.se", delay=3.0))
+    all_urls += _load_source("Karolinska Open Archive (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
+        "https://openarchive.ki.se/server/oai/request", max_records=200))
+    all_urls += _load_source("UNAM Repositorio Institucional (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
+        "https://repositorio.unam.mx/oai/request", max_records=200))
+    all_urls += _load_source("UFES Repositório Institucional (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
+        "https://repositorio.ufes.br/oai/request", max_records=200))
+    all_urls += _load_source("UAM Biblos-e Archivo (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
+        "https://repositorio.uam.es/oai/request", max_records=200))
+    all_urls += _load_source("USP Teses", fn=lambda: _crawl_one_level(
+        "https://www.teses.usp.br/", "teses.usp.br", delay=2.5))
+    all_urls += _load_source("Univ Michigan Deep Blue (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
+        "https://deepblue.lib.umich.edu/oai/request", max_records=200))
+
+    # 14. Repositorios abiertos y preprints
+    all_urls += _load_source("bioRxiv Dental",            fn=fetch_biorxiv_dental_urls)
+    all_urls += _load_source("DataCite Dental",           fn=fetch_datacite_dental_urls)
+    all_urls += _load_source("arXiv Dental (CV/IA)",      fn=fetch_arxiv_dental_urls)
+    all_urls += _load_source("Mendeley Data (búsqueda dental)", fn=lambda: _crawl_one_level(
+        "https://data.mendeley.com/research-data?search=dental", "data.mendeley.com", delay=3.0))
+    all_urls += _load_source("ResearchGate (metadata pública)", fn=lambda: _crawl_one_level(
+        "https://www.researchgate.net/search?q=dentistry", "researchgate.net", delay=10.0))
+
     print(f"\nTotal URLs objetivo: {len(all_urls)}", flush=True)
     return all_urls
 
 
 # ── Scraping ───────────────────────────────────────────────────────────────────
 
+INLINE_MARKERS = ["|PUBMED_DENTAL|", "|OPENALEX_DENTAL|", "|CROSSREF_DENTAL|",
+                   "|DOAJ_DENTAL|", "|ZENODO_DENTAL|", "|S2_DENTAL|",
+                   "|EUROPEPMC_DENTAL|", "|MEDRXIV_DENTAL|", "|OSF_DENTAL|",
+                   "|FIGSHARE_DENTAL|", "|DAILYMED_DENTAL|",
+                   "|UNPAYWALL_DENTAL|", "|CORE_DENTAL|", "|OPENAIRE_DENTAL|",
+                   "|OPENFDA_DRUG|", "|OPENFDA_510K|", "|OPENFDA_MAUDE|", "|OPENFDA_RECALL|",
+                   "|RXNORM_DENTAL|", "|PUBCHEM_DENTAL|", "|NLM_HCPCS|",
+                   "|BIORXIV_DENTAL|", "|DATACITE_DENTAL|", "|ARXIV_DENTAL|"]
+
+
 def delay_for_url(url):
     # Inline API records — no HTTP
-    if any(m in url for m in ["|PUBMED_DENTAL|", "|OPENALEX_DENTAL|", "|CROSSREF_DENTAL|",
-                               "|DOAJ_DENTAL|", "|ZENODO_DENTAL|", "|S2_DENTAL|",
-                               "|EUROPEPMC_DENTAL|", "|MEDRXIV_DENTAL|", "|OSF_DENTAL|",
-                               "|FIGSHARE_DENTAL|", "|DAILYMED_DENTAL|"]):
+    if any(m in url for m in INLINE_MARKERS):
         return 0.1
     if any(d in url for d in ["ada.org", "aae.org", "perio.org", "aaoms.org",
-                               "fda.gov", "cdc.gov", "osha.gov", "who.int"]):
+                               "fda.gov", "cdc.gov", "osha.gov", "who.int",
+                               "3shape.com", "itero.com", "aaed.com", "researchgate.net",
+                               "colgate.com", "iso.org"]):
         return 3.0
     if any(d in url for d in ["bmcoralhealth", "mdpi.com", "hindawi.com",
                                "frontiersin.org", "nidcr.nih.gov"]):
@@ -978,11 +1616,7 @@ def delay_for_url(url):
 
 def scrape_page(url):
     # Inline records — no HTTP
-    inline_markers = ["|PUBMED_DENTAL|", "|OPENALEX_DENTAL|", "|CROSSREF_DENTAL|",
-                      "|DOAJ_DENTAL|", "|ZENODO_DENTAL|", "|S2_DENTAL|",
-                      "|EUROPEPMC_DENTAL|", "|MEDRXIV_DENTAL|", "|OSF_DENTAL|",
-                      "|FIGSHARE_DENTAL|", "|DAILYMED_DENTAL|"]
-    if any(m in url for m in inline_markers):
+    if any(m in url for m in INLINE_MARKERS):
         text = extract_inline_content(url)
         title = text.split("\n")[0] or "record"
         return {"title": title, "full_text": text}
@@ -1020,7 +1654,20 @@ def scrape_page(url):
 
 
 def url_to_filename(url):
-    if "fdiworlddental.org"        in url: prefix = "fdi"
+    # ── Overrides específicas — igual que en folder_for_url ─────────────────
+    if any(m in url for m in INLINE_MARKERS):
+        marker = next(m for m in INLINE_MARKERS if m in url)
+        prefix = marker.strip("|").lower()
+    elif "ada.org/resources/practice/practice-management" in url: prefix = "ada_practice_mgmt"
+    elif "ada.org/resources/practice/legal-and-regulatory/infection" in url: prefix = "ada_infection_control"
+    elif "ada.org/resources/research"      in url: prefix = "ada_evidence_guidelines"
+    elif "ada.org/resources/ada-library/oral-health-topics/x-rays" in url: prefix = "ada_radiation"
+    elif "ada.org/publications/cdt"        in url: prefix = "ada_cdt_metadata"
+    elif "iris.paho.org"                   in url: prefix = "paho_iris_ipc"
+    elif "nidcr.nih.gov/health-info"       in url: prefix = "nidcr_health_info"
+    elif "3shape.com"                      in url: prefix = "3shape"
+    elif "exocad.com"                      in url: prefix = "exocad"
+    elif "fdiworlddental.org"        in url: prefix = "fdi"
     elif "who.int"                 in url: prefix = "who_oral"
     elif "paho.org"                in url: prefix = "paho_oral"
     elif "iapd.org"                in url: prefix = "iapd"
@@ -1092,6 +1739,68 @@ def url_to_filename(url):
     elif "osf.io"                  in url: prefix = "osf_dent"
     elif "figshare.com"            in url: prefix = "figshare_dent"
     elif "jdentaled.org"           in url: prefix = "jdentaled"
+    # ── Nuevas (Inventario Maestro v2) ──────────────────────────────────────
+    elif "iso.org"                 in url: prefix = "iso_dental"
+    elif "unep.org"                in url: prefix = "unep_dental"
+    elif "consejodentistas.es"     in url: prefix = "consejo_dentistas_es"
+    elif "adm.org.mx"              in url: prefix = "adm_mx"
+    elif "cora.org.ar"             in url: prefix = "cora_ar"
+    elif "colegiodentistas.cl"     in url: prefix = "colegio_dentistas_cl"
+    elif "cgdent.uk"               in url: prefix = "cgdent_uk"
+    elif "rcseng.ac.uk"            in url: prefix = "rcs_england"
+    elif "medicinaoral.com"        in url: prefix = "j_clin_exp_dent"
+    elif "ejomr.org"                in url: prefix = "ejomr"
+    elif "sciencedirect.com"       in url: prefix = "sciencedirect_dent"
+    elif "onlinelibrary.wiley.com" in url: prefix = "wiley_dental"
+    elif "|UNPAYWALL_DENTAL|"      in url: prefix = "unpaywall_dent"
+    elif "|CORE_DENTAL|"           in url: prefix = "core_dent"
+    elif "|OPENAIRE_DENTAL|"       in url: prefix = "openaire_dent"
+    elif "medicine.uiowa.edu"      in url: prefix = "uiowa_oral"
+    elif "oralcancerfoundation.org" in url: prefix = "oral_cancer_fdn"
+    elif "|OPENFDA_DRUG|"          in url: prefix = "openfda_drug"
+    elif "|OPENFDA_510K|"          in url: prefix = "openfda_510k"
+    elif "|OPENFDA_MAUDE|"         in url: prefix = "openfda_maude"
+    elif "|OPENFDA_RECALL|"        in url: prefix = "openfda_recall"
+    elif "|RXNORM_DENTAL|"         in url: prefix = "rxnorm_dent"
+    elif "|PUBCHEM_DENTAL|"        in url: prefix = "pubchem_dent"
+    elif "nist.gov"                in url: prefix = "nist_materials"
+    elif "wfo.org"                 in url: prefix = "wfo_ortho"
+    elif "eacmfs.org"              in url: prefix = "eacmfs"
+    elif "aaed.com"                in url: prefix = "aaed"
+    elif "ecfr.gov"                in url: prefix = "ecfr_bloodborne"
+    elif "gov.uk"                  in url: prefix = "nhs_htm0105"
+    elif "iris.paho.org"           in url: prefix = "paho_iris_ipc"
+    elif "cms.gov"                 in url: prefix = "cms_hcpcs"
+    elif "|NLM_HCPCS|"             in url: prefix = "nlm_hcpcs"
+    elif "hhs.gov"                 in url: prefix = "hipaa"
+    elif "build.fhir.org"          in url: prefix = "hl7_fhir_dental"
+    elif "reposipot.imss.gob.mx"   in url: prefix = "imss_procedimiento"
+    elif "dentalhealth.org"        in url: prefix = "oral_health_fdn"
+    elif "healthdirect.gov.au"     in url: prefix = "healthdirect_au"
+    elif "betterhealth.vic.gov.au" in url: prefix = "better_health_vic"
+    elif "colgate.com"             in url: prefix = "colgate_metadata"
+    elif "dicom.nema.org"          in url: prefix = "dicom_standard"
+    elif "3shape.com"              in url: prefix = "3shape"
+    elif "itero.com"               in url: prefix = "itero"
+    elif "exocad.com"              in url: prefix = "exocad"
+    elif "open-ortho.org"          in url: prefix = "open_ortho"
+    elif "slicer.readthedocs.io"   in url: prefix = "slicer_docs"
+    elif "docs.monai.io"           in url: prefix = "monai_docs"
+    elif "itksnap.org"             in url: prefix = "itksnap_docs"
+    elif "opendental.com"          in url: prefix = "opendental"
+    elif "ddshub.nih.gov"          in url: prefix = "nidcr_dds_hub"
+    elif "openarchive.ki.se"       in url: prefix = "karolinska_open"
+    elif "ki.se"                   in url: prefix = "karolinska_dental"
+    elif "repositorio.unam.mx"     in url: prefix = "unam_repositorio"
+    elif "repositorio.ufes.br"     in url: prefix = "ufes_repositorio"
+    elif "repositorio.uam.es"      in url: prefix = "uam_biblos"
+    elif "teses.usp.br"            in url: prefix = "usp_teses"
+    elif "deepblue.lib.umich.edu"  in url: prefix = "umich_deep_blue"
+    elif "|BIORXIV_DENTAL|"        in url: prefix = "biorxiv_dent"
+    elif "|DATACITE_DENTAL|"       in url: prefix = "datacite_dent"
+    elif "|ARXIV_DENTAL|"          in url: prefix = "arxiv_dent"
+    elif "data.mendeley.com"       in url: prefix = "mendeley_dent"
+    elif "researchgate.net"        in url: prefix = "researchgate"
     else:                                  prefix = "dental"
     path = re.sub(r"[?=&|]", "_", url.split("//", 1)[-1]).replace("/", "__").strip("__")
     return f"{prefix}__{path[:180]}.txt"
