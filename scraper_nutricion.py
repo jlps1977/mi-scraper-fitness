@@ -174,7 +174,6 @@ DRIVE_CURATED_METAGENOMIC_DATA_ID   = "1JobDCK7x3vRuu01luNQrJL_8t-FF429O"
 DRIVE_MICROBIOMEDB_ID               = "1p7tubZ4EQPsvQ70Shy8fNFoY5kQrosst"
 DRIVE_DISBIOME_MICROBIOME_ID        = "19VNKRDNOQPLuvQZoRFIqznmoox6JVgBn"
 DRIVE_CAM_CANCER_SUMMARIES_ID       = "1DafF-OhX7pi_zFOovUAjhqlX3g-LE6-9"
-DRIVE_OPENALEX_NUTR_ID              = "1gyLi1_IkrlG3cEt0uq539D_JPW9-09Rk"   # openalex_nutricion
 
 PROGRESS_FILE = "progress_nutricion.json"
 
@@ -323,7 +322,6 @@ def folder_for_url(url):
     if "|CDN_OA|"                  in url:  return DRIVE_CURRENT_DEV_NUTRITION_ID
     if "|CNOS_OA|"                 in url:  return DRIVE_CLINICAL_NUTRITION_OPEN_ID
     if "|HYBRID_NUTR_OA|"          in url:  return DRIVE_HYBRID_NUTRITION_JOURNALS_OA_ID
-    if "|OPENALEX_NUTR|"           in url:  return DRIVE_OPENALEX_NUTR_ID
     if "|NUTR_METADATA|"           in url:  return DRIVE_NUTRICION_ROOT_ID  # sobreescrito por caller si aplica
     if "rivm.nl"                   in url:  return DRIVE_NEVO_NETHERLANDS_ID
     if "naehrwertdaten.ch"         in url:  return DRIVE_SWISS_FOOD_COMPOSITION_ID
@@ -450,11 +448,6 @@ def extract_inline_content(inline_str):
                  f"Biome: {data.get('biome_name','')}",
                  f"Samples: {data.get('samples_count','')}"]
         return "\n".join(lines)
-    if dtype == "OPENALEX_NUTR":
-        title = data.get("title", "Untitled")
-        doi = data.get("doi", "")
-        abstract = data.get("abstract", "")
-        return (f"{title}\n{'='*len(title)}\n\nURL: {url}\nDOI: {doi}\n\n{abstract}").strip()
     return json.dumps(data, ensure_ascii=False, indent=2)[:3000]
 
 
@@ -1030,53 +1023,6 @@ def fetch_hybrid_nutrition_journals_urls():
         urls += _fetch_crossref_unpaywall_oa(journal, "HYBRID_NUTR_OA")
     return urls
 
-# Segments via OpenAlex's Domain>Field>Subfield>Topic taxonomy (subfields/2916
-# = Nutrition and Dietetics -- note this sits under the "Nursing" field, not
-# Medicine or Health Professions, an OpenAlex taxonomy quirk) instead of a
-# hardcoded journal whitelist. See health-platform-knowledge-infrastructure
-# README for the domain-mapping rationale. Cursor-paginated.
-OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
-OPENALEX_MAX_RESULTS = 300  # per run; raise for a one-off catch-up
-
-
-def _openalex_reconstruct_abstract(inverted_index):
-    if not inverted_index:
-        return ""
-    positions = {}
-    for word, idxs in inverted_index.items():
-        for i in idxs:
-            positions[i] = word
-    return " ".join(positions[i] for i in sorted(positions))
-
-
-def fetch_openalex_nutr_urls():
-    urls = []
-    cursor = "*"
-    while cursor and len(urls) < OPENALEX_MAX_RESULTS:
-        params = {
-            "filter": "primary_topic.subfield.id:2916", "per-page": 100, "cursor": cursor,
-            "select": "id,doi,title,abstract_inverted_index",
-        }
-        if OPENALEX_API_KEY:
-            params["api_key"] = OPENALEX_API_KEY
-        try:
-            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
-            data = r.json()
-        except Exception:
-            break
-        works = data.get("results", [])
-        if not works:
-            break
-        for w in works:
-            doi = w.get("doi") or ""
-            title = w.get("title") or ""
-            wid = w.get("id", "").split("/")[-1]
-            abstract = _openalex_reconstruct_abstract(w.get("abstract_inverted_index"))
-            urls.append(f"https://openalex.org/works/{wid}|OPENALEX_NUTR|"
-                        f"{json.dumps({'title': title, 'doi': doi, 'abstract': abstract})}")
-        cursor = (data.get("meta") or {}).get("next_cursor")
-    return urls
-
 # C. Bases de composición — folders ya reservados, sin fetcher hasta ahora
 def fetch_afcd_australia_urls():
     return _crawl_one_level(
@@ -1350,7 +1296,6 @@ def get_all_urls():
     all_urls += _load_source("Current Developments in Nutrition (OA)", fn=fetch_current_dev_nutrition_oa_urls)
     all_urls += _load_source("Clinical Nutrition Open Science (OA)", fn=fetch_clinical_nutrition_open_oa_urls)
     all_urls += _load_source("Revistas híbridas nutrición (Crossref/Unpaywall)", fn=fetch_hybrid_nutrition_journals_urls)
-    all_urls += _load_source("OpenAlex Nutrición (Subfield 2916)", fn=fetch_openalex_nutr_urls)
     # F. Nutrición clínica — genuinamente nuevas
     all_urls += _load_source("KDOQI Kidney Nutrition",      fn=fetch_kdoqi_kidney_nutrition_urls)
     all_urls += _load_source("EASL Liver Nutrition",        fn=fetch_easl_liver_nutrition_urls)
@@ -1377,7 +1322,7 @@ def scrape_page(url):
     if "|FDC_FOOD|" in url or "|OFF_PRODUCT|" in url or "|NORWAY_FOOD|" in url \
             or "|LNHPD_PRODUCT|" in url or "|MGNIFY_STUDY|" in url \
             or "|CDN_OA|" in url or "|CNOS_OA|" in url or "|HYBRID_NUTR_OA|" in url \
-            or "|NUTR_METADATA|" in url or "|OPENALEX_NUTR|" in url:
+            or "|NUTR_METADATA|" in url:
         text = extract_inline_content(url)
         real_url = url.split("|")[0]
         return {"title": real_url.split("/")[-1][:80], "full_text": text}
@@ -1507,7 +1452,6 @@ def url_to_filename(url):
     elif "|CDN_OA|"                in url:      prefix = "current_dev_nutr_oa"
     elif "|CNOS_OA|"               in url:      prefix = "clin_nutr_open_oa"
     elif "|HYBRID_NUTR_OA|"        in url:      prefix = "hybrid_nutr_oa"
-    elif "|OPENALEX_NUTR|"         in url:      prefix = "openalex_nutr"
     elif "|NUTR_METADATA|"         in url:      prefix = "nutr_metadata"
     elif "rivm.nl"                 in base_url: prefix = "nevo_nl"
     elif "naehrwertdaten.ch"       in base_url: prefix = "swiss_food_comp"

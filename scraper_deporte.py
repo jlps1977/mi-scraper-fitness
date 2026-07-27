@@ -274,7 +274,6 @@ DRIVE_OLYMPIATOPPEN_NORWAY_ID     = "1qmHpAGjRZRPlOApyctzUah52PQkouRrk"
 DRIVE_BISP_GERMANY_ID             = "1ZvLDBERkM3bYLDpoahQnuA8aurn-0oSw"
 DRIVE_SFISM_SWITZERLAND_ID        = "1UIcvmSCl2pkUTtxChLNukpt7L0MyMPET"
 # Sección 14 — Bases de datos OA
-DRIVE_OPENALEX_API_ID             = "14qNeGccfzU2JpOHLxj8d6VA4ldznLyeb"
 DRIVE_CROSSREF_API_ID             = "1tc5mqyDn0J7ReUU6k0FnGf35f56Hc0ry"
 DRIVE_UNPAYWALL_API_ID            = "1dsjmbfTHs-hhkShXH3mTogTIm9XSiZLc"
 DRIVE_DOAJ_API_ID                 = "1lR_xWEH79siUkH1BBtsJy06S6JwCB9ny"
@@ -529,7 +528,6 @@ def folder_for_url(url):
     if "bisp.de"                in url:  return DRIVE_BISP_GERMANY_ID
     if "sfism.ch"               in url:  return DRIVE_SFISM_SWITZERLAND_ID
     # Sec 14 — Bases de datos OA
-    if "openalex.org"           in url:  return DRIVE_OPENALEX_API_ID
     if "doi.org" in url and "|CROSSREF|" in url: return DRIVE_CROSSREF_API_ID
     if "doaj.org"               in url:  return DRIVE_DOAJ_API_ID
     if "zenodo.org"             in url:  return DRIVE_ZENODO_API_ID
@@ -1262,54 +1260,6 @@ def fetch_sfism_switzerland_urls():
     return _crawl_one_level("https://www.sfism.ch/en/research/", "sfism.ch", delay=3.0)
 
 # Sección 14 — Bases de datos OA y repositorios
-# Segments via OpenAlex's Domain>Field>Subfield>Topic taxonomy instead of the
-# deprecated legacy /concepts id -- no dedicated "Sports Science" field exists,
-# so this unions the two closest subfields (same filter key -> pipe-OR works
-# in one call): Orthopedics and Sports Medicine (under Medicine) and Physical
-# Therapy/Sports Therapy/Rehabilitation (under Health Professions). See
-# health-platform-knowledge-infrastructure README for the domain-mapping
-# rationale. Cursor-paginated so a single run isn't capped at 200 results.
-OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
-OPENALEX_MAX_RESULTS = 300  # per run; raise for a one-off catch-up
-
-
-def _openalex_reconstruct_abstract(inverted_index):
-    if not inverted_index:
-        return ""
-    positions = {}
-    for word, idxs in inverted_index.items():
-        for i in idxs:
-            positions[i] = word
-    return " ".join(positions[i] for i in sorted(positions))
-
-
-def fetch_openalex_sport_urls():
-    urls = []
-    cursor = "*"
-    while cursor and len(urls) < OPENALEX_MAX_RESULTS:
-        params = {
-            "filter": "primary_topic.subfield.id:2732|3612", "per-page": 100, "cursor": cursor,
-            "select": "id,doi,title,abstract_inverted_index",
-        }
-        if OPENALEX_API_KEY:
-            params["api_key"] = OPENALEX_API_KEY
-        try:
-            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
-            data = r.json()
-        except Exception:
-            break
-        works = data.get("results", [])
-        if not works:
-            break
-        for w in works:
-            doi = w.get("doi") or ""
-            title = w.get("title") or ""
-            abstract = _openalex_reconstruct_abstract(w.get("abstract_inverted_index"))
-            urls.append(f"https://openalex.org/works/{w['id'].split('/')[-1]}|OPENALEX|"
-                        f"{json.dumps({'title': title, 'doi': doi, 'abstract': abstract})}")
-        cursor = (data.get("meta") or {}).get("next_cursor")
-    return urls
-
 def fetch_crossref_sport_urls():
     try:
         r = requests.get(
@@ -1410,8 +1360,7 @@ def extract_inline_content_deporte(inline_str):
         data = json.loads(json_str)
         title = data.get("title", "Untitled")
         doi = data.get("doi", "")
-        abstract = data.get("abstract", "")
-        return (f"{title}\n{'='*len(title)}\n\nURL: {url_part}\nDOI: {doi}\nType: {rtype}\n\n{abstract}").strip()
+        return f"{title}\n{'='*len(title)}\n\nURL: {url_part}\nDOI: {doi}\nType: {rtype}\n"
     except Exception:
         return inline_str
 
@@ -1681,7 +1630,6 @@ def get_all_urls():
     all_urls += _load_source("SFISM Switzerland",       fn=fetch_sfism_switzerland_urls)
 
     # Sección 14 — Bases de datos OA y repositorios
-    all_urls += _load_source("OpenAlex Sport",          fn=fetch_openalex_sport_urls)
     all_urls += _load_source("Crossref Sport",          fn=fetch_crossref_sport_urls)
     all_urls += _load_source("DOAJ Sport",              fn=fetch_doaj_sport_urls)
     all_urls += _load_source("Zenodo Sport",            fn=fetch_zenodo_sport_urls)
@@ -1708,7 +1656,7 @@ def delay_for_url(url):
                                "clearinghouseforsport", "sportsmedicineopen"]):
         return 2.0
     # API inline records — no HTTP request needed
-    if "|OPENALEX|" in url or "|CROSSREF|" in url or "|DOAJ|" in url \
+    if "|CROSSREF|" in url or "|DOAJ|" in url \
             or "|ZENODO|" in url or "|S2|" in url or "|SPORTRXIV|" in url:
         return 0.1
     return 1.5
@@ -1716,7 +1664,7 @@ def delay_for_url(url):
 
 def scrape_page(url):
     # Inline API records — no HTTP needed
-    if any(m in url for m in ["|OPENALEX|", "|CROSSREF|", "|DOAJ|", "|ZENODO|", "|S2|", "|SPORTRXIV|"]):
+    if any(m in url for m in ["|CROSSREF|", "|DOAJ|", "|ZENODO|", "|S2|", "|SPORTRXIV|"]):
         text = extract_inline_content_deporte(url)
         title = text.split("\n")[0] or "record"
         return {"title": title, "full_text": text}
@@ -1930,7 +1878,6 @@ def url_to_filename(url):
     elif "olympiatoppen.no"     in url:  prefix = "olympiatoppen"
     elif "bisp.de"              in url:  prefix = "bisp"
     elif "sfism.ch"             in url:  prefix = "sfism"
-    elif "openalex.org"         in url:  prefix = "openalex"
     elif "|CROSSREF|"           in url:  prefix = "crossref"
     elif "doaj.org"             in url:  prefix = "doaj"
     elif "zenodo.org"           in url:  prefix = "zenodo"

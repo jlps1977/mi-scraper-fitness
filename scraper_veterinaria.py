@@ -41,9 +41,6 @@ DRIVE_TAMU_ID       = "1PZHrQcf8DQGg59pUPWqYJ1bVndg-wgO5"   # texas_am_vet
 DRIVE_OSU_ID        = "17T52a-QfK8P-So9UKppeF78hmre6Bc6q"   # ohio_state_vet
 DRIVE_SYDNEY_ID     = "1-Rl1UMq8px1u3Jw8FugDrohZnNJDLS3X"   # sydney_vet
 
-# ── OpenAlex (Domain>Field>Subfield>Topic taxonomy segmentation) ─────────────
-DRIVE_OPENALEX_VET_ID          = "1ODS5jx8DlV3QVJuVS-Vz02nbzcCB-jxY"   # openalex_veterinaria
-
 # ── Drive IDs — batch 4 (90+ fuentes adicionales) ─────────────────────────────
 # A. Sociedades
 DRIVE_ECVIM_CONGRESS_ID        = "11GemfGD3L_Z01ifnHYeucGmMbXbQAcEH"
@@ -357,7 +354,6 @@ def folder_for_url(url):
     if "revistas.usp.br/bjvras" in url: return DRIVE_BJVRAS_BRAZIL_ID
     if "vetsci.org"         in url:  return DRIVE_JVS_KOREA_ID
     if "|HYBRID_VET_OA|"    in url:  return DRIVE_HYBRID_VET_JOURNALS_OA_ID
-    if "|OPENALEX_VET|"     in url:  return DRIVE_OPENALEX_VET_ID
     if "farad.org"          in url:  return DRIVE_FARAD_ID
     if "maff.go.jp/nval"    in url:  return DRIVE_NVAL_JAPAN_ID
     if "faang" in url and "data.faang.org" in url: return DRIVE_FAANG_DATA_PORTAL_ID
@@ -958,74 +954,6 @@ def fetch_bjvras_brazil_urls():
 def fetch_jvs_korea_urls():
     return _crawl_one_level("https://vetsci.org/", "vetsci.org", delay=2.5)
 
-# ── OpenAlex ────────────────────────────────────────────────────────────────
-# Segments the corpus using OpenAlex's own Domain>Field>Subfield>Topic
-# taxonomy instead of a hardcoded journal whitelist -- see
-# docs/drive-source-map.md / health-platform-knowledge-infrastructure README
-# for the full domain-mapping rationale. The Veterinary field (fields/34) is
-# narrow (only "Small Animals" + "Equine" subfields) and excludes general/
-# livestock/production-animal medicine, which OpenAlex instead classifies
-# under Agricultural and Biological Sciences > Animal Science and Zoology
-# (subfields/1103) -- both are queried and merged/deduped by work id since
-# OpenAlex doesn't support OR across different filter keys in one call.
-OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
-OPENALEX_MAX_RESULTS = 300  # per filter, per run; raise for a one-off catch-up
-
-
-def _openalex_reconstruct_abstract(inverted_index):
-    if not inverted_index:
-        return ""
-    positions = {}
-    for word, idxs in inverted_index.items():
-        for i in idxs:
-            positions[i] = word
-    return " ".join(positions[i] for i in sorted(positions))
-
-
-def _openalex_fetch_works(filter_str, max_results=OPENALEX_MAX_RESULTS):
-    """Cursor-paginated OpenAlex /works query, filtered by Domain/Field/Subfield/Topic id."""
-    results = []
-    cursor = "*"
-    while cursor and len(results) < max_results:
-        params = {
-            "filter": filter_str, "per-page": 100, "cursor": cursor,
-            "select": "id,doi,title,abstract_inverted_index",
-        }
-        if OPENALEX_API_KEY:
-            params["api_key"] = OPENALEX_API_KEY
-        try:
-            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
-            data = r.json()
-        except Exception:
-            break
-        works = data.get("results", [])
-        if not works:
-            break
-        for w in works:
-            results.append({
-                "id": w.get("id", "").split("/")[-1],
-                "doi": w.get("doi") or "",
-                "title": w.get("title") or "",
-                "abstract": _openalex_reconstruct_abstract(w.get("abstract_inverted_index")),
-            })
-            if len(results) >= max_results:
-                break
-        cursor = (data.get("meta") or {}).get("next_cursor")
-    return results
-
-
-def fetch_openalex_vet_urls():
-    works = {}
-    for filter_str in ("primary_topic.field.id:34", "primary_topic.subfield.id:1103"):
-        for w in _openalex_fetch_works(filter_str):
-            works.setdefault(w["id"], w)
-    return [
-        f"https://openalex.org/works/{w['id']}|OPENALEX_VET|"
-        f"{json.dumps({'title': w['title'], 'doi': w['doi'], 'abstract': w['abstract']})}"
-        for w in works.values()
-    ]
-
-
 HYBRID_VET_JOURNALS = [
     "Journal of Veterinary Internal Medicine", "Veterinary Medicine and Science",
     "Veterinary Record Open", "Journal of Feline Medicine and Surgery Open Reports",
@@ -1256,7 +1184,6 @@ def get_all_urls():
     all_urls += _load_source("Brazilian J Vet Research (USP)", fn=fetch_bjvras_brazil_urls)
     all_urls += _load_source("J Veterinary Science (Korea)", fn=fetch_jvs_korea_urls)
     all_urls += _load_source("Revistas híbridas veterinaria (Crossref/Unpaywall)", fn=fetch_hybrid_vet_journals_urls)
-    all_urls += _load_source("OpenAlex Veterinaria (Field 34 + Subfield 1103)", fn=fetch_openalex_vet_urls)
     # C — farmacología adicional
     all_urls += _load_source("FARAD",                      fn=fetch_farad_urls)
     all_urls += _load_source("National Vet Assay Lab Japón", fn=fetch_nval_japan_urls)
@@ -1276,7 +1203,7 @@ def get_all_urls():
 # ── Scraping de páginas HTML ───────────────────────────────────────────────────
 
 def scrape_page(url):
-    if "|HYBRID_VET_OA|" in url or "|VET_METADATA|" in url or "|OPENALEX_VET|" in url:
+    if "|HYBRID_VET_OA|" in url or "|VET_METADATA|" in url:
         real_url, marker, payload_str = url.split("|", 2)
         try:
             payload = json.loads(payload_str)
@@ -1421,7 +1348,6 @@ def url_to_filename(url):
     elif "nal.usda.gov"      in url:  prefix = "nal_animal"
     elif "hsa.org.uk"        in url:  prefix = "humane_slaughter"
     elif "|HYBRID_VET_OA|"   in url:  prefix = "hybrid_vet_oa"
-    elif "|OPENALEX_VET|"    in url:  prefix = "openalex_vet"
     elif "|VET_METADATA|"    in url:  prefix = "vet_metadata"
     elif "beva.org.uk"       in url:  prefix = "beva"
     elif "aaep.org"          in url:  prefix = "aaep"

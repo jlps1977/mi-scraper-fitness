@@ -98,7 +98,6 @@ DRIVE_CLINICAL_ORAL_INVEST_OA_ID  = "1OROYODHnyTlFvnzD7oudAAs6QznWe6Ak"
 
 # E. Bases de datos API
 DRIVE_PUBMED_DENTAL_ID            = "1Cxdwxpq_m8q0mdCiKnoDEZvRR24WhQBe"
-DRIVE_OPENALEX_DENTAL_ID          = "104dNS_yd1RrbV-GSVv83uNTNZjPvJctu"
 DRIVE_CROSSREF_DENTAL_ID          = "1i8SLgP19rZCbWiI_siAJA2FWzwxGVka7"
 DRIVE_DOAJ_DENTAL_ID              = "1ttjvwro4HxDUc7d54bPCSO-yENB5x2o2"
 DRIVE_ZENODO_DENTAL_ID            = "1CDF1MxSoLdGcejx7kyCCAiCYI6qbOCP5"
@@ -328,7 +327,6 @@ def folder_for_url(url):
     if "link.springer.com/journal/784" in url: return DRIVE_CLINICAL_ORAL_INVEST_OA_ID
     # E. Bases de datos API (inline)
     if "|PUBMED_DENTAL|"           in url: return DRIVE_PUBMED_DENTAL_ID
-    if "|OPENALEX_DENTAL|"         in url: return DRIVE_OPENALEX_DENTAL_ID
     if "|CROSSREF_DENTAL|"         in url: return DRIVE_CROSSREF_DENTAL_ID
     if "|DOAJ_DENTAL|"             in url: return DRIVE_DOAJ_DENTAL_ID
     if "|ZENODO_DENTAL|"           in url: return DRIVE_ZENODO_DENTAL_ID
@@ -710,53 +708,6 @@ def fetch_pubmed_dental_urls():
         except Exception:
             pass
     return all_urls
-
-# Segments via OpenAlex's Domain>Field>Subfield>Topic taxonomy (fields/35 =
-# Dentistry, a clean 1:1 match under the Health Sciences domain) instead of
-# the deprecated legacy /concepts fuzzy text search -- see
-# health-platform-knowledge-infrastructure README for the domain-mapping
-# rationale. Cursor-paginated so a single run isn't capped at 200 results.
-OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
-OPENALEX_MAX_RESULTS = 300  # per run; raise for a one-off catch-up
-
-
-def _openalex_reconstruct_abstract(inverted_index):
-    if not inverted_index:
-        return ""
-    positions = {}
-    for word, idxs in inverted_index.items():
-        for i in idxs:
-            positions[i] = word
-    return " ".join(positions[i] for i in sorted(positions))
-
-
-def fetch_openalex_dental_urls():
-    urls = []
-    cursor = "*"
-    while cursor and len(urls) < OPENALEX_MAX_RESULTS:
-        params = {
-            "filter": "primary_topic.field.id:35", "per-page": 100, "cursor": cursor,
-            "select": "id,doi,title,abstract_inverted_index",
-        }
-        if OPENALEX_API_KEY:
-            params["api_key"] = OPENALEX_API_KEY
-        try:
-            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
-            data = r.json()
-        except Exception:
-            break
-        works = data.get("results", [])
-        if not works:
-            break
-        for w in works:
-            doi = w.get("doi", "") or ""
-            title = w.get("title", "") or ""
-            wid = w.get("id", "").split("/")[-1]
-            abstract = _openalex_reconstruct_abstract(w.get("abstract_inverted_index"))
-            urls.append(f"https://openalex.org/works/{wid}|OPENALEX_DENTAL|"
-                        f"{json.dumps({'title': title, 'doi': doi, 'abstract': abstract})}")
-        cursor = (data.get("meta") or {}).get("next_cursor")
-    return urls
 
 def fetch_crossref_dental_urls():
     try:
@@ -1386,7 +1337,6 @@ def get_all_urls():
 
     # E. Bases de datos API
     all_urls += _load_source("PubMed Dental (MeSH)",      fn=fetch_pubmed_dental_urls)
-    all_urls += _load_source("OpenAlex Dental",           fn=fetch_openalex_dental_urls)
     all_urls += _load_source("Crossref Dental",           fn=fetch_crossref_dental_urls)
     all_urls += _load_source("DOAJ Dental",               fn=fetch_doaj_dental_urls)
     all_urls += _load_source("Zenodo Dental",             fn=fetch_zenodo_dental_urls)
@@ -1618,7 +1568,7 @@ def get_all_urls():
 
 # ── Scraping ───────────────────────────────────────────────────────────────────
 
-INLINE_MARKERS = ["|PUBMED_DENTAL|", "|OPENALEX_DENTAL|", "|CROSSREF_DENTAL|",
+INLINE_MARKERS = ["|PUBMED_DENTAL|", "|CROSSREF_DENTAL|",
                    "|DOAJ_DENTAL|", "|ZENODO_DENTAL|", "|S2_DENTAL|",
                    "|EUROPEPMC_DENTAL|", "|MEDRXIV_DENTAL|", "|OSF_DENTAL|",
                    "|FIGSHARE_DENTAL|", "|DAILYMED_DENTAL|",
@@ -1730,7 +1680,6 @@ def url_to_filename(url):
     elif "pubmed.ncbi"             in url: prefix = "pubmed_dent"
     elif "europepmc.org"           in url: prefix = "europepmc_dent"
     elif "|PUBMED_DENTAL|"         in url: prefix = "pubmed_dent"
-    elif "|OPENALEX_DENTAL|"       in url: prefix = "openalex_dent"
     elif "|CROSSREF_DENTAL|"       in url: prefix = "crossref_dent"
     elif "|DOAJ_DENTAL|"           in url: prefix = "doaj_dent"
     elif "|ZENODO_DENTAL|"         in url: prefix = "zenodo_dent"
