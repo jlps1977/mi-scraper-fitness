@@ -711,23 +711,52 @@ def fetch_pubmed_dental_urls():
             pass
     return all_urls
 
+# Segments via OpenAlex's Domain>Field>Subfield>Topic taxonomy (fields/35 =
+# Dentistry, a clean 1:1 match under the Health Sciences domain) instead of
+# the deprecated legacy /concepts fuzzy text search -- see
+# health-platform-knowledge-infrastructure README for the domain-mapping
+# rationale. Cursor-paginated so a single run isn't capped at 200 results.
+OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
+OPENALEX_MAX_RESULTS = 300  # per run; raise for a one-off catch-up
+
+
+def _openalex_reconstruct_abstract(inverted_index):
+    if not inverted_index:
+        return ""
+    positions = {}
+    for word, idxs in inverted_index.items():
+        for i in idxs:
+            positions[i] = word
+    return " ".join(positions[i] for i in sorted(positions))
+
+
 def fetch_openalex_dental_urls():
-    try:
-        r = requests.get(
-            "https://api.openalex.org/works",
-            params={"filter": "concepts.display_name.search:dentistry",
-                    "per-page": 200, "select": "id,doi,title,abstract_inverted_index"},
-            headers=HEADERS, timeout=30)
-        works = r.json().get("results", [])
-        urls = []
+    urls = []
+    cursor = "*"
+    while cursor and len(urls) < OPENALEX_MAX_RESULTS:
+        params = {
+            "filter": "primary_topic.field.id:35", "per-page": 100, "cursor": cursor,
+            "select": "id,doi,title,abstract_inverted_index",
+        }
+        if OPENALEX_API_KEY:
+            params["api_key"] = OPENALEX_API_KEY
+        try:
+            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
+            data = r.json()
+        except Exception:
+            break
+        works = data.get("results", [])
+        if not works:
+            break
         for w in works:
-            doi = w.get("doi", "")
-            title = w.get("title", "")
+            doi = w.get("doi", "") or ""
+            title = w.get("title", "") or ""
             wid = w.get("id", "").split("/")[-1]
-            urls.append(f"https://openalex.org/works/{wid}|OPENALEX_DENTAL|{json.dumps({'title': title, 'doi': doi})}")
-        return urls
-    except Exception:
-        return []
+            abstract = _openalex_reconstruct_abstract(w.get("abstract_inverted_index"))
+            urls.append(f"https://openalex.org/works/{wid}|OPENALEX_DENTAL|"
+                        f"{json.dumps({'title': title, 'doi': doi, 'abstract': abstract})}")
+        cursor = (data.get("meta") or {}).get("next_cursor")
+    return urls
 
 def fetch_crossref_dental_urls():
     try:

@@ -6,7 +6,7 @@ Se excluyen únicamente las que tienen paywall/WAF duro o robots.txt restrictivo
 Resumible: guarda progreso en progress_medicina.json
 """
 
-import json, re, time, xml.etree.ElementTree as ET
+import json, os, re, time, xml.etree.ElementTree as ET
 from urllib.parse import urljoin
 
 import requests
@@ -121,6 +121,7 @@ DRIVE_OPEN_TARGETS_ID          = "1IywWQxruGJ5WiWMx-3EBLhlQPucKfwGb"
 DRIVE_GWAS_CATALOG_ID          = "1uDz1mknjq4nqy8WiE1nXkXj5mZm2vm1X"
 DRIVE_MEDGEN_ID                = "14vNMfbI6d9uZ_5juRXfnsEBsmcDK5eXv"
 DRIVE_NCBI_GENE_ID             = "1wFX-XPD6hqHSmmOmiv4GMJz3TaG2_aEo"
+DRIVE_OPENALEX_MED_ID          = "1BvQtEvVgyBVeMUtYTEWiWaXTUxLEw1Gk"   # openalex_medicina_humana
 
 PROGRESS_FILE = "progress_medicina.json"
 
@@ -289,6 +290,7 @@ def folder_for_url(url):
     if "ebi.ac.uk/gwas"              in url:  return DRIVE_GWAS_CATALOG_ID
     if "ncbi.nlm.nih.gov/medgen"     in url:  return DRIVE_MEDGEN_ID
     if "ncbi.nlm.nih.gov/gene"       in url:  return DRIVE_NCBI_GENE_ID
+    if "|OPENALEX_MED|"              in url:  return DRIVE_OPENALEX_MED_ID
     return DRIVE_MEDICINA_ROOT_ID
 
 
@@ -881,6 +883,56 @@ def _load_source(name, sitemaps=None, fn=None):
     return urls
 
 
+# Segments via OpenAlex's Domain>Field>Subfield>Topic taxonomy: unions the
+# three Health Sciences fields other than Dentistry/Veterinary (Medicine,
+# Nursing, Health Professions -- same filter key, pipe-OR works in one call)
+# per the team's decision to cover the full Health Sciences scope for
+# MedicalOS, not just core clinical Medicine. See
+# health-platform-knowledge-infrastructure README for the domain-mapping
+# rationale. Cursor-paginated so a single run isn't capped.
+OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
+OPENALEX_MAX_RESULTS = 300  # per run; raise for a one-off catch-up
+
+
+def _openalex_reconstruct_abstract(inverted_index):
+    if not inverted_index:
+        return ""
+    positions = {}
+    for word, idxs in inverted_index.items():
+        for i in idxs:
+            positions[i] = word
+    return " ".join(positions[i] for i in sorted(positions))
+
+
+def fetch_openalex_med_urls():
+    urls = []
+    cursor = "*"
+    while cursor and len(urls) < OPENALEX_MAX_RESULTS:
+        params = {
+            "filter": "primary_topic.field.id:27|29|36", "per-page": 100, "cursor": cursor,
+            "select": "id,doi,title,abstract_inverted_index",
+        }
+        if OPENALEX_API_KEY:
+            params["api_key"] = OPENALEX_API_KEY
+        try:
+            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
+            data = r.json()
+        except Exception:
+            break
+        works = data.get("results", [])
+        if not works:
+            break
+        for w in works:
+            doi = w.get("doi") or ""
+            title = w.get("title") or ""
+            wid = w.get("id", "").split("/")[-1]
+            abstract = _openalex_reconstruct_abstract(w.get("abstract_inverted_index"))
+            urls.append(f"https://openalex.org/works/{wid}|OPENALEX_MED|"
+                        f"{json.dumps({'title': title, 'doi': doi, 'abstract': abstract})}")
+        cursor = (data.get("meta") or {}).get("next_cursor")
+    return urls
+
+
 def get_all_urls():
     all_urls = []
 
@@ -896,6 +948,7 @@ def get_all_urls():
     all_urls += _load_source("PAHO/OPS",                         fn=fetch_paho_urls)
     all_urls += _load_source("CDC MMWR",                         fn=fetch_mmwr_urls)
     all_urls += _load_source("NCBI Bookshelf (StatPearls etc.)", fn=fetch_ncbi_bookshelf_urls)
+    all_urls += _load_source("OpenAlex Medicina Humana (Fields 27|29|36)", fn=fetch_openalex_med_urls)
     all_urls += _load_source("WHO Publications",                 fn=fetch_who_urls)
     all_urls += _load_source("Frontiers Medicine",               fn=fetch_frontiers_medicine_urls)
     # APIs
@@ -1049,6 +1102,7 @@ def url_to_filename(url):
         ("api.fda.gov",                 "openfda"),
         ("fda.gov/regulatory",          "fda_guidance"),
         ("europepmc.org",               "epmc"),
+        ("openalex.org",                "openalex_med"),
         ("journals.plos.org",           "plos"),
         ("frontiersin.org",             "frontiers"),
         ("biomedcentral.com",           "bmc"),
@@ -1218,6 +1272,16 @@ def extract_inline_content(url_entry):
 
     if kind == "PREPRINT":
         return f"SOURCE: {url}\nTYPE: Preprint (NOT peer-reviewed)\n\n{data}"
+
+    if kind == "OPENALEX_MED":
+        try:
+            item = json.loads(data)
+            title = item.get("title", "Untitled")
+            doi = item.get("doi", "")
+            abstract = item.get("abstract", "")
+            return (f"{title}\n{'='*len(title)}\n\nURL: {url}\nDOI: {doi}\n\n{abstract}").strip()
+        except Exception:
+            return f"SOURCE: {url}\n{data}"
 
     return None
 

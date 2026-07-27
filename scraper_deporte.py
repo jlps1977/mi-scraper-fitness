@@ -1262,20 +1262,53 @@ def fetch_sfism_switzerland_urls():
     return _crawl_one_level("https://www.sfism.ch/en/research/", "sfism.ch", delay=3.0)
 
 # Sección 14 — Bases de datos OA y repositorios
+# Segments via OpenAlex's Domain>Field>Subfield>Topic taxonomy instead of the
+# deprecated legacy /concepts id -- no dedicated "Sports Science" field exists,
+# so this unions the two closest subfields (same filter key -> pipe-OR works
+# in one call): Orthopedics and Sports Medicine (under Medicine) and Physical
+# Therapy/Sports Therapy/Rehabilitation (under Health Professions). See
+# health-platform-knowledge-infrastructure README for the domain-mapping
+# rationale. Cursor-paginated so a single run isn't capped at 200 results.
+OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")
+OPENALEX_MAX_RESULTS = 300  # per run; raise for a one-off catch-up
+
+
+def _openalex_reconstruct_abstract(inverted_index):
+    if not inverted_index:
+        return ""
+    positions = {}
+    for word, idxs in inverted_index.items():
+        for i in idxs:
+            positions[i] = word
+    return " ".join(positions[i] for i in sorted(positions))
+
+
 def fetch_openalex_sport_urls():
-    try:
-        r = requests.get(
-            "https://api.openalex.org/works",
-            params={"filter": "concepts.id:C2524010", "per-page": 200, "select": "id,doi,title"},
-            headers=HEADERS, timeout=30)
-        works = r.json().get("results", [])
-        urls = []
+    urls = []
+    cursor = "*"
+    while cursor and len(urls) < OPENALEX_MAX_RESULTS:
+        params = {
+            "filter": "primary_topic.subfield.id:2732|3612", "per-page": 100, "cursor": cursor,
+            "select": "id,doi,title,abstract_inverted_index",
+        }
+        if OPENALEX_API_KEY:
+            params["api_key"] = OPENALEX_API_KEY
+        try:
+            r = requests.get("https://api.openalex.org/works", params=params, headers=HEADERS, timeout=30)
+            data = r.json()
+        except Exception:
+            break
+        works = data.get("results", [])
+        if not works:
+            break
         for w in works:
-            doi = w.get("doi")
-            urls.append(f"https://openalex.org/works/{w['id'].split('/')[-1]}|OPENALEX|{json.dumps({'title': w.get('title',''), 'doi': doi})}")
-        return urls
-    except Exception:
-        return []
+            doi = w.get("doi") or ""
+            title = w.get("title") or ""
+            abstract = _openalex_reconstruct_abstract(w.get("abstract_inverted_index"))
+            urls.append(f"https://openalex.org/works/{w['id'].split('/')[-1]}|OPENALEX|"
+                        f"{json.dumps({'title': title, 'doi': doi, 'abstract': abstract})}")
+        cursor = (data.get("meta") or {}).get("next_cursor")
+    return urls
 
 def fetch_crossref_sport_urls():
     try:
@@ -1377,7 +1410,8 @@ def extract_inline_content_deporte(inline_str):
         data = json.loads(json_str)
         title = data.get("title", "Untitled")
         doi = data.get("doi", "")
-        return f"{title}\n{'='*len(title)}\n\nURL: {url_part}\nDOI: {doi}\nType: {rtype}\n"
+        abstract = data.get("abstract", "")
+        return (f"{title}\n{'='*len(title)}\n\nURL: {url_part}\nDOI: {doi}\nType: {rtype}\n\n{abstract}").strip()
     except Exception:
         return inline_str
 
