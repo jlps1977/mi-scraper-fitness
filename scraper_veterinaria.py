@@ -1,9 +1,25 @@
 """
-Scraper veterinario completo — 90+ fuentes
+Scraper veterinario completo — 124 fuentes
 Incluye: manuales, organizaciones, guías, farmacología, toxicología,
 revistas OA, universidades, organizaciones regionales, bases de datos
 clínicas/genéticas/epidemiológicas, y nutrición/bienestar animal.
-Resumible: guarda progreso en progress_vet.json
+Resumible: guarda progreso en progress_vet.json (o progress_vet_shardNofM.json
+si se corre en modo sharding, ver abajo).
+
+Paralelizar en dos (o más) computadoras SIN duplicar trabajo:
+Cada fuente tiene un índice fijo según el orden en que aparece en
+get_all_urls(). Con VET_SHARD_COUNT/VET_SHARD_ID cada máquina procesa
+solo las fuentes que le tocan (idx % SHARD_COUNT == SHARD_ID - 1) y se
+salta el resto — no vuelve a pedir sitemaps ni sube archivos de las
+fuentes de la otra máquina, así que no hay carga doble a los sitios ni
+archivos duplicados en Drive.
+
+Máquina 1:
+    VET_SHARD_ID=1 VET_SHARD_COUNT=2 .venv/bin/python scraper_veterinaria.py
+Máquina 2:
+    VET_SHARD_ID=2 VET_SHARD_COUNT=2 .venv/bin/python scraper_veterinaria.py
+
+Sin esas variables (o VET_SHARD_COUNT=1) corre como siempre, sin dividir.
 """
 import os, json, time, random, re, requests
 from bs4 import BeautifulSoup
@@ -11,6 +27,15 @@ from xml.etree import ElementTree as ET
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 from google.oauth2.credentials import Credentials
+
+# ── Sharding (paralelizar entre varias computadoras) ────────────────────────────
+VET_SHARD_COUNT = max(1, int(os.getenv("VET_SHARD_COUNT", "1")))
+VET_SHARD_ID    = int(os.getenv("VET_SHARD_ID", "1"))
+if not (1 <= VET_SHARD_ID <= VET_SHARD_COUNT):
+    raise SystemExit(
+        f"VET_SHARD_ID={VET_SHARD_ID} inválido: debe estar entre 1 y "
+        f"VET_SHARD_COUNT={VET_SHARD_COUNT}."
+    )
 
 # ── Drive IDs ──────────────────────────────────────────────────────────────────
 
@@ -155,7 +180,10 @@ DRIVE_SHELTER_ANIMALS_COUNT_ID = "119cPcb5MHpd71n0vSxU3o6Nqf8go2lFA"
 # "Veterinary Breed Ontology" y "UK VIDA surveillance" reutilizan folders ya
 # existentes (DRIVE_VBO_BREEDS_ID, DRIVE_UK_VIDA_ID) que estaban huérfanos/rotos.
 
-PROGRESS_FILE = "progress_vet.json"
+PROGRESS_FILE = (
+    "progress_vet.json" if VET_SHARD_COUNT <= 1
+    else f"progress_vet_shard{VET_SHARD_ID}of{VET_SHARD_COUNT}.json"
+)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -1031,8 +1059,19 @@ def fetch_shelter_animals_count_urls():
 
 # ── Carga de todas las URLs ────────────────────────────────────────────────────
 
+_source_counter = {"n": 0}
+
 def _load_source(name, sitemaps=None, fn=None):
-    """Helper: carga URLs desde lista de sitemaps o función, imprime resultado."""
+    """Helper: carga URLs desde lista de sitemaps o función, imprime resultado.
+    En modo sharding, cada fuente tiene un índice fijo (orden de llamada) y se
+    procesa solo en la máquina a la que le toca; las demás la omiten sin
+    pedir nada a su sitio ni tocar su carpeta de Drive."""
+    idx = _source_counter["n"]
+    _source_counter["n"] += 1
+    if VET_SHARD_COUNT > 1 and (idx % VET_SHARD_COUNT) != (VET_SHARD_ID - 1):
+        print(f"[shard {VET_SHARD_ID}/{VET_SHARD_COUNT}] Omitiendo {name} "
+              f"(fuente #{idx}, le toca a la máquina {(idx % VET_SHARD_COUNT) + 1})", flush=True)
+        return []
     print(f"Cargando {name}...", flush=True)
     urls = []
     if sitemaps:
