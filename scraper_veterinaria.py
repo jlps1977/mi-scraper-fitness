@@ -1,5 +1,5 @@
 """
-Scraper veterinario completo — 124 fuentes
+Scraper veterinario completo — 125 fuentes
 Incluye: manuales, organizaciones, guías, farmacología, toxicología,
 revistas OA, universidades, organizaciones regionales, bases de datos
 clínicas/genéticas/epidemiológicas, y nutrición/bienestar animal.
@@ -280,13 +280,19 @@ def folder_for_url(url):
     if "aaha.org"           in url:  return DRIVE_AAHA_ID
     # ── batch 4 ───────────────────────────────────────────────────────────────
     # A. Sociedades
-    if "ecvim.org"          in url:  return DRIVE_ECVIM_CONGRESS_ID
+    # BUGFIX 2026-07-29: "ecvim.org" nunca fue un substring real de
+    # "ecvim-ca.org" (el dominio que usaba el fetcher) ni de "ecvim-ca.college"
+    # (el dominio real actual) -- esta regla nunca hizo match, era dead code.
+    if "ecvim-ca.college"   in url:  return DRIVE_ECVIM_CONGRESS_ID
     if "esccap.org"         in url:  return DRIVE_ESCCAP_ID
     if "capcvet.org"        in url:  return DRIVE_CAPC_ID
     if "troccap.com"        in url:  return DRIVE_TROCCAP_ID
     if "abcdcatsvets.org"   in url:  return DRIVE_ABCD_CATS_ID
     if "iscaid.org"         in url:  return DRIVE_ISCAID_ID
-    if "veccs.org"          in url or "recover-cpr.org" in url: return DRIVE_VECCS_RECOVER_ID
+    # BUGFIX 2026-07-29: "recover-cpr.org" nunca resuelve; se agrega el
+    # dominio real recoverinitiative.org (se deja recover-cpr.org por si
+    # algún progress.json viejo aún tiene URLs con ese dominio).
+    if "veccs.org"          in url or "recover-cpr.org" in url or "recoverinitiative.org" in url: return DRIVE_VECCS_RECOVER_ID
     if "fecava.org"         in url:  return DRIVE_FECAVA_ID
     if "catvets.com"        in url:  return DRIVE_AAFP_FELINE_ID
     if "laveccs.org"        in url:  return DRIVE_LAVECCS_ID
@@ -295,7 +301,9 @@ def folder_for_url(url):
     if "wavma.org"          in url:  return DRIVE_WAVMA_ID
     if "aasv.org"           in url:  return DRIVE_AASV_ID
     if "aabp.org"           in url:  return DRIVE_AABP_ID
-    if "associationofavianvets.org" in url: return DRIVE_AAV_AVIAN_ID
+    # BUGFIX 2026-07-29: "associationofavianvets.org" no resuelve; el dominio
+    # real es aav.org (se deja el viejo por compatibilidad con progreso ya guardado).
+    if "associationofavianvets.org" in url or "aav.org" in url: return DRIVE_AAV_AVIAN_ID
     # B. Revistas OA adicionales
     if "europepmc.org"      in url:  return DRIVE_EUROPE_PMC_VET_ID
     if "veterinaryworld.org" in url: return DRIVE_VETERINARY_WORLD_ID
@@ -307,15 +315,25 @@ def folder_for_url(url):
     if "bmcvetres.biomedcentral.com" in url: return DRIVE_BMC_VET_RESEARCH_ID
     if "parasitesandvectors.com" in url: return DRIVE_PARASITES_VECTORS_VET_ID
     # C. Farmacología veterinaria
+    # BUGFIX 2026-07-29: "vmd.defra.gov.uk/varss" (más específica) estaba
+    # DESPUÉS de "vmd.defra.gov.uk" (más genérica) -- como toda URL de VARSS
+    # también contiene "vmd.defra.gov.uk", la regla genérica la interceptaba
+    # primero y DRIVE_UK_VARSS_ID quedaba huérfana. Se reordena: específica
+    # antes que genérica.
+    if "vmd.defra.gov.uk/varss" in url: return DRIVE_UK_VARSS_ID
     if "vmd.defra.gov.uk"   in url:  return DRIVE_VMD_UK_ID
     if "apvma.gov.au"       in url:  return DRIVE_APVMA_AUSTRALIA_ID
     if "epa.govt.nz"        in url or "acvm.govt.nz" in url: return DRIVE_ACVM_NEWZEALAND_ID
     if "canada.ca/en/health-canada" in url and "vet" in url: return DRIVE_HEALTH_CANADA_VET_ID
-    if "vmd.defra.gov.uk/varss" in url: return DRIVE_UK_VARSS_ID
     if "pharmacovigilance" in url and "vet" in url: return DRIVE_UK_VET_PHARMACOVIGILANCE_ID
     if "drugcentral.org"    in url:  return DRIVE_DRUGCENTRAL_VET_ID
     if "ebi.ac.uk/chembl"   in url or "chembl.org" in url: return DRIVE_CHEMBL_VET_ID
     # D. Universidades adicionales
+    # BUGFIX 2026-07-29: VetCompass ahora vive bajo rvc.ac.uk/vetcompass; se
+    # necesita esta regla específica ANTES de la genérica "rvc.ac.uk" de
+    # abajo, si no toda su URL se iría a DRIVE_RVC_LONDON_ID y
+    # DRIVE_VETCOMPASS_ID quedaría huérfana.
+    if "rvc.ac.uk/vetcompass" in url: return DRIVE_VETCOMPASS_ID
     if "rvc.ac.uk"          in url:  return DRIVE_RVC_LONDON_ID
     if "ed.ac.uk"           in url and "vet" in url: return DRIVE_EDINBURGH_VET_ID
     if "unimelb.edu.au"     in url and "vet" in url: return DRIVE_MELBOURNE_VET_ID
@@ -323,9 +341,21 @@ def folder_for_url(url):
     if "uoguelph.ca"        in url:  return DRIVE_GUELPH_OVC_ID
     if "vetmeduni.ac.at"    in url:  return DRIVE_VETMEDUNI_VIENNA_ID
     if "liverpool.ac.uk"    in url and ("vet" in url or "savsnet" in url): return DRIVE_LIVERPOOL_SAVSNET_ID
+    # BUGFIX 2026-07-29: "vetsrev.nottingham.ac.uk" (más específica, ver
+    # sección F más abajo) estaba DESPUÉS de "nottingham.ac.uk"+"vet" (más
+    # genérica) -- toda URL de VetSRev contiene "nottingham.ac.uk" Y "vet"
+    # (de "vetsrev"), así que la genérica la interceptaba primero y
+    # DRIVE_VETSREV_ID quedaba huérfana. Se adelanta aquí.
+    if "vetsrev.nottingham.ac.uk" in url: return DRIVE_VETSREV_ID
     if "nottingham.ac.uk"   in url and "vet" in url: return DRIVE_NOTTINGHAM_CEVM_ID
     if "cfsph.iastate.edu"  in url:  return DRIVE_IOWA_CFSPH_ID
     if "cahfs.umn.edu"      in url:  return DRIVE_MINNESOTA_CAHFS_ID
+    # BUGFIX 2026-07-29: el blog Petfoodology se mudó a
+    # sites.tufts.edu/petfoodology; esta regla específica debe ir ANTES de
+    # la genérica "tufts.edu"+"vet" de abajo (algunos posts de Petfoodology
+    # tienen "veterinary" en el slug, lo que también matchea esa genérica y
+    # dejaría huérfana la carpeta dedicada).
+    if "sites.tufts.edu/petfoodology" in url: return DRIVE_TUFTS_PETFOODOLOGY_ID
     if "tufts.edu"          in url and "vet" in url: return DRIVE_TUFTS_VET_ID
     if "gla.ac.uk"          in url and "vet" in url: return DRIVE_GLASGOW_VET_ID
     if "bristol.ac.uk"      in url and "vet" in url: return DRIVE_BRISTOL_VET_ID
@@ -334,15 +364,24 @@ def folder_for_url(url):
     if "ava.com.au"         in url:  return DRIVE_AVA_AUSTRALIA_ID
     if "cahss.org"          in url:  return DRIVE_CAHSS_CANADA_ID
     if "inspection.canada.ca" in url or "inspection.gc.ca" in url: return DRIVE_CFIA_ANIMAL_HEALTH_ID
-    if "apha.gov.uk"        in url:  return DRIVE_UK_APHA_ID
+    # BUGFIX 2026-07-29: "apha.gov.uk" nunca existió como dominio real; APHA
+    # vive bajo gov.uk. Se corrige a la ruta real del organismo.
+    if "animal-and-plant-health-agency" in url: return DRIVE_UK_APHA_ID
+    # BUGFIX 2026-07-29: "nahms.usda.gov" no resuelve; NAHMS se consolidó
+    # bajo aphis.usda.gov/livestock-poultry-disease/nahms. Esta regla
+    # específica debe ir ANTES de la genérica "aphis.usda.gov" de abajo, si
+    # no toda URL de NAHMS se iría a DRIVE_USDA_APHIS_VET_ID y
+    # DRIVE_USDA_NAHMS_ID quedaría huérfana (se deja también el dominio
+    # viejo por compatibilidad con progreso ya guardado).
+    if "livestock-poultry-disease/nahms" in url or "nahms.usda.gov" in url: return DRIVE_USDA_NAHMS_ID
     if "aphis.usda.gov"     in url:  return DRIVE_USDA_APHIS_VET_ID
-    if "nahms.usda.gov"     in url:  return DRIVE_USDA_NAHMS_ID
     if "ec.europa.eu"       in url and "animal" in url: return DRIVE_EC_ANIMAL_HEALTH_ID
     if "animalhealthaustralia.com.au" in url: return DRIVE_AHA_AUSTRALIA_ID
     if "agriculture.vic.gov.au" in url: return DRIVE_AGRICULTURE_VICTORIA_ID
     if "animalhealthireland.ie" in url: return DRIVE_ANIMAL_HEALTH_IRELAND_ID
     # F. Bases de datos
-    if "vetsrev.nottingham.ac.uk" in url: return DRIVE_VETSREV_ID
+    # (la regla de VetSRev se adelantó arriba, junto a Nottingham CEVM, para
+    # evitar que quedara huérfana -- ver BUGFIX 2026-07-29 más arriba)
     if "omia.org"           in url:  return DRIVE_OMIA_ID
     if "vetbact.org"        in url:  return DRIVE_VETBACT_ID
     if "vetcompass.org"     in url:  return DRIVE_VETCOMPASS_ID
@@ -364,7 +403,13 @@ def folder_for_url(url):
     if "awionline.org"      in url or "awin-site.org" in url: return DRIVE_AWIN_WELFARE_ID
     if "icam-coalition.org" in url:  return DRIVE_ICAM_COALITION_ID
     if "ufaw.org.uk"        in url:  return DRIVE_UFAW_ID
-    if "nal.usda.gov"       in url and "animal" in url: return DRIVE_NAL_ANIMAL_HEALTH_ID
+    # BUGFIX 2026-07-29: se quitó el requisito "and 'animal' in url" -- el
+    # nuevo seed real ("/programs/awic") también trae de vuelta navegación
+    # genérica del sitio (about-the-library, collections, etc.) que no
+    # contiene la palabra "animal", y como este es el único fetcher que usa
+    # nal.usda.gov en todo el archivo, no hay riesgo de que otra fuente se
+    # confunda con esta regla más amplia.
+    if "nal.usda.gov"       in url: return DRIVE_NAL_ANIMAL_HEALTH_ID
     if "hsa.org.uk"         in url or "humane-slaughter.org" in url: return DRIVE_HUMANE_SLAUGHTER_ID
 
     # ── Nuevas (Inventario Complementario 2026-07-26) ───────────────────────────
@@ -420,11 +465,23 @@ def fetch_urls_from_sitemap(url):
 
 
 def _fetch_sitemap_index_urls(index_url, url_filter=None, delay=0.5):
-    """Descarga un sitemap-index, luego cada sub-sitemap; filtra con url_filter."""
+    """Descarga un sitemap-index, luego cada sub-sitemap; filtra con url_filter.
+    BUGFIX 2026-07-29: antes, si UN solo sub-sitemap fallaba (timeout, WAF
+    intermitente, etc.) la excepción se propagaba y se perdían TODAS las
+    URLs ya acumuladas de los sub-sitemaps anteriores que sí habían
+    funcionado (se detectó con RVC London: 31 minutos acumulando timeouts
+    intermitentes y terminando en count=0 pese a haber tenido sub-sitemaps
+    exitosos). Ahora cada sub-sitemap se envuelve en su propio try/except,
+    igual que ya hacía _load_source() con su lista de `sitemaps=`."""
     sub_sitemaps = fetch_urls_from_sitemap(index_url)
     all_urls = []
     for sm in sub_sitemaps:
-        urls = fetch_urls_from_sitemap(sm)
+        try:
+            urls = fetch_urls_from_sitemap(sm)
+        except Exception as e:
+            print(f"    ERROR sub-sitemap {sm.split('/')[-1]}: {e}", flush=True)
+            time.sleep(delay)
+            continue
         if url_filter:
             urls = [u for u in urls if url_filter(u)]
         all_urls.extend(urls)
@@ -532,7 +589,15 @@ def fetch_frontiers_vet_urls():
 
 
 def _crawl_one_level(seed, domain_prefix, delay=2.0):
-    """Crawl de 1 nivel: recoge todos los links del seed dentro del mismo dominio."""
+    """Crawl de 1 nivel: recoge todos los links del seed dentro del mismo dominio.
+    BUGFIX 2026-07-29: los links absolutos reales en HTML vienen como
+    href="https://www.dominio.org/pagina" -- eso NUNCA empieza literalmente
+    con domain_prefix (que no lleva protocolo/www), así que la condición
+    original `href.startswith(domain_prefix)` casi nunca hacía match y solo
+    se capturaban los links relativos ("/algo"). Muchas fuentes (LAVECCS,
+    CIDD, FARAD, FAANG, VetCompass, ICAM, UFAW, etc.) usan enlaces internos
+    absolutos y devolvían count=1 (solo la seed URL) por este motivo. Ahora
+    se detecta domain_prefix como substring de cualquier href absoluto."""
     visited = set()
     try:
         r = requests.get(seed, headers=HEADERS, timeout=20)
@@ -540,8 +605,10 @@ def _crawl_one_level(seed, domain_prefix, delay=2.0):
         soup = BeautifulSoup(r.text, "html.parser")
         for a in soup.find_all("a", href=True):
             href = a["href"].split("#")[0].split("?")[0]
-            if href.startswith(domain_prefix):
-                visited.add(href if href.startswith("http") else "https://" + href.lstrip("/"))
+            if href.startswith("http") and domain_prefix in href:
+                visited.add(href)
+            elif href.startswith(domain_prefix):
+                visited.add("https://" + href.lstrip("/"))
             elif href.startswith("/") and domain_prefix in seed:
                 base = seed.split("/")[0] + "//" + seed.split("/")[2]
                 visited.add(base + href)
@@ -577,6 +644,15 @@ def fetch_tvp_urls():
 
 
 def fetch_fao_animal_health_urls():
+    # NOTA (2026-07-29): FAO_SITEMAP_INDEX ("https://www.fao.org/sitemap.xml")
+    # redirige (301) a "https://www.fao.org/home/404" -- ruta muerta. El
+    # robots.txt de fao.org solo lista sitemaps temáticos específicos
+    # (newsroom, ectad, americas, director-general, europe, world-food-day),
+    # ninguno claramente "animal health" general; se probó el de ECTAD
+    # (Emergency Centre for Transboundary Animal Diseases, el más afín) y
+    # también da 404. No se encontró un sitemap de reemplazo verificado que
+    # cubra todo animal-health/animal-disease/animal-production -- se deja
+    # como TODO en vez de adivinar. Necesita más investigación.
     return _fetch_sitemap_index_urls(
         FAO_SITEMAP_INDEX,
         url_filter=lambda u: "animal-health" in u or "animal-disease" in u or "animal-production" in u,
@@ -593,6 +669,11 @@ def fetch_purdue_vet_urls():
 
 
 def fetch_tamu_vet_urls():
+    # Confirmado bloqueado por WAF (2026-07-29): con un User-Agent de
+    # navegador normal (el mismo HEADERS de este scraper) vetmed.tamu.edu
+    # devuelve 403 en TODO el dominio, incluido el homepage; con el
+    # User-Agent por defecto de curl sí deja pasar. Es un bloqueo activo
+    # basado en User-Agent -- no evadir cambiando el header para esquivarlo.
     return _fetch_sitemap_index_urls(TAMU_SITEMAP_INDEX, delay=1.0)
 
 
@@ -604,7 +685,10 @@ def fetch_osu_vet_urls():
 
 # A. Sociedades
 def fetch_ecvim_urls():
-    return _crawl_one_level("https://www.ecvim-ca.org/congress/proceedings", "ecvim-ca.org", delay=3.0)
+    # BUGFIX 2026-07-29: ecvim-ca.org sirve un certificado TLS para
+    # "ecvim-ca.college" (hostname mismatch) -- el colegio migró de dominio.
+    # Verificado en vivo: ecvim-ca.college responde 200 con el sitio real.
+    return _crawl_one_level("https://ecvim-ca.college/", "ecvim-ca.college", delay=3.0)
 
 def fetch_esccap_urls():
     return _crawl_one_level("https://www.esccap.org/guidelines/", "esccap.org", delay=3.0)
@@ -619,11 +703,17 @@ def fetch_abcd_cats_urls():
     return _crawl_one_level("https://www.abcdcatsvets.org/guidelines/", "abcdcatsvets.org", delay=3.0)
 
 def fetch_iscaid_urls():
+    # Confirmado bloqueado por WAF a nivel de dominio (2026-07-29): tanto la
+    # página de guidelines como el homepage devuelven 403 "Forbidden" con el
+    # mismo User-Agent de navegador normal. No evadir.
     return _crawl_one_level("https://www.iscaid.org/guidelines/", "iscaid.org", delay=3.0)
 
 def fetch_veccs_recover_urls():
     urls = _crawl_one_level("https://www.veccs.org/education/", "veccs.org", delay=3.0)
-    urls += _crawl_one_level("https://www.recover-cpr.org/guidelines/", "recover-cpr.org", delay=3.0)
+    # BUGFIX 2026-07-29: "recover-cpr.org" nunca resuelve (NXDOMAIN); el
+    # dominio real del RECOVER Initiative (REassessment Campaign On
+    # VEterinary CPR) es recoverinitiative.org. Verificado en vivo.
+    urls += _crawl_one_level("https://recoverinitiative.org/", "recoverinitiative.org", delay=3.0)
     return urls
 
 def fetch_fecava_urls():
@@ -639,7 +729,9 @@ def fetch_cvma_urls():
     return _crawl_one_level("https://www.canadianveterinarians.net/policy-and-outreach/", "canadianveterinarians.net", delay=3.0)
 
 def fetch_nzva_urls():
-    return _crawl_one_level("https://www.nzva.org.nz/page/resources", "nzva.org.nz", delay=3.0)
+    # BUGFIX 2026-07-29: "/page/resources" da 404; la sección real de
+    # recursos clínicos es "/clinical-resources" (verificado en vivo).
+    return _crawl_one_level("https://www.nzva.org.nz/clinical-resources", "nzva.org.nz", delay=3.0)
 
 def fetch_wavma_urls():
     return _crawl_one_level("https://www.wavma.org/", "wavma.org", delay=3.0)
@@ -648,10 +740,18 @@ def fetch_aasv_urls():
     return _crawl_one_level("https://www.aasv.org/pages/aasv_resources.php", "aasv.org", delay=3.0)
 
 def fetch_aabp_urls():
-    return _crawl_one_level("https://www.aabp.org/resources/", "aabp.org", delay=3.0)
+    # BUGFIX 2026-07-29: "/resources/" da 403 (IIS "Detailed Error", ruta
+    # inexistente); la página real de guías/position statements es
+    # "/about/Guidelines_PositionStatements.asp" (verificado en vivo).
+    return _crawl_one_level("https://www.aabp.org/about/Guidelines_PositionStatements.asp", "aabp.org", delay=3.0)
 
 def fetch_aav_avian_urls():
-    return _crawl_one_level("https://www.associationofavianvets.org/resources", "associationofavianvets.org", delay=3.0)
+    # BUGFIX 2026-07-29: "associationofavianvets.org" no resuelve (NXDOMAIN).
+    # El dominio real de la Association of Avian Veterinarians es aav.org.
+    # Confirmado bloqueado por WAF a nivel de dominio (Cloudflare "Just a
+    # moment", homepage incluido) -- no evadir; se deja el dominio corregido
+    # por si el bloqueo cambia, pero hoy devuelve ~0 URLs igual.
+    return _crawl_one_level("https://aav.org/", "aav.org", delay=3.0)
 
 # B. Revistas OA adicionales
 def fetch_europe_pmc_vet_urls():
@@ -678,15 +778,36 @@ def fetch_europe_pmc_vet_urls():
     return urls
 
 def fetch_veterinary_world_urls():
-    return _fetch_sitemap_index_urls("https://www.veterinaryworld.org/sitemap-index.xml", delay=1.0)
+    # BUGFIX 2026-07-29: "www.veterinaryworld.org/sitemap-index.xml" da 404
+    # (según su propio robots.txt el sitemap real es
+    # "veterinaryworld.org/sitemap.xml", sin "www." y sin "-index"). Además
+    # es un sitemap PLANO (lista artículos directamente, no es un índice de
+    # sub-sitemaps), así que hay que leerlo con fetch_urls_from_sitemap()
+    # directo en vez de _fetch_sitemap_index_urls(). Verificado en vivo:
+    # ~10,064 URLs reales.
+    return fetch_urls_from_sitemap("https://veterinaryworld.org/sitemap.xml")
 
 def fetch_veterinary_evidence_urls():
+    # Confirmado (2026-07-29): el dominio no responde -- timeout de conexión
+    # incluso a nivel TCP (DNS resuelve bien, pero el servidor no contesta).
+    # Parece estar caído; no es un bug de código. Revisar más adelante.
     return _crawl_one_level("https://veterinaryevidence.org/index.php/ve", "veterinaryevidence.org", delay=2.0)
 
 def fetch_open_vet_journal_urls():
+    # NOTA (2026-07-29): benthamopen.com/TOVETJ/ ahora redirige a
+    # benthamopenarchives.com/journal-details.php?jid=TOVETJ (archivo de
+    # revistas descontinuadas de Bentham), pero esa página no expone listado
+    # de artículos crawleable con un nivel simple (requiere navegación/JS).
+    # No se encontró un reemplazo verificado con contenido real -- se deja
+    # como está. Necesita más investigación.
     return _crawl_one_level("https://benthamopen.com/TOVETJ/", "benthamopen.com", delay=2.0)
 
 def fetch_jstage_jvms_urls():
+    # NOTA (2026-07-29): "/sitemap/jvms.xml" da 403 (bloqueado específicamente
+    # esa ruta), pero páginas normales como "/browse/jvms" sí cargan (200).
+    # No se cambió a crawl porque un crawl de 1 nivel sobre /browse/jvms
+    # probablemente solo da links de volúmenes/números, no artículos
+    # individuales -- necesitaría un crawl más profundo. Deja TODO.
     return _fetch_sitemap_index_urls(
         "https://www.jstage.jst.go.jp/sitemap/jvms.xml",
         url_filter=lambda u: "/jvms/" in u,
@@ -738,38 +859,69 @@ def fetch_vmd_uk_urls():
     return _crawl_one_level("https://www.vmd.defra.gov.uk/ProductInformationDatabase/", "vmd.defra.gov.uk", delay=3.0)
 
 def fetch_apvma_urls():
+    # Confirmado (2026-07-29): apvma.gov.au no responde -- timeout consistente
+    # incluso en el homepage (probado con timeout de 45s). No es un problema
+    # de ruta; el dominio entero no contesta en tiempo razonable. No es
+    # evadible con reintentos; se deja como está.
     return _crawl_one_level("https://apvma.gov.au/node/106", "apvma.gov.au", delay=3.0)
 
 def fetch_acvm_nz_urls():
+    # Confirmado bloqueado por WAF (Imperva Incapsula, 2026-07-29): la
+    # respuesta es un iframe a "/_Incapsula_Resource" (challenge JS), no
+    # contenido real. No evadir.
     return _crawl_one_level("https://www.epa.govt.nz/database-search/acvm-register/", "epa.govt.nz", delay=3.0)
 
 def fetch_health_canada_vet_urls():
+    # Confirmado (2026-07-29): www.canada.ca no responde -- timeout
+    # consistente incluso en el homepage general (canada.ca/en/health-canada.html).
+    # No es un problema de ruta; se deja como está.
     return _crawl_one_level("https://www.canada.ca/en/health-canada/services/drugs-health-products/veterinary-drugs.html", "canada.ca", delay=3.0)
 
 def fetch_uk_varss_urls():
     return _crawl_one_level("https://www.vmd.defra.gov.uk/varss/", "vmd.defra.gov.uk", delay=3.0)
 
 def fetch_drugcentral_vet_urls():
-    return _crawl_one_level("https://drugcentral.org/pharmacology", "drugcentral.org", delay=2.0)
+    # BUGFIX 2026-07-29: "/pharmacology" da 404. El homepage sí tiene links
+    # reales (about, download, drugcard/*, help, etc.) -- verificado en vivo.
+    return _crawl_one_level("https://drugcentral.org/", "drugcentral.org", delay=2.0)
 
 def fetch_chembl_vet_urls():
     return _crawl_one_level("https://www.ebi.ac.uk/chembl/g/#browse/compounds", "ebi.ac.uk", delay=2.0)
 
 # D. Universidades adicionales
 def fetch_rvc_urls():
+    # NOTA (2026-07-29): rvc.ac.uk parece tener WAF intermitente -- a veces
+    # "sitemap.xml" da 403 "Request Blocked" directo, otras veces deja pasar
+    # el índice y luego empieza a bloquear/tardar en sub-sitemaps sueltos
+    # (se detectó una corrida real de 31 minutos terminando en 0 URLs).
+    # Con el fix de _fetch_sitemap_index_urls() (que ya no pierde todo el
+    # progreso si un sub-sitemap falla) esto debería degradar mejor, pero
+    # sigue siendo un sitio lento/con bot-management -- no evadir.
     return _fetch_sitemap_index_urls("https://www.rvc.ac.uk/sitemap.xml", delay=1.0)
 
 def fetch_edinburgh_vet_urls():
     return _crawl_one_level("https://www.ed.ac.uk/vet/research", "ed.ac.uk", delay=2.0)
 
 def fetch_melbourne_vet_urls():
+    # NOTA (2026-07-29): "fvas.unimelb.edu.au" ahora redirige a
+    # "science.unimelb.edu.au/research". Confirmado bloqueado por WAF a nivel
+    # de dominio (Cloudflare "Just a moment") en ese destino -- no evadir.
     return _crawl_one_level("https://fvas.unimelb.edu.au/research", "unimelb.edu.au", delay=2.0)
 
 def fetch_utrecht_vet_urls():
     return _crawl_one_level("https://www.uu.nl/en/organisation/faculty-of-veterinary-medicine", "uu.nl", delay=2.0)
 
 def fetch_guelph_ovc_urls():
-    return _fetch_sitemap_index_urls("https://ovc.uoguelph.ca/sitemap.xml", delay=1.0)
+    # BUGFIX 2026-07-29: "ovc.uoguelph.ca" ya no existe como subdominio
+    # propio -- redirige permanentemente a "www.uoguelph.ca/ovc" (OVC se
+    # fusionó al sitio principal de la universidad). Se usa el sitemap-index
+    # general de la universidad filtrado a URLs de OVC (incluye su blog de
+    # noticias en bulletin.ovc.uoguelph.ca). Verificado en vivo (~10k URLs).
+    return _fetch_sitemap_index_urls(
+        "https://www.uoguelph.ca/sitemap.xml",
+        url_filter=lambda u: "ovc" in u.lower(),
+        delay=1.0,
+    )
 
 def fetch_vetmeduni_vienna_urls():
     return _crawl_one_level("https://www.vetmeduni.ac.at/en/research/", "vetmeduni.ac.at", delay=2.0)
@@ -781,7 +933,10 @@ def fetch_nottingham_cevm_urls():
     return _crawl_one_level("https://www.nottingham.ac.uk/vet/", "nottingham.ac.uk", delay=2.0)
 
 def fetch_iowa_cfsph_urls():
-    return _crawl_one_level("https://www.cfsph.iastate.edu/Factsheets/", "cfsph.iastate.edu", delay=2.0)
+    # BUGFIX 2026-07-29: "/Factsheets/" es una página vacía ("Untitled
+    # Document", sin body). El homepage sí tiene navegación real (~100 links)
+    # -- verificado en vivo.
+    return _crawl_one_level("https://www.cfsph.iastate.edu/", "cfsph.iastate.edu", delay=2.0)
 
 def fetch_minnesota_cahfs_urls():
     return _crawl_one_level("https://cahfs.umn.edu/", "cahfs.umn.edu", delay=2.0)
@@ -797,6 +952,12 @@ def fetch_bristol_vet_urls():
 
 # E. Organizaciones regionales
 def fetch_fve_urls():
+    # NOTA (2026-07-29): fve.org da SSLError persistente en Python/requests
+    # ("unable to get local issuer certificate" -- el servidor no manda la
+    # cadena de certificados intermedios completa). curl con el trust store
+    # del sistema sí conecta bien (200), así que el sitio funciona para
+    # navegadores normales; es una limitación de esta librería/entorno, no
+    # un dominio muerto ni un WAF. No se cambia verify= por seguridad.
     return _crawl_one_level("https://www.fve.org/publications/", "fve.org", delay=3.0)
 
 def fetch_ava_australia_urls():
@@ -809,24 +970,52 @@ def fetch_cfia_animal_health_urls():
     return _crawl_one_level("https://inspection.canada.ca/animal-health/eng/1299009566369/1299009642126", "inspection.canada.ca", delay=3.0)
 
 def fetch_uk_apha_urls():
-    return _crawl_one_level("https://www.gov.uk/government/organisations/animal-and-plant-health-agency", "apha.gov.uk", delay=3.0)
+    # BUGFIX 2026-07-29: domain_prefix="apha.gov.uk" nunca aparece en la
+    # seed ("www.gov.uk/government/organisations/...") ni en links reales de
+    # gov.uk, así que _crawl_one_level nunca capturaba nada más que la seed
+    # (count=1). APHA vive bajo el dominio gov.uk, no bajo "apha.gov.uk"
+    # (ese dominio no responde). Se corrige domain_prefix a "gov.uk", igual
+    # que los demás fetchers de gov.uk de este archivo.
+    return _crawl_one_level("https://www.gov.uk/government/organisations/animal-and-plant-health-agency", "gov.uk", delay=3.0)
 
 def fetch_usda_aphis_vet_urls():
+    # Confirmado (2026-07-29): aphis.usda.gov no responde -- timeout
+    # consistente incluso en el homepage (probado con timeout de 45s). No es
+    # un problema de ruta; se deja como está.
     return _crawl_one_level("https://www.aphis.usda.gov/aphis/ourfocus/animalhealth", "aphis.usda.gov", delay=3.0)
 
 def fetch_usda_nahms_urls():
-    return _crawl_one_level("https://www.nahms.usda.gov/publications/", "nahms.usda.gov", delay=3.0)
+    # BUGFIX 2026-07-29: "nahms.usda.gov" no resuelve (NXDOMAIN); NAHMS se
+    # consolidó bajo aphis.usda.gov. La URL "/publications/" redirige (301)
+    # a "aphis.usda.gov/livestock-poultry-disease/nahms" -- confirmado con
+    # curl (200, contenido real, título "Nahms – Resources & Guidance").
+    # Ver también folder_for_url(): se agregó una regla específica para esta
+    # ruta antes de la genérica de aphis.usda.gov, para que no quede huérfana.
+    # NOTA: igual que fetch_usda_aphis_vet_urls(), aphis.usda.gov es
+    # intermitentemente lento/no responde con requests de Python (timeout
+    # incluso con la URL correcta) -- no es la URL, es el dominio.
+    return _crawl_one_level("https://www.aphis.usda.gov/livestock-poultry-disease/nahms", "aphis.usda.gov", delay=3.0)
 
 def fetch_ec_animal_health_urls():
     return _crawl_one_level("https://ec.europa.eu/info/departments/health-and-food-safety_en", "ec.europa.eu", delay=3.0)
 
 def fetch_aha_australia_urls():
+    # Confirmado bloqueado por WAF (Cloudflare, 2026-07-29): la ruta
+    # /publications/ responde 403 "Just a moment" de forma intermitente
+    # (a veces 200). Comportamiento de bot-management, no un bug de URL. No
+    # evadir.
     return _crawl_one_level("https://www.animalhealthaustralia.com.au/publications/", "animalhealthaustralia.com.au", delay=3.0)
 
 def fetch_agriculture_victoria_urls():
+    # Confirmado bloqueado por WAF a nivel de dominio (Cloudflare "Just a
+    # moment", 2026-07-29) -- no evadir.
     return _crawl_one_level("https://agriculture.vic.gov.au/livestock-and-animals", "agriculture.vic.gov.au", delay=3.0)
 
 def fetch_animal_health_ireland_urls():
+    # NOTA (2026-07-29): mismo problema que fve.org -- SSLError persistente
+    # en Python/requests por certificado intermedio faltante en el servidor;
+    # curl con el trust store del sistema conecta bien (200). No es un
+    # dominio muerto ni un WAF.
     return _crawl_one_level("https://www.animalhealthireland.ie/programmes/", "animalhealthireland.ie", delay=3.0)
 
 # F. Bases de datos
@@ -840,7 +1029,12 @@ def fetch_vetbact_urls():
     return _crawl_one_level("https://www.vetbact.org/vetbact/", "vetbact.org", delay=2.0)
 
 def fetch_vetcompass_urls():
-    return _crawl_one_level("https://www.vetcompass.org/publications/", "vetcompass.org", delay=2.0)
+    # BUGFIX 2026-07-29: vetcompass.org es hoy una landing page de una sola
+    # página (portfolio con modales JS, sin subpáginas reales) -- "/publications/"
+    # da 404. VetCompass es un programa de la RVC (Royal Veterinary College)
+    # y su contenido real vive en rvc.ac.uk/vetcompass (about, papers-and-data,
+    # research-projects-and-opportunities, etc.) -- verificado en vivo.
+    return _crawl_one_level("https://www.rvc.ac.uk/vetcompass", "rvc.ac.uk/vetcompass", delay=2.0)
 
 def fetch_vbo_breeds_urls():
     # BUGFIX 2026-07-26: la URL "vbo.com" era incorrecta y no correspondía a la
@@ -850,7 +1044,12 @@ def fetch_vbo_breeds_urls():
         "github.com/monarch-initiative/vertebrate-breed-ontology", delay=2.0)
 
 def fetch_gbads_urls():
-    return _crawl_one_level("https://www.gbads.org/resources/", "gbads.org", delay=3.0)
+    # BUGFIX 2026-07-29: "gbads.org" no resuelve (NXDOMAIN). El dominio real
+    # del programa GBADs (Global Burden of Animal Diseases) es
+    # animalhealthmetrics.org -- de hecho folder_for_url() ya lo anticipaba
+    # como alias, pero el fetcher seguía apuntando al dominio muerto.
+    # Verificado en vivo (200, contenido real).
+    return _crawl_one_level("https://animalhealthmetrics.org/publications/", "animalhealthmetrics.org", delay=3.0)
 
 def fetch_cidd_urls():
     return _crawl_one_level("https://www.cidd.org/", "cidd.org", delay=3.0)
@@ -862,6 +1061,10 @@ def fetch_animal_qtldb_urls():
     return _crawl_one_level("https://www.animalgenome.org/QTLdb/", "animalgenome.org", delay=2.0)
 
 def fetch_phi_base_urls():
+    # Confirmado (2026-07-29): phi-base.org devuelve SSLError porque el
+    # certificado presentado es de "maintenance.rothamsted.ac.uk" (con -k se
+    # confirma título "Temporarily Unavailable") -- el sitio está caído por
+    # mantenimiento del lado de Rothamsted Research, no es un bug de código.
     return _crawl_one_level("https://www.phi-base.org/searchFacet.htm", "phi-base.org", delay=2.0)
 
 # G. Nutrición y bienestar
@@ -869,10 +1072,18 @@ def fetch_fediaf_urls():
     return _crawl_one_level("https://www.fediaf.org/self-regulation/nutrition-guidelines.html", "fediaf.org", delay=3.0)
 
 def fetch_pet_nutrition_alliance_urls():
-    return _crawl_one_level("https://petnutritionalliance.org/resources.php", "petnutritionalliance.org", delay=3.0)
+    # BUGFIX 2026-07-29: "resources.php" (ruta legacy tipo PHP) da 404; el
+    # sitio migró a rutas limpias tipo "/resources/". Se usa el homepage,
+    # que sí expone esos links reales -- verificado en vivo.
+    return _crawl_one_level("https://petnutritionalliance.org/", "petnutritionalliance.org", delay=3.0)
 
 def fetch_tufts_petfoodology_urls():
-    return _fetch_sitemap_index_urls("https://vetnutrition.tufts.edu/post-sitemap.xml", delay=1.0)
+    # BUGFIX 2026-07-29: todo el subdominio "vetnutrition.tufts.edu" (incluida
+    # cualquier ruta, sitemaps incluidos) redirige permanentemente a una
+    # página genérica bajo vet.tufts.edu -- el blog Petfoodology se mudó
+    # de verdad a sites.tufts.edu/petfoodology (con su propio wp-sitemap.xml
+    # de WordPress). Verificado en vivo (200, ~150+ posts reales).
+    return _fetch_sitemap_index_urls("https://sites.tufts.edu/petfoodology/wp-sitemap.xml", delay=1.0)
 
 def fetch_waltham_urls():
     return _crawl_one_level("https://www.waltham.com/resources/", "waltham.com", delay=3.0)
@@ -890,22 +1101,40 @@ def fetch_awin_welfare_urls():
     return _crawl_one_level("https://awionline.org/content/farm-animals", "awionline.org", delay=3.0)
 
 def fetch_icam_urls():
+    # Confirmado bloqueado por WAF a nivel de dominio (Cloudflare "Just a
+    # moment", 2026-07-29, homepage incluido) -- no evadir.
     return _crawl_one_level("https://www.icam-coalition.org/resources/", "icam-coalition.org", delay=3.0)
 
 def fetch_ufaw_urls():
+    # Confirmado bloqueado por WAF a nivel de dominio (Cloudflare "Just a
+    # moment", 2026-07-29) -- no evadir.
     return _crawl_one_level("https://www.ufaw.org.uk/the-ufaw-journal/the-ufaw-journal", "ufaw.org.uk", delay=3.0)
 
 def fetch_nal_animal_health_urls():
-    return _crawl_one_level("https://www.nal.usda.gov/legacy/awic/animal-health-and-welfare", "nal.usda.gov", delay=3.0)
+    # BUGFIX 2026-07-29: la ruta "/legacy/awic/..." da 410 Gone (removida
+    # explícitamente). La página vigente del Animal Welfare Information
+    # Center es "/programs/awic" -- verificado en vivo (200).
+    return _crawl_one_level("https://www.nal.usda.gov/programs/awic", "nal.usda.gov", delay=3.0)
 
 def fetch_humane_slaughter_urls():
+    # Confirmado bloqueado por WAF a nivel de dominio (Cloudflare "Just a
+    # moment", 2026-07-29) -- no evadir.
     return _crawl_one_level("https://www.hsa.org.uk/publications/publications", "hsa.org.uk", delay=3.0)
 
 
 def fetch_plos_vet_urls():
-    """PLOS API — retorna URLs de artículos sobre veterinaria."""
+    """PLOS API — retorna URLs de artículos sobre veterinaria.
+    BUGFIX 2026-07-29: el campo Solr "subject_area" ya no existe en el
+    esquema de PLOS (la API devuelve HTTP 400 "undefined field subject_area",
+    lo que producía un KeyError('response') no capturado al intentar leer
+    data["response"]). El campo correcto hoy es "subject". Además, sin
+    fq=doc_type:full la búsqueda "everything" de PLOS devuelve también
+    fragmentos indexados por separado (.../title, .../abstract) cuyo id no
+    tiene el formato DOI esperado, lo que rompía el parseo de journal_key
+    con IndexError. Verificado en vivo: 2315 artículos reales."""
     params = {
-        "q": 'subject_area:"veterinary science"',
+        "q": 'subject:"veterinary science"',
+        "fq": "doc_type:full",
         "fl": "id",
         "rows": 1000,
         "wt": "json",
@@ -922,10 +1151,10 @@ def fetch_plos_vet_urls():
         try:
             r = requests.get(PLOS_API_URL, params=params, headers=HEADERS, timeout=30)
             data = r.json()
+            docs = data["response"]["docs"]
         except Exception as e:
             print(f"  PLOS API error at start={start}: {e}", flush=True)
             break
-        docs = data["response"]["docs"]
         if not docs:
             break
         for doc in docs:
@@ -976,6 +1205,9 @@ def fetch_acta_vet_scandinavica_urls():
     return _crawl_one_level(
         "https://actavetscand.biomedcentral.com/articles", "actavetscand.biomedcentral.com", delay=2.5)
 
+# Confirmado bloqueado por WAF a nivel de dominio (Akamai "Access Denied",
+# 2026-07-29, homepage de mdpi.com incluido) -- afecta a los dos fetchers de
+# MDPI de abajo (Animals y Veterinary Sciences). No evadir.
 def fetch_animals_mdpi_urls():
     return _fetch_sitemap_index_urls(
         "https://www.mdpi.com/sitemap/sitemap-animals.xml",
@@ -1047,6 +1279,11 @@ def fetch_hybrid_vet_journals_urls():
     return urls
 
 def fetch_farad_urls():
+    # NOTA (2026-07-29): farad.org es hoy una SPA moderna (bundle Vite,
+    # <title>FARAD</title> vacío) -- el contenido se renderiza por
+    # JavaScript, así que el HTML estático no tiene ningún <a href> util
+    # (page-source de 741 bytes). No es un WAF ni una URL rota; requeriría
+    # un navegador headless para crawlear, fuera de alcance de este fetcher.
     return _crawl_one_level("https://www.farad.org/publications/", "farad.org", delay=5.0)
 
 def fetch_nval_japan_urls():
@@ -1063,6 +1300,10 @@ def fetch_uk_vida_urls():
         "gov.uk", delay=3.0)
 
 def fetch_faang_data_portal_urls():
+    # NOTA (2026-07-29): data.faang.org es un portal de datos moderno
+    # (probablemente Angular/React) -- responde 200 con ~53KB de HTML pero
+    # sin ningún <a href> real (todo se arma por JS). No es un WAF ni una
+    # URL rota; requeriría un navegador headless, fuera de alcance.
     return _crawl_one_level("https://data.faang.org/", "data.faang.org", delay=3.0)
 
 def fetch_assoc_shelter_vets_guidelines_urls():
@@ -1208,6 +1449,11 @@ def get_all_urls():
     all_urls += _load_source("OMIA",                       fn=fetch_omia_urls)
     all_urls += _load_source("VetBact",                    fn=fetch_vetbact_urls)
     all_urls += _load_source("VetCompass",                 fn=fetch_vetcompass_urls)
+    # BUGFIX 2026-07-29: fetch_vbo_breeds_urls() existía (con su dominio ya
+    # corregido a GitHub) y su regla de folder_for_url() también, pero nunca
+    # se llamaba aquí -- la fuente estaba huérfana/muerta igual que le pasaba
+    # antes a "UK VIDA surveillance". Se agrega, verificado en vivo (47 URLs).
+    all_urls += _load_source("VBO Breeds (Vertebrate Breed Ontology)", fn=fetch_vbo_breeds_urls)
     all_urls += _load_source("GBADs",                      fn=fetch_gbads_urls)
     all_urls += _load_source("CIDD",                       fn=fetch_cidd_urls)
     all_urls += _load_source("PennGen",                    fn=fetch_penngen_urls)
@@ -1333,13 +1579,13 @@ def url_to_filename(url):
     elif "sydney.edu.au"     in url:  prefix = "sydney"
     elif "aaha.org"          in url:  prefix = "aaha"
     # batch 4
-    elif "ecvim-ca.org"      in url:  prefix = "ecvim"
+    elif "ecvim-ca.org"      in url or "ecvim-ca.college" in url: prefix = "ecvim"
     elif "esccap.org"        in url:  prefix = "esccap"
     elif "capcvet.org"       in url:  prefix = "capc"
     elif "troccap.com"       in url:  prefix = "troccap"
     elif "abcdcatsvets.org"  in url:  prefix = "abcd"
     elif "iscaid.org"        in url:  prefix = "iscaid"
-    elif "veccs.org"         in url or "recover-cpr.org" in url: prefix = "veccs"
+    elif "veccs.org"         in url or "recover-cpr.org" in url or "recoverinitiative.org" in url: prefix = "veccs"
     elif "fecava.org"        in url:  prefix = "fecava"
     elif "catvets.com"       in url:  prefix = "aafp_feline"
     elif "laveccs.org"       in url:  prefix = "laveccs"
@@ -1348,7 +1594,7 @@ def url_to_filename(url):
     elif "wavma.org"         in url:  prefix = "wavma"
     elif "aasv.org"          in url:  prefix = "aasv"
     elif "aabp.org"          in url:  prefix = "aabp"
-    elif "associationofavianvets.org" in url: prefix = "aav"
+    elif "associationofavianvets.org" in url or "aav.org" in url: prefix = "aav"
     elif "europepmc.org"     in url:  prefix = "europepmc_vet"
     elif "veterinaryworld.org" in url: prefix = "vetworld"
     elif "veterinaryevidence.org" in url: prefix = "vetevidence"
@@ -1364,6 +1610,7 @@ def url_to_filename(url):
     elif "health-canada"     in url and "vet" in url: prefix = "healthcanada_vet"
     elif "drugcentral.org"   in url:  prefix = "drugcentral"
     elif "ebi.ac.uk/chembl"  in url:  prefix = "chembl"
+    elif "rvc.ac.uk/vetcompass" in url: prefix = "vetcompass"
     elif "rvc.ac.uk"         in url:  prefix = "rvc"
     elif "ed.ac.uk"          in url:  prefix = "edinburgh_vet"
     elif "unimelb.edu.au"    in url:  prefix = "melbourne_vet"
@@ -1374,6 +1621,7 @@ def url_to_filename(url):
     elif "nottingham.ac.uk"  in url:  prefix = "nottingham_vet"
     elif "cfsph.iastate.edu" in url:  prefix = "iowa_cfsph"
     elif "cahfs.umn.edu"     in url:  prefix = "minnesota_cahfs"
+    elif "sites.tufts.edu/petfoodology" in url: prefix = "petfoodology"
     elif "vetnutrition.tufts.edu" in url: prefix = "tufts_vet"
     elif "gla.ac.uk"         in url:  prefix = "glasgow_vet"
     elif "bristol.ac.uk"     in url:  prefix = "bristol_vet"
@@ -1382,8 +1630,8 @@ def url_to_filename(url):
     elif "cahss.org"         in url:  prefix = "cahss"
     elif "inspection.canada.ca" in url: prefix = "cfia"
     elif "apha.gov.uk"       in url or "gov.uk/government/organisations/animal" in url: prefix = "uk_apha"
+    elif "nahms.usda.gov"    in url or "livestock-poultry-disease/nahms" in url: prefix = "usda_nahms"
     elif "aphis.usda.gov"    in url:  prefix = "usda_aphis"
-    elif "nahms.usda.gov"    in url:  prefix = "usda_nahms"
     elif "animalhealthaustralia.com.au" in url: prefix = "aha_au"
     elif "agriculture.vic.gov.au" in url: prefix = "agvic"
     elif "animalhealthireland.ie" in url: prefix = "ahi"
@@ -1393,7 +1641,7 @@ def url_to_filename(url):
     elif "vetcompass.org"    in url:  prefix = "vetcompass"
     elif "animalgenome.org"  in url:  prefix = "animal_qtldb"
     elif "phi-base.org"      in url:  prefix = "phi_base"
-    elif "gbads.org"         in url:  prefix = "gbads"
+    elif "gbads.org"         in url or "animalhealthmetrics.org" in url: prefix = "gbads"
     elif "cidd.org"          in url:  prefix = "cidd"
     elif "vet.upenn.edu"     in url:  prefix = "penngen"
     elif "fediaf.org"        in url:  prefix = "fediaf"
