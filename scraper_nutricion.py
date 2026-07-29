@@ -207,6 +207,7 @@ def folder_for_url(url):
     if "efsa.europa.eu/en/topics/topic/dietary-reference" in url: return DRIVE_EFSA_NUTRITION_DRV_ID
     if "efsa.europa.eu/en/data-report/food-composition" in url: return DRIVE_EFSA_FOOD_COMPOSITION_ID
     if "efsa.europa.eu/en/applications/guidance" in url: return DRIVE_EFSA_GUIDANCE_CATALOGUE_ID
+    if "efsa.europa.eu/en/methodology/guidance" in url: return DRIVE_EFSA_GUIDANCE_CATALOGUE_ID
     if "efsa.europa.eu"            in url:  return DRIVE_EFSA_NUTRITION_DRV_ID
     if "nutrition.gov"             in url:  return DRIVE_USDA_NUTRITIONGOV_ID
     if "dietaryguidelines.gov"     in url or "realfood.gov" in url: return DRIVE_DGA_USA_2025_ID
@@ -225,8 +226,11 @@ def folder_for_url(url):
     if "ijbnpa.biomedcentral.com"  in url:  return DRIVE_IJBNPA_ID
     if "foodandnutritionresearch.net" in url: return DRIVE_FOOD_NUTRITION_RESEARCH_ID
     if "jhpn.biomedcentral.com"    in url:  return DRIVE_JHPN_ID
-    if "tandfonline.com/journals/rssn" in url or "jissn.biomedcentral.com" in url: return DRIVE_JISSN_SPORTS_NUTR_ID
-    if "sportsmedicine-open.springeropen.com" in url: return DRIVE_SPORTS_MEDICINE_OPEN_ID
+    # BUGFIX 2026-07-29: excluye la colección "issn-position-stands" (más
+    # específica, ver Fase G) para no volverla inalcanzable por shadowing.
+    if ("tandfonline.com/journals/rssn" in url and "collections/issn-position-stands" not in url) \
+            or "jissn.biomedcentral.com" in url: return DRIVE_JISSN_SPORTS_NUTR_ID
+    if "sportsmedicine-open.springeropen.com" in url or "link.springer.com/article/10.1186/s40798" in url: return DRIVE_SPORTS_MEDICINE_OPEN_ID
     if "sciencedirect.com/journal/clinical-nutrition-open-science" in url: return DRIVE_CLINICAL_NUTRITION_OPEN_ID
     if "nutrirejournal.biomedcentral.com" in url: return DRIVE_NUTRIRE_JOURNAL_ID
     if "genesandnutrition.biomedcentral.com" in url: return DRIVE_GENES_NUTRITION_ID
@@ -248,7 +252,21 @@ def folder_for_url(url):
     if "phenol-explorer.eu"        in url:  return DRIVE_PHENOL_EXPLORER_ID
     if "foodon.org"                in url:  return DRIVE_FOODON_ONTOLOGY_ID
     # D. Guías dietéticas
+    # ORPHANED/INALCANZABLE (flag 2026-07-29, no corregido — requiere
+    # decisión de negocio, no de código): "fao.org" ya hace match en la
+    # regla general de Fase A (línea ~206, DRIVE_FAO_NUTRITION_ID) ANTES de
+    # llegar aquí, y no hay ningún fetcher dedicado exclusivamente a esta
+    # sub-ruta — todo el contenido de fetch_fao_nutrition_urls (Fase A) cae
+    # en DRIVE_FAO_NUTRITION_ID. DRIVE_FAO_COUNTRY_GUIDELINES_ID nunca se
+    # alcanza. No se reordena porque no está claro si es la intención
+    # correcta (podría duplicar/fragmentar el contenido de FAO Nutrition).
     if "fao.org/nutrition/education" in url: return DRIVE_FAO_COUNTRY_GUIDELINES_ID
+    # ORPHANED/INALCANZABLE (flag 2026-07-29, no corregido): "realfood.gov"
+    # ya hace match en la regla general de Fase A (línea ~212,
+    # DRIVE_DGA_USA_2025_ID) ANTES de llegar aquí. No hay fetcher dedicado
+    # solo a realfood.gov — fetch_dga_usa_urls (Fase A) ya crawlea
+    # dietaryguidelines.gov Y realfood.gov juntos hacia esa misma carpeta.
+    # DRIVE_DGA_2025_REALFOOD_ID nunca se alcanza.
     if "realfood.gov"              in url:  return DRIVE_DGA_2025_REALFOOD_ID
     if "gob.mx/salud" in url and "guia" in url: return DRIVE_GUIAS_MEXICO_2023_ID
     if "aesan.gob.es"              in url:  return DRIVE_AESAN_SPAIN_ID
@@ -258,6 +276,15 @@ def folder_for_url(url):
     if "pub.norden.org"            in url or "nordic" in url and "nutrition" in url: return DRIVE_NORDIC_NUTRITION_REC_2023_ID
     if "saude.gov.br"              in url and "nutricao" in url: return DRIVE_BRAZIL_DIETARY_GUIDELINES_ID
     if "health.govt.nz"            in url and ("eat" in url or "nutrition" in url): return DRIVE_NZ_EATING_GUIDELINES_ID
+    # ORPHANED/DUPLICADO (flag 2026-07-29, no corregido — requiere decisión
+    # de negocio): condición IDÉNTICA a la de Fase A línea ~207
+    # ("efsa.europa.eu/en/topics/topic/dietary-reference"), que se evalúa
+    # ANTES y devuelve DRIVE_EFSA_NUTRITION_DRV_ID (carpeta DISTINTA). Este
+    # DRIVE_EFSA_DRV_ID nunca se alcanza aunque sí existe un fetcher
+    # dedicado (fetch_efsa_drv_urls). No se reordena porque no está claro
+    # cuál de las dos carpetas de Drive es la correcta/vigente — decidir
+    # manualmente si deben fusionarse o si esta debe pasar a ser la
+    # ganadora.
     if "efsa.europa.eu/en/topics/topic/dietary-reference" in url: return DRIVE_EFSA_DRV_ID
     if "mhlw.go.jp"                in url:  return DRIVE_JAPAN_DRI_ID
     if "icmr.gov.in"               in url or "nin.res.in" in url: return DRIVE_INDIA_DIETARY_GUIDELINES_ID
@@ -266,16 +293,21 @@ def folder_for_url(url):
     if "nutrition.org"             in url:  return DRIVE_ASN_NUTRITION_ID
     if "nutricioncomunitaria.org"  in url:  return DRIVE_SENC_SPAIN_ID
     if "fesnad.org"                in url:  return DRIVE_FESNAD_SPAIN_ID
-    if "senpe.com"                 in url:  return DRIVE_SENPE_SPAIN_ID
-    if "espen.org"                 in url:  return DRIVE_ESPEN_ID
-    if "nutritioncare.org"         in url:  return DRIVE_ASPEN_CLINICAL_ID
-    if "bapen.org.uk"              in url:  return DRIVE_BAPEN_ID
+    # BUGFIX 2026-07-29: los 5 checks siguientes excluyen su propia sub-ruta
+    # F ("/guias", "/guidelines", "/clinical", "/screening") porque antes esta
+    # regla general (Sociedades) se evaluaba ANTES que la regla específica de
+    # Fase F para el mismo dominio, dejándola inalcanzable (shadowing) pese a
+    # existir un fetcher dedicado para esa sub-ruta.
+    if "senpe.com" in url and "senpe.com/guias" not in url: return DRIVE_SENPE_SPAIN_ID
+    if "espen.org" in url and "espen.org/guidelines" not in url: return DRIVE_ESPEN_ID
+    if "nutritioncare.org" in url and "nutritioncare.org/clinical" not in url: return DRIVE_ASPEN_CLINICAL_ID
+    if "bapen.org.uk" in url and "bapen.org.uk/screening" not in url: return DRIVE_BAPEN_ID
     if "bda.uk.com"                in url:  return DRIVE_BDA_UK_ID
     if "nutritionsociety.org"      in url:  return DRIVE_NUTRITION_SOCIETY_UK_ID
-    if "felanpeweb.org"            in url:  return DRIVE_FELANPE_ID
+    if "felanpeweb.org" in url or "felanpe.org" in url: return DRIVE_FELANPE_ID
     if "iuns.org"                  in url:  return DRIVE_IUNS_ID
     if "fensnutrition.org"         in url:  return DRIVE_FENS_EUROPE_ID
-    if "obesitycanada.ca"          in url:  return DRIVE_OBESITY_CANADA_ID
+    if "obesitycanada.ca" in url and "obesitycanada.ca/guidelines" not in url: return DRIVE_OBESITY_CANADA_ID
     # F. Nutrición clínica
     if "espen.org/guidelines"      in url:  return DRIVE_ESPEN_GUIDELINES_ID
     if "nutritioncare.org/clinical" in url: return DRIVE_ASPEN_GUIDELINES_ID
@@ -291,7 +323,10 @@ def folder_for_url(url):
     # G. Nutrición deportiva
     if "tandfonline.com/journals/rssn20/collections" in url: return DRIVE_ISSN_POSITION_STANDS_ID
     if "ausport.gov.au/ais/nutrition/supplements" in url or "ais.gov.au/nutrition/supplements" in url: return DRIVE_AIS_SUPPLEMENT_FRAMEWORK_ID
-    if "opss.org"                  in url:  return DRIVE_OPSS_DOD_ID
+    # BUGFIX 2026-07-29: excluye las dos sub-rutas específicas de Fase J
+    # (antes inalcanzables por shadowing pese a tener fetchers dedicados).
+    if "opss.org" in url and "opss.org/ingredient" not in url and "opss.org/dod-prohibited" not in url:
+        return DRIVE_OPSS_DOD_ID
     if "usada.org/substances/supplement" in url: return DRIVE_USADA_SUPPLEMENTS_ID
     if "ncaa.org" in url and "nutrition" in url: return DRIVE_NCAA_NUTRITION_ID
     if "sportintegrity.gov.au"     in url:  return DRIVE_SPORT_INTEGRITY_AU_ID
@@ -389,11 +424,19 @@ def _crawl_one_level(seed, domain_prefix, delay=3.0):
             return []
         soup = BeautifulSoup(r.text, "html.parser")
         urls = set()
+        from urllib.parse import urljoin
         for a in soup.find_all("a", href=True):
             href = a["href"]
-            if href.startswith("/"):
-                from urllib.parse import urljoin
+            if href.startswith(("javascript:", "mailto:", "tel:", "#")):
+                continue
+            # BUGFIX 2026-07-29: antes solo se resolvían con urljoin los
+            # hrefs que empezaban con "/" (root-relative); los relativos
+            # "planos" (p.ej. "articles/foo.html", típicos de sitios
+            # generados con pkgdown/Sphinx, como waldronlab.io) se
+            # descartaban en silencio porque no empezaban con "http".
+            if not href.startswith("http"):
                 href = urljoin(seed, href)
+            href = href.split("#")[0]  # descarta fragmento (evita duplicados triviales)
             if domain_prefix in href and href.startswith("http"):
                 urls.add(href)
         time.sleep(delay)
@@ -454,9 +497,12 @@ def extract_inline_content(inline_str):
 # ── FASE A: Organizaciones oficiales ──────────────────────────────────────────
 
 def fetch_fao_nutrition_urls():
-    urls = _crawl_one_level("https://www.fao.org/nutrition/publications/en/", "fao.org", delay=4.0)
-    urls += _crawl_one_level("https://www.fao.org/nutrition/education/food-based-dietary-guidelines/en/", "fao.org", delay=4.0)
-    return urls
+    # BUGFIX 2026-07-29: ambos seeds anteriores están muertos (404 y 504 —
+    # FAO reorganizó /nutrition/*). El hub general "/nutrition" sigue activo
+    # (200) y enlaza a todas las sub-secciones (assessment, food-composition,
+    # education, policies-programmes, requirements, etc.), así que basta un
+    # solo crawl desde ahí.
+    return _crawl_one_level("https://www.fao.org/nutrition", "fao.org", delay=4.0)
 
 def fetch_fao_infoods_urls():
     return _crawl_one_level("https://www.fao.org/infoods/infoods/tables-and-databases/en/", "fao.org", delay=4.0)
@@ -472,10 +518,18 @@ def fetch_efsa_nutrition_urls():
     )
 
 def fetch_efsa_guidance_urls():
-    return _crawl_one_level("https://www.efsa.europa.eu/en/applications/guidance", "efsa.europa.eu", delay=2.0)
+    # BUGFIX 2026-07-29: /en/applications/guidance devuelve 404 (EFSA
+    # reorganizó su sitio); la sección ahora vive bajo /en/methodology/guidance.
+    return _crawl_one_level("https://www.efsa.europa.eu/en/methodology/guidance", "efsa.europa.eu", delay=2.0)
 
 def fetch_usda_nutritiongov_urls():
-    return _fetch_sitemap_index_urls("https://www.nutrition.gov/sitemap.xml", delay=2.0)
+    # BUGFIX 2026-07-29: nutrition.gov/sitemap.xml es un <urlset> PLANO (246
+    # páginas reales), no un <sitemapindex>. _fetch_sitemap_index_urls trataba
+    # cada página como si fuera, a su vez, otro sitemap XML a re-fetchear —
+    # cada intento fallaba (ET.ParseError sobre HTML) y devolvía 0, además de
+    # tardar ~15 min recorriendo las 246 "sub-URLs" con delay=2.0 cada una.
+    # fetch_urls_from_sitemap() de un solo nivel basta aquí.
+    return fetch_urls_from_sitemap("https://www.nutrition.gov/sitemap.xml")
 
 def fetch_dga_usa_urls():
     urls = _crawl_one_level("https://www.dietaryguidelines.gov/resources/", "dietaryguidelines.gov", delay=2.0)
@@ -485,6 +539,8 @@ def fetch_dga_usa_urls():
 def fetch_paho_nutrition_urls():
     return _crawl_one_level("https://www.paho.org/en/topics/healthy-diet", "paho.org", delay=3.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — devuelve 403
+# incluso para la portada con User-Agent de navegador normal; no evadir.
 def fetch_unicef_nutrition_urls():
     return _crawl_one_level("https://www.unicef.org/nutrition", "unicef.org", delay=4.0)
 
@@ -494,6 +550,8 @@ def fetch_wfp_nutrition_urls():
 def fetch_global_nutrition_report_urls():
     return _crawl_one_level("https://globalnutritionreport.org/", "globalnutritionreport.org", delay=3.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — 403 incluso
+# para la portada con User-Agent de navegador normal; no evadir.
 def fetch_ec_knowledge4policy_urls():
     return _crawl_one_level(
         "https://knowledge4policy.ec.europa.eu/health-promotion-knowledge-gateway/nutrition_en",
@@ -503,6 +561,8 @@ def fetch_ec_knowledge4policy_urls():
 
 # ── FASE B: Revistas OA ───────────────────────────────────────────────────────
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — 403 incluso
+# para la portada con User-Agent de navegador normal; no evadir.
 def fetch_nutrients_mdpi_urls():
     return _fetch_sitemap_index_urls(
         "https://www.mdpi.com/sitemap/sitemap-nutrients.xml",
@@ -562,8 +622,33 @@ def fetch_jhpn_urls():
 def fetch_jissn_urls():
     return _fetch_springer_journal_articles("jissn")
 
-def fetch_sports_medicine_open_urls():
-    return _fetch_springer_journal_articles("sportsmedicine-open")
+def fetch_sports_medicine_open_urls(max_pages=20, delay=2.0):
+    """BUGFIX 2026-07-29: sportsmedicine-open.springeropen.com migró por
+    completo a la plataforma link.springer.com — incluso los artículos
+    individuales redirigen ahí — así que devolvía 404/0 con el patrón
+    compartido de _fetch_springer_journal_articles (que asume subdominio
+    *.biomedcentral.com). El ID de revista de Springer para "Sports
+    Medicine - Open" es 40798 (prefijo DOI 10.1186/s40798-...)."""
+    listing_base = "https://link.springer.com/journal/40798"
+    link_domain = "https://link.springer.com"
+    urls = set()
+    for page in range(1, max_pages + 1):
+        try:
+            seed = f"{listing_base}/articles" if page == 1 else f"{listing_base}/articles?page={page}"
+            r = requests.get(seed, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            page_urls = {link_domain + a["href"] for a in soup.find_all("a", href=True)
+                         if a["href"].startswith("/article/10.1186/s40798-")}
+            if not page_urls or not (page_urls - urls):
+                urls |= page_urls
+                break
+            urls |= page_urls
+            time.sleep(delay)
+        except Exception:
+            break
+    return list(urls)
 
 def fetch_nutrire_urls():
     return _fetch_springer_journal_articles("nutrirejournal")
@@ -581,7 +666,15 @@ def fetch_journal_nutritional_science_urls():
 # ── FASE C: Bases de composición de alimentos (API inline) ───────────────────
 
 FDC_API_KEY = "DEMO_KEY"  # reemplazar con tu API key propia para producción
-
+# CONFIRMADO (2026-07-29): DEMO_KEY está actualmente rate-limited por USDA —
+# la PRIMERA request en una prueba aislada ya devolvió 429 OVER_RATE_LIMIT
+# ("You have exceeded your rate limit"). El código ya maneja el 429 con un
+# backoff de 60s y reintenta, pero con 3 dataTypes × 25 páginas eso puede
+# significar hasta 75 esperas de 60s (~75 min) en el peor caso — se observó
+# en vivo que esta fuente no terminó dentro de un budget de 25 min. No es un
+# bug de código: requiere una API key real de
+# https://fdc.nal.usda.gov/api-key-signup (no se genera aquí — crear cuentas
+# está fuera de alcance de esta auditoría). Dejar como TODO para el usuario.
 def fetch_fdc_urls():
     """USDA FoodData Central API — primeros 5,000 alimentos de Foundation y SR."""
     base = "https://api.nal.usda.gov/fdc/v1/foods/list"
@@ -630,11 +723,15 @@ def fetch_open_food_facts_urls():
     return urls
 
 def fetch_norway_food_urls():
-    """Matvaretabellen Norway REST API — todos los alimentos."""
-    base = "https://www.matvaretabellen.no/api/foods"
+    """Matvaretabellen Norway REST API — todos los alimentos.
+    BUGFIX 2026-07-29: "/api/foods?language=en" devuelve 404 (endpoint
+    muerto). El endpoint vigente es "/api/nb/foods.json" y responde un
+    objeto {"foods": [...], "locale": ...} en vez de una lista directa."""
+    base = "https://www.matvaretabellen.no/api/nb/foods.json"
     try:
-        r = requests.get(f"{base}?language=en", headers=HEADERS, timeout=30)
-        foods = r.json()
+        r = requests.get(base, headers=HEADERS, timeout=30)
+        data = r.json()
+        foods = data.get("foods", []) if isinstance(data, dict) else data
         urls = []
         for food in foods[:2000]:
             fid = food.get("foodId")
@@ -645,24 +742,42 @@ def fetch_norway_food_urls():
     except Exception:
         return []
 
+# Confirmado (2026-07-29): la portada responde 200 pero es un shell casi
+# vacío (1145 bytes, 0 <a>) — SPA renderizada por JS del lado del cliente, no
+# crawleable con requests+BeautifulSoup. No es un bug de URL ni WAF.
 def fetch_ciqual_urls():
     return _crawl_one_level("https://ciqual.anses.fr/", "ciqual.anses.fr", delay=2.0)
 
 def fetch_fineli_urls():
     return _crawl_one_level("https://fineli.fi/fineli/en/foods?", "fineli.fi", delay=2.0)
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — la portada tampoco
+# conecta (connection refused/timeout) ni siquiera con User-Agent de
+# navegador normal; no evadir.
 def fetch_phenol_explorer_urls():
     return _crawl_one_level("https://phenol-explorer.eu/compounds", "phenol-explorer.eu", delay=2.0)
 
+# Confirmado (2026-07-29): status 200 pero navegación 100% vía
+# "javascript:void(0)" (onclick), sin <a href> reales — no crawleable con
+# requests+BeautifulSoup. No es un bug de URL ni WAF.
 def fetch_bedca_urls():
     return _crawl_one_level("https://www.bedca.net/bdpub/index_en.php", "bedca.net", delay=4.0)
 
+# Confirmado (2026-07-29): el servidor de TBCA responde 302 con cabecera
+# "Location" VACÍA (bug del lado de TBCA, verificado con curl -v) — no hay
+# adónde redirigir, así que requests no puede seguir el enlace. No es
+# corregible desde el cliente.
 def fetch_tbca_urls():
     return _crawl_one_level("https://www.tbca.net.br/base-dados/int_composicao_alimentos.php", "tbca.net.br", delay=4.0)
 
 
 # ── FASE D: Guías dietéticas ──────────────────────────────────────────────────
 
+# AMBIGUO (2026-07-29): el seed específico ni siquiera conecta (000/timeout),
+# aunque el dominio dietaryguidelines.gov sí responde para otras rutas (ver
+# fetch_dga_usa_urls en Fase A, que ya crawlea "/resources/" general y
+# probablemente cubre este mismo contenido). No se encontró con confianza
+# una URL de reemplazo — dejar así en vez de adivinar; posible duplicado.
 def fetch_dga_2025_urls():
     return _crawl_one_level("https://www.dietaryguidelines.gov/resources/2025-2030-dietary-guidelines-americans", "dietaryguidelines.gov", delay=2.0)
 
@@ -681,12 +796,18 @@ def fetch_canada_dri_urls():
         "canada.ca", delay=2.0,
     )
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — eatforhealth.gov.au
+# no conecta (connection refused/timeout) ni siquiera en la portada con
+# User-Agent de navegador normal; no evadir. Afecta a las 2 fuentes de este
+# dominio (guidelines y NRV).
 def fetch_australia_guidelines_urls():
     return _crawl_one_level("https://www.eatforhealth.gov.au/guidelines", "eatforhealth.gov.au", delay=2.0)
 
 def fetch_australia_nrv_urls():
     return _crawl_one_level("https://www.eatforhealth.gov.au/nutrient-reference-values", "eatforhealth.gov.au", delay=2.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — 403 incluso
+# para la portada con User-Agent de navegador normal; no evadir.
 def fetch_nordic_nutrition_urls():
     return _crawl_one_level("https://pub.norden.org/nord2023-003/", "pub.norden.org", delay=2.0)
 
@@ -697,8 +818,20 @@ def fetch_efsa_drv_urls():
     )
 
 def fetch_aesan_spain_urls():
+    # AMBIGUO (2026-07-29): esta ruta específica (legado "AECOSAN") devuelve
+    # 403 "Forbidden" incluso con User-Agent de navegador normal, aunque la
+    # portada de aesan.gob.es sí responde 200 — parece una ruta antigua
+    # bloqueada/retirada tras la fusión AECOSAN→AESAN. No se encontró en la
+    # portada un enlace de reemplazo claro (navegación probablemente vía JS);
+    # se deja así en vez de adivinar.
     return _crawl_one_level("https://www.aesan.gob.es/AECOSAN/web/nutricion/", "aesan.gob.es", delay=3.0)
 
+# AMBIGUO (2026-07-29): este seed devuelve 404; el subsitio gob.mx/salud está
+# activo (200 en varias rutas probadas: /salud, /salud/es/,
+# /salud/archivo/documentos) pero no se localizó con confianza la página
+# vigente de "guías alimentarias" (sin resultados de "guia" en el listado de
+# documentos revisado, y varias rutas candidatas dieron excepción de
+# conexión). Se deja así en vez de adivinar.
 def fetch_mexico_guias_urls():
     return _crawl_one_level(
         "https://www.gob.mx/salud/documentos/guias-alimentarias-saludables-y-sostenibles-para-la-poblacion-mexicana-2023",
@@ -708,11 +841,16 @@ def fetch_mexico_guias_urls():
 
 # ── FASE E: Sociedades profesionales ──────────────────────────────────────────
 
+# Confirmado bloqueado (2026-07-29) — tanto el seed como la portada de
+# eatrightpro.org redirigen a un bucle de SSO/PassiveAuthentication (login
+# wall) en vez de servir la página pública; no evadir/loguear.
 def fetch_and_eatright_urls():
     return _crawl_one_level("https://www.eatrightpro.org/practice/position-and-practice-papers", "eatrightpro.org", delay=5.0)
 
 def fetch_asn_nutrition_urls():
-    return _crawl_one_level("https://nutrition.org/policy-and-advocacy/", "nutrition.org", delay=5.0)
+    # BUGFIX 2026-07-29: /policy-and-advocacy/ devuelve 404; ASN reorganizó su
+    # sitio, la sección ahora vive bajo /public-affairs/asn-advocacy/.
+    return _crawl_one_level("https://nutrition.org/public-affairs/asn-advocacy/", "nutrition.org", delay=5.0)
 
 def fetch_senc_spain_urls():
     urls = fetch_urls_from_sitemap("https://www.nutricioncomunitaria.org/wp-sitemap.xml")
@@ -729,6 +867,11 @@ def fetch_senpe_urls():
         urls = _crawl_one_level("https://senpe.com/guias/", "senpe.com", delay=4.0)
     return urls
 
+# Confirmado bloqueado (2026-07-29) — verificado con curl: un User-Agent de
+# navegador normal recibe 200, pero el User-Agent propio del scraper
+# ("...HumanNutritionCorpusBot...") recibe 403 (WAF/Cloudflare filtrando por
+# UA). Por regla de auditoría no se cambia el User-Agent para evadirlo
+# (afectaría a los ~70 fetchers que comparten HEADERS); no evadir.
 def fetch_espen_urls():
     return _crawl_one_level("https://www.espen.org/guidelines-home/espen-guidelines", "espen.org", delay=5.0)
 
@@ -742,20 +885,31 @@ def fetch_bapen_urls():
     return urls
 
 def fetch_bda_uk_urls():
-    return _crawl_one_level("https://www.bda.uk.com/resource/food-facts.html", "bda.uk.com", delay=5.0)
+    # BUGFIX 2026-07-29: /resource/food-facts.html devuelve 404; la sección
+    # de food facts se movió a /food-health/food-facts.html.
+    return _crawl_one_level("https://www.bda.uk.com/food-health/food-facts.html", "bda.uk.com", delay=5.0)
 
 def fetch_nutrition_society_uk_urls():
     return _crawl_one_level("https://www.nutritionsociety.org/", "nutritionsociety.org", delay=5.0)
 
 def fetch_felanpe_urls():
-    return _crawl_one_level("https://felanpeweb.org/", "felanpeweb.org", delay=5.0)
+    # BUGFIX 2026-07-29: felanpeweb.org devuelve 200 pero su HTML ya no tiene
+    # navegación propia — todos los enlaces internos apuntan a felanpe.org
+    # (el sitio real se consolidó ahí). Se crawlea felanpe.org directamente.
+    return _crawl_one_level("https://felanpe.org/", "felanpe.org", delay=5.0)
 
+# Confirmado bloqueado (2026-07-29) — igual que espen.org: 200 con
+# User-Agent de navegador, 403 con el User-Agent propio del scraper (WAF por
+# UA, probablemente el mismo plugin de seguridad WordPress/Cloudflare). No
+# evadir cambiando el User-Agent compartido.
 def fetch_iuns_urls():
     urls = fetch_urls_from_sitemap("https://iuns.org/wp-sitemap.xml")
     if not urls:
         urls = _crawl_one_level("https://iuns.org/", "iuns.org", delay=5.0)
     return urls
 
+# Confirmado bloqueado (2026-07-29) — mismo patrón: 200 con User-Agent de
+# navegador, 403 con el User-Agent propio del scraper. No evadir.
 def fetch_fens_urls():
     return _crawl_one_level("https://fensnutrition.org/", "fensnutrition.org", delay=5.0)
 
@@ -765,6 +919,11 @@ def fetch_obesity_canada_urls():
 
 # ── FASE F: Nutrición clínica ─────────────────────────────────────────────────
 
+# NOTA (2026-07-29): mismo bloqueo por User-Agent que fetch_espen_urls (ver
+# comentario ahí) — además esta función es literalmente duplicada de
+# fetch_espen_urls (mismo seed exacto). No se elimina la duplicación por
+# quedar fuera de alcance de esta auditoría; ambas quedan afectadas por el
+# mismo bloqueo WAF.
 def fetch_espen_guidelines_urls():
     return _crawl_one_level("https://www.espen.org/guidelines-home/espen-guidelines", "espen.org", delay=5.0)
 
@@ -783,6 +942,10 @@ def fetch_obesity_canada_cpg_urls():
 def fetch_diabetes_canada_urls():
     return _crawl_one_level("https://guidelines.diabetes.ca/", "guidelines.diabetes.ca", delay=3.0)
 
+# AMBIGUO (2026-07-29): este seed devuelve 404; la portada de diabetes.org.uk
+# responde 200 pero no se localizaron enlaces de nutrición/dieta en un
+# escaneo simple de la portada (navegación probablemente vía JS/mega-menú).
+# No se encontró con confianza una URL de reemplazo — se deja así.
 def fetch_diabetes_uk_urls():
     return _crawl_one_level(
         "https://www.diabetes.org.uk/for-professionals/supporting-your-patients/clinical-recommendations-for-professionals/evidence-based-nutrition-guidelines",
@@ -826,6 +989,9 @@ def fetch_usada_supplements_urls():
 def fetch_ncaa_nutrition_urls():
     return _crawl_one_level("https://www.ncaa.org/sports/2016/7/20/nutrition-sleep-and-performance.aspx", "ncaa.org", delay=4.0)
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — sportintegrity.gov.au
+# no conecta (connection refused/timeout) ni siquiera en la portada con
+# User-Agent de navegador normal; no evadir.
 def fetch_sport_integrity_au_urls():
     return _crawl_one_level(
         "https://www.sportintegrity.gov.au/what-we-do/anti-doping/supplements-sport",
@@ -847,6 +1013,8 @@ def fetch_tufts_friedman_urls():
 def fetch_tufts_hnrca_urls():
     return _crawl_one_level("https://hnrca.tufts.edu/", "hnrca.tufts.edu", delay=5.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — 403 incluso
+# para la portada con User-Agent de navegador normal; no evadir.
 def fetch_mayo_clinic_nutrition_urls():
     return _fetch_sitemap_index_urls(
         "https://www.mayoclinic.org/sitemap.xml",
@@ -870,17 +1038,27 @@ def fetch_johns_hopkins_nutrition_urls():
 
 # ── FASE I: Microbioma ────────────────────────────────────────────────────────
 
+# Confirmado (2026-07-29): la portada responde 200 pero es un shell Vue.js
+# vacío (id="app", 687 bytes) — SPA renderizada por JS del lado del cliente,
+# no crawleable con requests+BeautifulSoup. No es un bug de URL ni WAF.
 def fetch_gmrepo_urls():
     return _crawl_one_level("https://gmrepo.humangut.info/", "gmrepo.humangut.info", delay=3.0)
 
+# Confirmado bloqueado/inalcanzable (2026-07-29) — bio-annotation.cn no
+# conecta (connection refused/timeout) ni siquiera en la portada; posible
+# sitio académico descontinuado. No evadir.
 def fetch_gutmdisorder_urls():
     return _crawl_one_level("http://bio-annotation.cn/gutMDisorder/", "bio-annotation.cn", delay=3.0)
 
 def fetch_mgnify_nutrition_urls():
-    """MGnify API — estudios con términos de dieta en biome intestinal."""
+    """MGnify API — estudios con términos de dieta en biome intestinal.
+    BUGFIX 2026-07-29: el parámetro "biome_name=Human:Gut" no coincide con
+    ningún biome real de la API (devolvía count=0) — la API espera el
+    lineage completo vía el parámetro "lineage", p.ej.
+    "root:Host-associated:Human:Digestive system" (verificado: 586 estudios)."""
     base = "https://www.ebi.ac.uk/metagenomics/api/v1/studies"
     urls = []
-    params = {"biome_name": "Human:Gut", "page_size": 50, "page": 1}
+    params = {"lineage": "root:Host-associated:Human:Digestive system", "page_size": 50, "page": 1}
     for _ in range(10):
         try:
             r = requests.get(base, params=params, headers=HEADERS, timeout=30)
@@ -911,6 +1089,11 @@ def fetch_gut_microbiota_health_urls():
 def fetch_linus_pauling_mic_urls():
     return _crawl_one_level("https://lpi.oregonstate.edu/mic", "lpi.oregonstate.edu", delay=5.0)
 
+# AMBIGUO (2026-07-29): el endpoint devuelve 404 y health-products.canada.ca
+# responde de forma inconsistente según la ruta (403 en la raíz, 200 en
+# /lnhpd-bdpsnh/ que es la UI HTML de búsqueda, no la API JSON; varias rutas
+# de API alternativas probadas dieron excepción de conexión). No se encontró
+# con confianza el endpoint JSON vigente — se deja así en vez de adivinar.
 def fetch_health_canada_lnhpd_urls():
     """Health Canada LNHPD API — primeros 1,000 productos naturales licenciados."""
     base = "https://health-products.canada.ca/api/natural-licenced-natural-health-products/"
@@ -937,6 +1120,9 @@ def fetch_health_canada_lnhpd_urls():
 def fetch_opss_ingredients_urls():
     return _crawl_one_level("https://www.opss.org/ingredient-and-substance-index", "opss.org", delay=2.0)
 
+# Confirmado (2026-07-29): status 200, página de 94KB pero con 0 etiquetas
+# <a> — es una SPA Angular (EU Register on nutrition and health claims), no
+# crawleable con requests+BeautifulSoup. No es un bug de URL ni WAF.
 def fetch_eu_health_claims_urls():
     return _crawl_one_level(
         "https://ec.europa.eu/food/food-feed-portal/screen/health-claims/eu-register",
@@ -950,11 +1136,16 @@ def fetch_efsa_health_claims_urls():
     )
 
 def fetch_efsa_botanicals_urls():
+    # BUGFIX 2026-07-29: /en/topics/topic/compendium-botanicals devuelve 404;
+    # el compendio vive ahora bajo /en/data-report/compendium-botanicals.
     return _crawl_one_level(
-        "https://www.efsa.europa.eu/en/topics/topic/compendium-botanicals",
+        "https://www.efsa.europa.eu/en/data-report/compendium-botanicals",
         "efsa.europa.eu", delay=2.0,
     )
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — tga.gov.au no
+# conecta (connection refused/timeout) ni siquiera en la portada con
+# User-Agent de navegador normal; no evadir.
 def fetch_artg_australia_urls():
     return _crawl_one_level("https://www.tga.gov.au/resources/artg", "tga.gov.au", delay=3.0)
 
@@ -1030,6 +1221,11 @@ def fetch_afcd_australia_urls():
         "https://www.foodstandards.gov.au/science-data/monitoringnutrients/afcd",
         "foodstandards.gov.au", delay=3.0)
 
+# Confirmado (2026-07-29): el servidor de foodcomposition.co.nz presenta un
+# certificado TLS autofirmado/cadena incompleta (SSLCertVerificationError
+# bajo el trust store por defecto de Python/certifi; curl con su propio
+# trust store del sistema no se queja). No se desactiva la verificación TLS
+# (degradación de seguridad fuera de alcance de esta auditoría).
 def fetch_foodfiles_nz_urls():
     return _crawl_one_level(
         "https://www.foodcomposition.co.nz/foodfiles", "foodcomposition.co.nz", delay=3.0)
@@ -1039,6 +1235,12 @@ def fetch_cofid_uk_urls():
         "https://www.gov.uk/government/publications/composition-of-foods-integrated-dataset-cofid",
         "gov.uk", delay=3.0)
 
+# AMBIGUO (2026-07-29): dataportal.livsmedelsverket.se da excepción de
+# conexión incluso en la raíz del dominio (probado varias rutas), y aparte
+# el seed original es una página Swagger UI (JS) que tampoco tendría enlaces
+# crawleables aunque cargara. Habría que usar el endpoint REST real de la
+# API (no localizado con confianza) en vez de la UI de documentación — se
+# deja así en vez de adivinar.
 def fetch_livsmedelsverket_sweden_urls():
     return _crawl_one_level(
         "https://dataportal.livsmedelsverket.se/livsmedel/swagger/index.html",
@@ -1058,18 +1260,35 @@ def fetch_nevo_netherlands_urls():
 def fetch_swiss_food_composition_urls():
     return _crawl_one_level("https://naehrwertdaten.ch/", "naehrwertdaten.ch", delay=3.0)
 
+# AMBIGUO (2026-07-29): este seed específico da excepción de conexión, pese
+# a que otras rutas de canada.ca funcionan bien para otros fetchers de este
+# archivo (fetch_canada_food_guide_urls, fetch_canada_dri_urls). Podría ser
+# una ruta muerta o un fallo intermitente puntual de esta página concreta;
+# no se encontró con confianza una URL de reemplazo — se deja así.
 def fetch_canadian_nutrient_file_urls():
     return _crawl_one_level(
         "https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/nutrient-data/canadian-nutrient-file-about-us/download-files.html",
         "canada.ca", delay=3.0)
 
+# Confirmado (2026-07-29): foodrepo.org quedó descontinuado — la portada solo
+# tiene un <meta http-equiv="refresh"> que redirige a openfoodfacts.org
+# ("This site has moved to openfoodfacts.org"). No es un bug ni un bloqueo:
+# la fuente se fusionó con Open Food Facts, que este archivo YA cubre por
+# separado vía fetch_open_food_facts_urls. No se apunta este fetcher a OFF
+# para evitar scraping duplicado del mismo contenido.
 def fetch_foodrepo_urls():
     return _crawl_one_level("https://www.foodrepo.org/", "foodrepo.org", delay=3.0)
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — globaldietarydatabase.org
+# no conecta (connection refused/timeout) ni siquiera en la portada con
+# User-Agent de navegador normal; no evadir.
 def fetch_global_dietary_database_urls():
     return _crawl_one_level("https://www.globaldietarydatabase.org/", "globaldietarydatabase.org", delay=3.0)
 
 # B. Revistas — genuinamente nuevas
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — 403 incluso
+# para la portada de academic.oup.com con User-Agent de navegador normal;
+# no evadir.
 def fetch_global_perspectives_nutrition_urls():
     return _crawl_one_level("https://academic.oup.com/gpn", "academic.oup.com/gpn", delay=5.0)
 
@@ -1082,8 +1301,12 @@ def fetch_kdoqi_kidney_nutrition_urls():
     return _crawl_one_level("https://www.kidney.org/professionals/guidelines", "kidney.org", delay=3.0)
 
 def fetch_easl_liver_nutrition_urls():
-    return _crawl_one_level("https://easl.eu/publication/", "easl.eu", delay=3.0)
+    # BUGFIX 2026-07-29: /publication/ devuelve 404; la sección correcta es
+    # /publications/clinical-practice-guidelines/ (plural + sub-sección).
+    return _crawl_one_level("https://easl.eu/publications/clinical-practice-guidelines/", "easl.eu", delay=3.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — 403 incluso
+# para la portada de cff.org con User-Agent de navegador normal; no evadir.
 def fetch_cystic_fibrosis_nutrition_urls():
     return _crawl_one_level(
         "https://www.cff.org/medical-professionals/clinical-care-guidelines", "cff.org", delay=3.0)
@@ -1100,12 +1323,18 @@ def fetch_national_lipid_assoc_urls():
 def fetch_curated_metagenomic_data_urls():
     return _crawl_one_level("https://waldronlab.io/curatedMetagenomicData/", "waldronlab.io", delay=2.0)
 
+# Confirmado (2026-07-29): la portada responde 200 pero el <body> es solo un
+# <meta http-equiv="refresh" content="0; ./app"> hacia una SPA (React/Ember,
+# familia EuPathDB) — no crawleable con requests+BeautifulSoup. No es un bug
+# de URL ni WAF.
 def fetch_microbiomedb_urls():
     return _crawl_one_level("https://microbiomedb.org/", "microbiomedb.org", delay=2.0)
 
 # J. Suplementos — genuinamente nuevas
 def fetch_cam_cancer_summaries_urls():
-    return _crawl_one_level("https://cam-cancer.org/en/summaries", "cam-cancer.org", delay=5.0)
+    # BUGFIX 2026-07-29: /en/summaries devuelve 404; el sitio se reorganizó,
+    # los resúmenes ahora viven en /methodology/evidence-based-summaries.
+    return _crawl_one_level("https://cam-cancer.org/methodology/evidence-based-summaries", "cam-cancer.org", delay=5.0)
 
 # Fuentes con licencia/uso restringido — solo metadata, sin crawl masivo
 def fetch_langual_metadata_urls():
@@ -1390,7 +1619,7 @@ def url_to_filename(url):
     elif "foodandnutritionresearch" in base_url: prefix = "fnr"
     elif "jhpn.biomedcentral"     in base_url:  prefix = "jhpn"
     elif "jissn.biomedcentral"    in base_url or "rssn20" in base_url: prefix = "jissn"
-    elif "sportsmedicine-open"    in base_url:  prefix = "sportsmed_open"
+    elif "sportsmedicine-open" in base_url or "link.springer.com/article/10.1186/s40798" in base_url: prefix = "sportsmed_open"
     elif "nutrirejournal"         in base_url:  prefix = "nutrire"
     elif "genesandnutrition"      in base_url:  prefix = "genes_nutr"
     elif "cambridge.org/core/journals/journal-of-nutritional" in base_url: prefix = "jns"
@@ -1419,7 +1648,7 @@ def url_to_filename(url):
     elif "bapen.org.uk"           in base_url:  prefix = "bapen"
     elif "bda.uk.com"             in base_url:  prefix = "bda"
     elif "nutritionsociety.org"   in base_url:  prefix = "nutr_soc"
-    elif "felanpeweb.org"         in base_url:  prefix = "felanpe"
+    elif "felanpeweb.org" in base_url or "felanpe.org" in base_url: prefix = "felanpe"
     elif "iuns.org"               in base_url:  prefix = "iuns"
     elif "fensnutrition.org"      in base_url:  prefix = "fens"
     elif "obesitycanada.ca"       in base_url:  prefix = "obesity_ca"
