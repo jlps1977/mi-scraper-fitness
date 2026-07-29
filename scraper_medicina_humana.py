@@ -1145,7 +1145,7 @@ def delay_for_url(url):
     if "nyulangone.org"         in url:  return 5.0
     if "pennmedicine.org"       in url:  return 5.0
     if "yalemedicine.org"       in url:  return 5.0
-    if "ecdc.europa.eu"         in url:  return 3.0
+    if "ecdc.europa.eu"         in url:  return 6.0
     if "paho.org"               in url:  return 3.0
     if "sign.ac.uk"             in url:  return 4.0
     if "cda-amc.ca"             in url:  return 5.0
@@ -1248,12 +1248,42 @@ def main():
     print("Descubriendo URLs de todas las fuentes...", flush=True)
     all_urls = get_all_urls()
 
+    # Dedup preservando orden (la misma URL puede aparecer en varios
+    # sub-sitemaps de un mismo índice, ej. ECDC listaba la misma página en
+    # múltiples categorías) — sin esto se reprocesa (y se le pega al mismo
+    # sitio) muchas veces de más.
+    _seen = set()
+    deduped = []
+    for u in all_urls:
+        key = u.split("|")[0] if "|" in u else u
+        if key not in _seen:
+            _seen.add(key)
+            deduped.append(u)
+    if len(deduped) < len(all_urls):
+        print(f"Dedup: {len(all_urls)} -> {len(deduped)} URLs "
+              f"({len(all_urls) - len(deduped)} duplicadas descartadas)", flush=True)
+    all_urls = deduped
+
     remaining = [u for u in all_urls if (u.split("|")[0] if "|" in u else u) not in done_set]
     total = len(all_urls)
     print(f"\nTotal: {total} | Ya hechos: {len(done_set)} | Pendientes: {len(remaining)}\n", flush=True)
 
+    # Backoff/desactivación por dominio ante 429 persistente. Regla del
+    # proyecto: un 429 persistente desactiva la fuente, no dispara rotación
+    # de IP ni ningún otro intento de evasión.
+    from urllib.parse import urlparse
+    domain_429_streak = {}
+    disabled_domains = set()
+    MAX_429_STREAK = 8
+
     for i, url_entry in enumerate(remaining, 1):
         url = url_entry.split("|")[0] if "|" in url_entry else url_entry
+        domain = urlparse(url).netloc
+
+        if domain in disabled_domains:
+            progress["failed"].append({"url": url, "error": "dominio desactivado por 429 persistente en esta corrida"})
+            continue
+
         name = url_to_filename(url_entry)
 
         try:
@@ -1270,14 +1300,38 @@ def main():
 
             upload_file(service, url, name, text)
             progress["done"].append(url)
+            domain_429_streak[domain] = 0
+
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response is not None else None
+            err = f"{status} {str(e)[:100]}" if status else str(e)[:120]
+            progress["failed"].append({"url": url, "error": err})
+            print(f"  ✗ {url[:70]} — {err}", flush=True)
+
+            if status == 429:
+                domain_429_streak[domain] = domain_429_streak.get(domain, 0) + 1
+                streak = domain_429_streak[domain]
+                if streak >= MAX_429_STREAK:
+                    disabled_domains.add(domain)
+                    print(f"  ⚠ {domain}: {streak} respuestas 429 seguidas — "
+                          f"desactivado para el resto de esta corrida (sin reintentos, sin rotar IP).",
+                          flush=True)
+                else:
+                    cooldown = 30 * streak
+                    print(f"  … 429 en {domain} ({streak}/{MAX_429_STREAK}) — "
+                          f"esperando {cooldown}s antes de seguir", flush=True)
+                    time.sleep(cooldown)
+            else:
+                domain_429_streak[domain] = 0
 
         except Exception as e:
             err = str(e)[:120]
             progress["failed"].append({"url": url, "error": err})
             print(f"  ✗ {url[:70]} — {err}", flush=True)
+            domain_429_streak[domain] = 0
 
         d = delay_for_url(url_entry)
-        if d > 0:
+        if d > 0 and domain not in disabled_domains:
             time.sleep(d)
 
         if i % 50 == 0:
