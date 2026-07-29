@@ -510,29 +510,45 @@ def fetch_nutrients_mdpi_urls():
         delay=8.0,
     )
 
+def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
+    """BUGFIX 2026-07-29: *.biomedcentral.com/*.springeropen.com/sitemap.xml
+    redirige al sitemap GLOBAL de Springer (todas sus revistas, millones de
+    URLs) — no sirve para acotar a una sola revista (se detectó con ISSN
+    Nutrition en scraper_deporte.py devolviendo 9,968,660 URLs). El
+    subdominio dedicado de cada revista sí está bien acotado; se recorre su
+    listado paginado de artículos en su lugar."""
+    base = f"https://{journal_slug}.biomedcentral.com"
+    urls = set()
+    for page in range(1, max_pages + 1):
+        try:
+            seed = f"{base}/articles" if page == 1 else f"{base}/articles?page={page}"
+            r = requests.get(seed, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            page_urls = {base + a["href"] for a in soup.find_all("a", href=True)
+                         if a["href"].startswith("/article/10.")}
+            if not page_urls or not (page_urls - urls):
+                urls |= page_urls
+                break
+            urls |= page_urls
+            time.sleep(delay)
+        except Exception:
+            break
+    return list(urls)
+
+
 def fetch_nutrition_journal_bmc_urls():
-    return _fetch_sitemap_index_urls(
-        "https://nutritionj.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("nutritionj")
 
 def fetch_bmc_nutrition_urls():
-    return _fetch_sitemap_index_urls(
-        "https://bmcnutr.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("bmcnutr")
 
 def fetch_nutrition_metabolism_urls():
-    return _fetch_sitemap_index_urls(
-        "https://nutritionandmetabolism.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("nutritionandmetabolism")
 
 def fetch_ijbnpa_urls():
-    return _fetch_sitemap_index_urls(
-        "https://ijbnpa.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("ijbnpa")
 
 def fetch_food_nutrition_research_urls():
     return _crawl_one_level(
@@ -541,34 +557,19 @@ def fetch_food_nutrition_research_urls():
     )
 
 def fetch_jhpn_urls():
-    return _fetch_sitemap_index_urls(
-        "https://jhpn.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("jhpn")
 
 def fetch_jissn_urls():
-    return _fetch_sitemap_index_urls(
-        "https://jissn.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("jissn")
 
 def fetch_sports_medicine_open_urls():
-    return _fetch_sitemap_index_urls(
-        "https://sportsmedicine-open.springeropen.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("sportsmedicine-open")
 
 def fetch_nutrire_urls():
-    return _fetch_sitemap_index_urls(
-        "https://nutrirejournal.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("nutrirejournal")
 
 def fetch_genes_nutrition_urls():
-    return _fetch_sitemap_index_urls(
-        "https://genesandnutrition.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=2.0,
-    )
+    return _fetch_springer_journal_articles("genesandnutrition")
 
 def fetch_journal_nutritional_science_urls():
     return _crawl_one_level(

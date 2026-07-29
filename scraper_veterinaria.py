@@ -699,18 +699,39 @@ def fetch_scielo_vet_urls():
 def fetch_journal_shelter_med_urls():
     return _crawl_one_level("https://www.sheltervet.org/assets/docs/shelter-medicine-textbook-toc.html", "sheltervet.org", delay=3.0)
 
+def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
+    """BUGFIX 2026-07-29: *.biomedcentral.com/*.springeropen.com/sitemap.xml
+    redirige al sitemap GLOBAL de Springer (todas sus revistas, millones de
+    URLs) — no sirve para acotar a una sola revista (se detectó con ISSN
+    Nutrition en scraper_deporte.py devolviendo 9,968,660 URLs). El
+    subdominio dedicado de cada revista sí está bien acotado; se recorre su
+    listado paginado de artículos en su lugar."""
+    base = f"https://{journal_slug}.biomedcentral.com"
+    urls = set()
+    for page in range(1, max_pages + 1):
+        try:
+            seed = f"{base}/articles" if page == 1 else f"{base}/articles?page={page}"
+            r = requests.get(seed, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            page_urls = {base + a["href"] for a in soup.find_all("a", href=True)
+                         if a["href"].startswith("/article/10.")}
+            if not page_urls or not (page_urls - urls):
+                urls |= page_urls
+                break
+            urls |= page_urls
+            time.sleep(delay)
+        except Exception:
+            break
+    return list(urls)
+
+
 def fetch_bmc_vet_research_urls():
-    return _fetch_sitemap_index_urls(
-        "https://bmcvetres.biomedcentral.com/sitemap.xml",
-        delay=1.0,
-    )
+    return _fetch_springer_journal_articles("bmcvetres")
 
 def fetch_parasites_vectors_vet_urls():
-    return _fetch_sitemap_index_urls(
-        "https://parasitesandvectors.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u,
-        delay=1.0,
-    )
+    return _fetch_springer_journal_articles("parasitesandvectors")
 
 # C. Farmacología veterinaria
 def fetch_vmd_uk_urls():

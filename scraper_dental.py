@@ -647,10 +647,36 @@ def fetch_aaom_urls():
     return _crawl_one_level("https://www.aaom.com/resources", "aaom.com", delay=3.0)
 
 # D. Revistas OA
+def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
+    """BUGFIX 2026-07-29: *.biomedcentral.com/*.springeropen.com/sitemap.xml
+    redirige al sitemap GLOBAL de Springer (todas sus revistas, millones de
+    URLs) — no sirve para acotar a una sola revista (se detectó con ISSN
+    Nutrition en scraper_deporte.py devolviendo 9,968,660 URLs). El
+    subdominio dedicado de cada revista sí está bien acotado; se recorre su
+    listado paginado de artículos en su lugar."""
+    base = f"https://{journal_slug}.biomedcentral.com"
+    urls = set()
+    for page in range(1, max_pages + 1):
+        try:
+            seed = f"{base}/articles" if page == 1 else f"{base}/articles?page={page}"
+            r = requests.get(seed, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            page_urls = {base + a["href"] for a in soup.find_all("a", href=True)
+                         if a["href"].startswith("/article/10.")}
+            if not page_urls or not (page_urls - urls):
+                urls |= page_urls
+                break
+            urls |= page_urls
+            time.sleep(delay)
+        except Exception:
+            break
+    return list(urls)
+
+
 def fetch_bmc_oral_health_urls():
-    return _fetch_sitemap_index_urls(
-        "https://bmcoralhealth.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=1.0)
+    return _fetch_springer_journal_articles("bmcoralhealth")
 
 def fetch_mdpi_dentistry_urls():
     return _fetch_sitemap_index_urls(

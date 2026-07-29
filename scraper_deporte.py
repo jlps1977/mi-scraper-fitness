@@ -728,11 +728,37 @@ def fetch_sports_health_urls():
 def fetch_nata_urls():
     return _crawl_one_level("https://www.nata.org/practice-patient-care/health-information/", "nata.org", delay=3.0)
 
+def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
+    """BUGFIX 2026-07-29: *.biomedcentral.com/*.springeropen.com/sitemap.xml
+    redirige al sitemap GLOBAL de Springer (todas sus revistas, millones de
+    URLs) — no sirve para acotar a una sola revista (se detectó con ISSN
+    Nutrition devolviendo 9,968,660 URLs). El subdominio dedicado de cada
+    revista sí está bien acotado; se recorre su listado paginado de
+    artículos en su lugar."""
+    base = f"https://{journal_slug}.biomedcentral.com"
+    urls = set()
+    for page in range(1, max_pages + 1):
+        try:
+            seed = f"{base}/articles" if page == 1 else f"{base}/articles?page={page}"
+            r = requests.get(seed, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            page_urls = {base + a["href"] for a in soup.find_all("a", href=True)
+                         if a["href"].startswith("/article/10.")}
+            if not page_urls or not (page_urls - urls):
+                urls |= page_urls
+                break
+            urls |= page_urls
+            time.sleep(delay)
+        except Exception:
+            break
+    return list(urls)
+
+
 # E. Nutrición deportiva
 def fetch_issn_nutrition_urls():
-    return _fetch_sitemap_index_urls("https://jissn.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u,
-        delay=1.0)
+    return _fetch_springer_journal_articles("jissn")
 
 def fetch_ais_nutrition_urls():
     return _crawl_one_level("https://www.ais.gov.au/nutrition/", "ais.gov.au", delay=2.0)
@@ -780,11 +806,7 @@ def fetch_frontiers_sports_urls():
     )
 
 def fetch_bmc_sports_sci_urls():
-    return _fetch_sitemap_index_urls(
-        "https://bmcsportsscimedrehabil.biomedcentral.com/sitemap.xml",
-        url_filter=lambda u: "article" in u,
-        delay=1.0,
-    )
+    return _fetch_springer_journal_articles("bmcsportsscimedrehabil")
 
 def fetch_peerj_sports_urls():
     return _fetch_sitemap_index_urls(
@@ -880,9 +902,9 @@ def fetch_cases_uk_urls():
     return _crawl_one_level("https://www.casesportsscience.co.uk/", "casesportsscience.co.uk", delay=3.0)
 
 def fetch_sports_med_open_urls():
-    return _fetch_sitemap_index_urls(
-        "https://sportsmedicineopen.springeropen.com/sitemap.xml",
-        url_filter=lambda u: "article" in u, delay=1.0)
+    # BUGFIX 2026-07-29: el dominio real lleva guión (sportsmedicineopen.
+    # springeropen.com, sin guión, da 404 — no redirige a ningún lado).
+    return _fetch_springer_journal_articles("sportsmedicine-open")
 
 def fetch_jhk_journal_urls():
     return _fetch_sitemap_index_urls(
