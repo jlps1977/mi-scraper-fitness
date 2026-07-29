@@ -237,7 +237,13 @@ def folder_for_url(url):
     if "atsdr.cdc.gov"               in url:  return DRIVE_ATSDR_TOXICOLOGY_ID
     if "inchem.org"                  in url:  return DRIVE_INCHEM_TOXICOLOGY_ID
     if "iris.epa.gov"                in url:  return DRIVE_EPA_IRIS_ID
-    if "niosh/npg"                   in url:  return DRIVE_NIOSH_POCKET_ID
+    # Antes solo "niosh/npg" — verificado en vivo (2026-07-29) que
+    # fetch_niosh_urls() (crawl de cdc.gov/niosh/) trae mayormente URLs como
+    # cdc.gov/niosh/pubs/, cdc.gov/niosh/about/, etc., no solo /niosh/npg/ —
+    # con el patrón viejo, 33 de 41 URLs caían en la regla genérica
+    # "cdc.gov" (DRIVE_NIOSH_POCKET_ID casi nunca se alcanzaba). Se amplía
+    # para cubrir todo /niosh/, consistente con el domain_match del fetcher.
+    if "cdc.gov/niosh"                in url:  return DRIVE_NIOSH_POCKET_ID
     if "cameochemicals"              in url:  return DRIVE_CAMEO_CHEMICALS_ID
     if "iarc.who.int"                in url:  return DRIVE_IARC_MONOGRAPHS_ID
     if "cdc.gov/chemical"            in url:  return DRIVE_CDC_CHEMICAL_ID
@@ -258,6 +264,10 @@ def folder_for_url(url):
     if "ecdc.europa.eu"              in url:  return DRIVE_ECDC_ID
     if "paho.org"                    in url:  return DRIVE_PAHO_ID
     if "cdc.gov/mmwr"                in url:  return DRIVE_CDC_MMWR_ID
+    # Debe ir antes de la regla genérica "cdc.gov" (más abajo) porque
+    # wwwnc.cdc.gov contiene "cdc.gov" como substring — si no, esta regla
+    # nunca se alcanza y DRIVE_CDC_EID_ID queda muerta (bug confirmado 2026-07-29).
+    if "wwwnc.cdc.gov/eid"           in url:  return DRIVE_CDC_EID_ID
     if "cdc.gov"                     in url:  return DRIVE_CDC_CONTENT_ID
     if "who.int"                     in url:  return DRIVE_WHO_PUBLICATIONS_ID
     if "medlineplus.gov"             in url:  return DRIVE_MEDLINEPLUS_ID
@@ -277,7 +287,6 @@ def folder_for_url(url):
     if "jmir.org"                    in url:  return DRIVE_JMIR_ID
     if "peerj.com"                   in url:  return DRIVE_PEERJ_ID
     if "eurosurveillance.org"        in url:  return DRIVE_EUROSURVEILLANCE_ID
-    if "wwwnc.cdc.gov/eid"           in url:  return DRIVE_CDC_EID_ID
     if "annfammed.org"               in url:  return DRIVE_ANNALS_FAMILY_ID
     if "medrxiv.org"                 in url:  return DRIVE_MEDRXIV_ID
     # Bases de datos clínicas
@@ -369,10 +378,21 @@ def fetch_uspstf_urls():
     return _crawl_one_level(USPSTF_SEED, "uspreventiveservicestaskforce.org", delay=3.0)
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — AWS WAF
+# devuelve HTTP 202 con x-amzn-waf-action: challenge y body vacío tanto para
+# el sitemap como para la home plana (con UA de navegador normal). No evadir.
 def fetch_ahrq_urls():
     return _fetch_sitemap_index_urls(AHRQ_SITEMAP, delay=2.0)
 
 
+# AMBIGUO (2026-07-29, no confirmado como WAF ni arreglado): requests/certifi
+# falla con SSLCertVerificationError "unable to get local issuer certificate"
+# — el servidor (CN=www6.va.gov, emisor DigiCert) no envía el certificado
+# intermedio completo en el handshake. curl y navegadores normales cargan la
+# página sin problema (probablemente porque tienen el intermedio cacheado o
+# lo obtienen vía AIA fetching), pero el bundle de certifi por sí solo no.
+# No se deshabilitó verify= por ser un cambio sensible de seguridad — requiere
+# decisión explícita (ej. agregar el intermedio faltante a un bundle propio).
 def fetch_va_dod_urls():
     return _crawl_one_level(VA_DOD_SEED, "healthquality.va.gov", delay=3.0)
 
@@ -389,6 +409,9 @@ def fetch_nci_pdq_urls():
     return _crawl_one_level(NCI_PDQ_SEED, "cancer.gov", delay=2.0)
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — Cloudflare
+# devuelve HTTP 403 con cf-mitigated: challenge (JS challenge) tanto en
+# /en/guidelines como en la home plana, con UA de navegador normal. No evadir.
 def fetch_nih_hiv_urls():
     return _crawl_one_level(NIH_HIV_SEED, "clinicalinfo.hiv.gov", delay=2.0)
 
@@ -401,8 +424,17 @@ def fetch_ecdc_urls():
     )
 
 
+# Sin filtro de idioma esto traía 20,013 URLs (verificado en vivo 2026-07-29):
+# paho.org publica todo su sitio en EN/ES/PT/FR en el mismo sitemap sin
+# separar por idioma, a diferencia de ECDC (que sí filtra "/en/" — ver
+# fetch_ecdc_urls). Se agrega el mismo filtro para quedar consistente con el
+# resto del corpus (en inglés) y bajar a ~6,358 URLs.
 def fetch_paho_urls():
-    return _fetch_sitemap_index_urls(PAHO_SITEMAP, delay=2.0)
+    return _fetch_sitemap_index_urls(
+        PAHO_SITEMAP,
+        url_filter=lambda u: "/en/" in u or u.rstrip("/").endswith("/en"),
+        delay=2.0,
+    )
 
 
 def fetch_mmwr_urls():
@@ -610,22 +642,57 @@ def fetch_plos_medicine_urls():
     return urls
 
 
+# FRONTIERS_SITEMAP ("/sitemap-articles.xml") da 404 confirmado (2026-07-29) —
+# Frontiers reestructuró su sitemap en decenas de archivos especializados
+# (ver robots.txt: articles/sitemap-index.xml son solo PDFs sin slug de
+# revista en la ruta, sitemap-journals.xml son páginas de navegación, no
+# artículos). Fix verificado en vivo: cada revista expone su propio listado
+# paginado en /journals/{slug}/articles?page=N con enlaces reales a artículos
+# HTML (mismo patrón que el fix de BioMedCentral/SpringerOpen usado en otros
+# scrapers de este repo — crawlear el listado en vez de confiar en el sitemap).
+def _fetch_frontiers_journal_articles(journal_slug, max_pages=20, delay=1.5):
+    base = "https://www.frontiersin.org"
+    urls = set()
+    for page in range(1, max_pages + 1):
+        try:
+            seed = f"{base}/journals/{journal_slug}/articles" if page == 1 else f"{base}/journals/{journal_slug}/articles?page={page}"
+            r = requests.get(seed, headers=HEADERS, timeout=30)
+            if not r.ok:
+                break
+            soup = BeautifulSoup(r.text, "html.parser")
+            page_urls = {a["href"] for a in soup.find_all("a", href=True)
+                         if "/articles/10.3389/" in a["href"] and a["href"].rstrip("/").endswith("/full")}
+            if not page_urls:
+                break
+            urls |= page_urls
+            time.sleep(delay)
+        except Exception:
+            break
+    return urls
+
+
 def fetch_frontiers_medicine_urls():
-    return _fetch_sitemap_index_urls(
-        FRONTIERS_SITEMAP,
-        url_filter=lambda u: "/medicine/" in u or "/public-health/" in u or "/pharmacology/" in u,
-        delay=1.5,
-    )
+    urls = set()
+    for slug in ("medicine", "public-health", "pharmacology"):
+        urls |= _fetch_frontiers_journal_articles(slug, max_pages=20, delay=1.5)
+    return list(urls)
 
 
 def fetch_who_urls():
-    """WHO publications API."""
+    """WHO publications API (OData). Verificado en vivo (2026-07-29): la
+    respuesta real es {"@odata.context":..., "value":[...], "@odata.nextLink":...}
+    — NO tiene "results" ni "items" (por eso antes siempre daba 0 URLs), y
+    el parámetro "page" es ignorado por el servidor (page=0 y page=1 devuelven
+    exactamente los mismos 50 ítems); la paginación real es vía "$skip", en
+    incrementos del tamaño de página real (50, sin importar "pageSize"). Cada
+    ítem trae "ItemDefaultUrl" como ruta relativa (ej. "/WHO-RHR-18.12"), no
+    una URL absoluta — hay que unirla con el dominio."""
     urls = []
-    params = {"sf_culture": "en", "_format": "json", "page": 0, "pageSize": 100}
-    MAX_PAGES = 30
+    PAGE_SIZE = 50
+    MAX_PAGES = 60  # ~3000 publicaciones, mismo orden de magnitud que el cap original
     print("  WHO API paginando...", flush=True)
     for page in range(MAX_PAGES):
-        params["page"] = page
+        params = {"sf_culture": "en", "_format": "json", "$skip": page * PAGE_SIZE}
         try:
             r = requests.get(WHO_API, params=params, headers=HEADERS, timeout=30)
             if not r.ok:
@@ -634,31 +701,52 @@ def fetch_who_urls():
         except Exception as e:
             print(f"  WHO API error: {e}", flush=True)
             break
-        items = data if isinstance(data, list) else data.get("results", data.get("items", []))
+        items = data.get("value", []) if isinstance(data, dict) else []
         if not items:
             break
         for item in items:
-            url = item.get("url", item.get("Url", ""))
-            title = item.get("title", item.get("Title", ""))
-            if url and "who.int" in url:
-                urls.append(url)
+            rel_url = item.get("ItemDefaultUrl", "")
+            if rel_url:
+                urls.append(urljoin("https://www.who.int", rel_url))
         time.sleep(1.5)
-        if len(items) < 100:
+        if len(items) < PAGE_SIZE:
             break
     return list(set(urls))
 
 
 # ── Fetchers adicionales (batch 2) ────────────────────────────────────────────
 
+# El sitemap.xml raíz de merckmanuals.com/msdmanuals.com es un índice de 25
+# sub-sitemaps segmentados por TIPO de contenido (verificado en vivo 2026-07-29):
+# home-audio, home-author, home-biodigital, home-figure, home-generic-pages,
+# home-image, home-infographic, home-labtest, home-news, home-quiz,
+# home-table, home-topic(.xml.gz), home-video — y el mismo set con prefijo
+# "professional-". El código anterior traía TODOS (~15,135 URLs — audio,
+# fichas de autor, modelos 3D, quizzes, tablas, imágenes...), no solo los
+# artículos de la enciclopedia médica ("-topic": 3335 home + 2833 professional
+# = 6168, un tamaño razonable). Se filtran los sub-sitemaps antes de bajarlos
+# (no después) para no procesar miles de URLs de audio/imagen/video sin texto.
+def _fetch_manuals_topic_sitemaps(root_sitemap, delay=5.0):
+    sub_sitemaps = fetch_urls_from_sitemap(root_sitemap)
+    keep = [sm for sm in sub_sitemaps if "-topic" in sm or "-generic-pages" in sm]
+    urls = []
+    for sm in keep:
+        found = fetch_urls_from_sitemap(sm)
+        print(f"  {sm.split('/')[-1]}: {len(found)} URLs", flush=True)
+        urls.extend(found)
+        time.sleep(delay)
+    return urls
+
+
 def fetch_merck_manual_urls():
-    urls = _fetch_sitemap_index_urls("https://www.merckmanuals.com/sitemap.xml", delay=5.0)
+    urls = _fetch_manuals_topic_sitemaps("https://www.merckmanuals.com/sitemap.xml", delay=5.0)
     pro  = [u for u in urls if "/professional/" in u]
     con  = [u for u in urls if "/home/" in u]
     return pro + con
 
 
 def fetch_msd_manual_urls():
-    return _fetch_sitemap_index_urls("https://www.msdmanuals.com/sitemap.xml", delay=5.0)
+    return _fetch_manuals_topic_sitemaps("https://www.msdmanuals.com/sitemap.xml", delay=5.0)
 
 
 def fetch_wikem_urls():
@@ -670,6 +758,15 @@ def fetch_msf_guidelines_urls():
     return _crawl_one_level("https://medicalguidelines.msf.org/en", "medicalguidelines.msf.org", delay=3.0)
 
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — TLS handshake
+# completa normalmente pero la conexión HTTP/2 se cuelga sin respuesta
+# (verificado con curl -v directo, no solo requests), tanto en /sitemap.xml
+# como en varias páginas de canada.ca. Mismo patrón que health.gov.au
+# (Australia) — consistente con mitigación de bots a nivel de borde/CDN.
+# Nota aparte: aunque se destrabara, este fetcher de por sí recorre el
+# sitemap de TODO el gobierno de Canadá (no solo Health Canada) y filtra
+# después de descargar cada sub-sitemap — es lento por diseño incluso sin
+# el bloqueo. No evadir el bloqueo.
 def fetch_health_canada_urls():
     return _fetch_sitemap_index_urls(
         "https://www.canada.ca/sitemap.xml",
@@ -678,18 +775,39 @@ def fetch_health_canada_urls():
     )
 
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — TLS handshake
+# completa normalmente pero la conexión se cuelga sin respuesta (timeout),
+# tanto en /sitemap.xml como en la home plana, con HTTP/2 y HTTP/1.1, y con
+# distintos User-Agent de navegador. Mismo patrón que canada.ca (Health
+# Canada) — consistente con mitigación de bots a nivel de borde/CDN
+# (conexión silenciosamente colgada en vez de 403/challenge). No evadir.
 def fetch_australia_health_urls():
     return _fetch_sitemap_index_urls("https://www.health.gov.au/sitemap.xml", delay=3.0)
 
 
+# BUG confirmado (2026-07-29): samhsa.gov/sitemap.xml es un sitemap PLANO
+# (<urlset> con 3185 <loc> de contenido real), NO un índice de sub-sitemaps
+# (<sitemapindex>). _fetch_sitemap_index_urls() asume que TODO <loc> del
+# nivel raíz es a su vez otro sitemap XML y trata de descargarlo como tal —
+# con esta fuente eso significa 3185 fetches de páginas HTML normales (cada
+# una tratada como si fuera XML, todas fallan el parseo y caen al fallback
+# de regex que no encuentra nada), a 3s de delay cada una: >3 horas para
+# terminar en 0 URLs reales. Se usa fetch_urls_from_sitemap() directo, igual
+# que ya se hace para MMWR y Johns Hopkins (que también son sitemaps planos).
 def fetch_samhsa_urls():
-    return _fetch_sitemap_index_urls("https://www.samhsa.gov/sitemap.xml", delay=3.0)
+    return fetch_urls_from_sitemap("https://www.samhsa.gov/sitemap.xml")
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — Cloudflare
+# devuelve HTTP 403 tanto en /health como en la home plana, con UA de
+# navegador normal. No evadir.
 def fetch_unicef_health_urls():
     return _crawl_one_level("https://www.unicef.org/health", "unicef.org/health", delay=3.0)
 
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — 403 Forbidden
+# genérico (awselb/2.0) tanto en /guidance como en la home plana, con UA de
+# navegador normal. No evadir.
 def fetch_nice_guidelines_urls():
     return _crawl_one_level("https://www.nice.org.uk/guidance", "nice.org.uk/guidance", delay=5.0)
 
@@ -698,6 +816,23 @@ def fetch_sign_guidelines_urls():
     return _crawl_one_level("https://www.sign.ac.uk/our-guidelines/", "sign.ac.uk", delay=4.0)
 
 
+# BUG confirmado en vivo (2026-07-29, NO es solo lentitud — se probó con
+# timeout de 6+ minutos y sigue dando 0): el "índice" en
+# ema.europa.eu/sitemap.xml lista 162 sub-sitemaps como
+# sitemap.xml?page=1..162, pero el parámetro ?page= es ignorado por el
+# servidor/CDN (CloudFront) — CUALQUIER valor de ?page= (1, 2, 162, e
+# incluso 200, fuera de rango) devuelve exactamente el mismo <sitemapindex>
+# de nivel raíz otra vez (mismos 162 <loc>, mismo <sitemapindex>, nunca un
+# <urlset> con contenido real). Es decir, el sitemap se referencia a sí
+# mismo indefinidamente y nunca llega a URLs de medicamentos reales, por lo
+# que el url_filter no encuentra nada que filtrar. Probablemente un bug de
+# caché/config del lado de EMA (robots.txt solo declara este único
+# sitemap.xml). Como alternativa se probó crawlear directamente
+# /en/medicines a mano, pero devuelve HTML sin links reales (parece
+# renderizado por JS del lado del cliente, no server-side) — no hay forma
+# de llegar al listado real sin ejecutar JS, que está fuera del alcance de
+# este scraper. Se deja sin arreglar (no hay URL/endpoint alternativo
+# verificado) — requiere investigación adicional o contactar a EMA.
 def fetch_ema_human_urls():
     return _fetch_sitemap_index_urls(
         "https://www.ema.europa.eu/sitemap.xml",
@@ -714,10 +849,18 @@ def fetch_fda_guidance_urls():
     )
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — Cloudflare
+# devuelve HTTP 403 "Just a moment..." (challenge) tanto en /sitemap.xml
+# como en la home plana, con UA de navegador normal. No evadir.
 def fetch_cadth_urls():
     return _fetch_sitemap_index_urls("https://www.cda-amc.ca/sitemap.xml", delay=5.0)
 
 
+# Confirmado bloqueado a nivel de dominio (2026-07-29) — TLS handshake
+# completa pero la conexión HTTP/2 se cuelga sin respuesta (curl: "HTTP/2
+# stream ... INTERNAL_ERROR"), tanto en /guidelines como en la home plana.
+# Mismo patrón que canada.ca y health.gov.au — consistente con mitigación de
+# bots a nivel de borde/CDN. No evadir.
 def fetch_nhmrc_urls():
     return _crawl_one_level("https://www.nhmrc.gov.au/guidelines", "nhmrc.gov.au/guidelines", delay=4.0)
 
@@ -746,6 +889,9 @@ def fetch_cdc_chemical_urls():
     return _crawl_one_level("https://www.cdc.gov/chemical-emergencies/", "cdc.gov/chemical", delay=2.0)
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — Akamai
+# devuelve HTTP 403 "Access Denied" tanto en /sitemap.xml como en la home
+# plana, con UA de navegador normal. No evadir.
 def fetch_mayo_clinic_urls():
     return _fetch_sitemap_index_urls(
         "https://www.mayoclinic.org/sitemap.xml",
@@ -785,6 +931,11 @@ def fetch_nyu_langone_urls():
     return _crawl_one_level("https://nyulangone.org/conditions", "nyulangone.org/conditions", delay=5.0)
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — responde
+# HTTP 200 (no 403) pero el body es un challenge JS de Imperva/Incapsula
+# ("Request unsuccessful. Incapsula incident ID...", iframe a
+# /_Incapsula_Resource), sin contenido real ni un solo link. No evadir
+# (requeriría ejecutar JS de verdad, no solo cambiar headers).
 def fetch_penn_medicine_urls():
     return _crawl_one_level(
         "https://www.pennmedicine.org/for-patients-and-visitors/patient-information/conditions-treated-a-to-z",
@@ -801,6 +952,9 @@ def fetch_elife_urls():
     return _crawl_one_level("https://elifesciences.org/", "elifesciences.org", delay=2.0)
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — Cloudflare
+# devuelve HTTP 403 "Just a moment..." (challenge) en la home, con UA de
+# navegador normal. No evadir.
 def fetch_jama_open_urls():
     return _crawl_one_level("https://jamanetworkopen.com/", "jamanetworkopen.com", delay=5.0)
 
@@ -809,14 +963,47 @@ def fetch_cureus_urls():
     return _crawl_one_level("https://www.cureus.com/", "cureus.com", delay=3.0)
 
 
+# Bug confirmado (2026-07-29): sin filtro esto traía 70,037 URLs, pero cada
+# artículo real genera ~6 entradas de sitemap distintas (la página base más
+# /metrics, /citations, /tweetations, /XML, /PDF del MISMO artículo) — puro
+# duplicado, no contenido nuevo. Filtrando esos sufijos queda en ~11,842
+# páginas base reales (JMIR publica desde 1999, así que ese orden de
+# magnitud es plausible para una sola revista longeva).
 def fetch_jmir_urls():
-    return _fetch_sitemap_index_urls("https://www.jmir.org/sitemap.xml", delay=2.0)
+    return _fetch_sitemap_index_urls(
+        "https://www.jmir.org/sitemap.xml",
+        url_filter=lambda u: not u.rstrip("/").endswith(
+            ("/metrics", "/citations", "/tweetations", "/XML", "/PDF")
+        ),
+        delay=2.0,
+    )
 
 
+# Bug confirmado (2026-07-29): sin filtro esto traía 63,169 URLs mezclando
+# de todo — miles de páginas de perfil de autor (peerj.com/username/,
+# peerj.com/user/N/), páginas de navegación (about/, benefits/), 13,169
+# preprints SIN revisar por pares, y artículos de sub-revistas de PeerJ que
+# no son de medicina (cs- = Computer Science, achem-/pchem-/ochem-/ichem- =
+# Chemistry, matsci- = Materials Science). Se filtra a solo /articles/ (no
+# /preprints/, no perfiles, no nav) excluyendo esas sub-revistas no médicas,
+# quedando ~28,385 — sigue siendo bastante porque la revista principal de
+# PeerJ es "Life and Environmental Sciences" en general (no solo medicina) y
+# no hay forma de acotar más solo por patrón de URL sin consultar metadata
+# de cada artículo; se deja así, no es un bug adicional sino el alcance real
+# de la fuente.
 def fetch_peerj_urls():
-    return _fetch_sitemap_index_urls("https://peerj.com/sitemap.xml", delay=2.0)
+    return _fetch_sitemap_index_urls(
+        "https://peerj.com/sitemap.xml",
+        url_filter=lambda u: "/articles/" in u and not any(
+            f"/articles/{p}" in u for p in ("cs-", "achem-", "pchem-", "matsci-", "ochem-", "ichem-")
+        ),
+        delay=2.0,
+    )
 
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — Cloudflare
+# devuelve HTTP 403 "Just a moment..." (challenge) tanto en /sitemap.xml
+# como en la home plana, con UA de navegador normal. No evadir.
 def fetch_eurosurveillance_urls():
     return _fetch_sitemap_index_urls("https://www.eurosurveillance.org/sitemap.xml", delay=2.0)
 
@@ -829,16 +1016,24 @@ def fetch_annals_family_urls():
     return _crawl_one_level("https://www.annfammed.org/", "annfammed.org", delay=3.0)
 
 
+# Dos bugs confirmados en vivo (2026-07-29):
+# 1) data["messages"][0]["total"] llega como STRING (ej. "45118"), no int —
+#    min(total, 5000) tiraba "'<' not supported between instances of 'int'
+#    and 'str'" y la excepción se tragaba silenciosamente, dando 0 URLs.
+# 2) El paso del cursor era 100, pero el tamaño real de página de la API es
+#    30 (verificado pidiendo cursor=0,30,100,130 — siempre devuelve 30 items
+#    y respeta exactamente ese offset). Con paso 100 se saltaban ~70 de cada
+#    100 preprints en vez de traerlos.
 def fetch_medrxiv_urls():
     """medRxiv API — preprints de medicina (corpus separado, marcado como preprint)."""
     urls = []
-    params = {"server": "medrxiv", "category": "all", "interval": "2024-01-01:2026-07-25", "format": "json"}
+    PAGE_SIZE = 30  # tamaño real de página de la API, no configurable vía params
     try:
         r = requests.get("https://api.biorxiv.org/details/medrxiv/2024-01-01/2026-07-25/0/json",
                          headers=HEADERS, timeout=30)
         data = r.json()
-        total = data["messages"][0]["total"]
-        for cursor in range(0, min(total, 5000), 100):
+        total = int(data["messages"][0]["total"])
+        for cursor in range(0, min(total, 5000), PAGE_SIZE):
             r2 = requests.get(f"https://api.biorxiv.org/details/medrxiv/2024-01-01/2026-07-25/{cursor}/json",
                               headers=HEADERS, timeout=30)
             d2 = r2.json()
@@ -929,6 +1124,12 @@ def get_all_urls():
     all_urls += _load_source("AHA Cardiology Guidelines",        fn=lambda: _fetch_society_guidelines("https://professional.heart.org/en/guidelines-and-statements", "professional.heart.org"))
     all_urls += _load_source("ACC Cardiology",                   fn=lambda: _fetch_society_guidelines("https://www.acc.org/guidelines", "acc.org/guidelines"))
     all_urls += _load_source("ESC Cardiology",                   fn=lambda: _fetch_society_guidelines("https://www.escardio.org/Guidelines", "escardio.org/Guidelines"))
+    # Confirmado (2026-07-29): asco.org devuelve HTTP 403 específicamente
+    # para el User-Agent bot declarado en HEADERS (HumanMedicineCorpusBot/1.0)
+    # — con un UA de navegador normal responde 200 con contenido real. Es
+    # decir, filtra por UA de bot, no un bloqueo ciego de IP/WAF genérico.
+    # No se cambia el UA para evadirlo (sería header-spoofing, prohibido por
+    # las reglas del proyecto) — se deja tal cual, confirmado bloqueado.
     all_urls += _load_source("ASCO Oncology",                    fn=lambda: _fetch_society_guidelines("https://www.asco.org/guidelines", "asco.org/guidelines"))
     all_urls += _load_source("ESMO Oncology",                    fn=lambda: _fetch_society_guidelines("https://www.esmo.org/guidelines", "esmo.org/guidelines"))
     all_urls += _load_source("AAN Neurology",                    fn=lambda: _fetch_society_guidelines("https://www.aan.com/practice/guidelines", "aan.com/practice"))
@@ -938,13 +1139,27 @@ def get_all_urls():
     all_urls += _load_source("Endocrine Society",                fn=lambda: _fetch_society_guidelines("https://www.endocrine.org/clinical-practice-guidelines", "endocrine.org"))
     all_urls += _load_source("GINA Asthma",                      fn=lambda: _fetch_society_guidelines("https://ginasthma.org/", "ginasthma.org"))
     all_urls += _load_source("GOLD COPD",                        fn=lambda: _fetch_society_guidelines("https://goldcopd.org/", "goldcopd.org"))
+    # Confirmado bloqueado por WAF (2026-07-29): /statements/ redirige (301)
+    # a site.thoracic.org/about-us/news/official-ats-documents, y ESE dominio
+    # devuelve HTTP 403 con cf-mitigated: challenge — incluso con UA de
+    # navegador normal. No evadir.
     all_urls += _load_source("ATS Pulmonology",                  fn=lambda: _fetch_society_guidelines("https://www.thoracic.org/statements/", "thoracic.org"))
     all_urls += _load_source("ERS Pulmonology",                  fn=lambda: _fetch_society_guidelines("https://www.ersnet.org/guidelines/", "ersnet.org"))
     all_urls += _load_source("ASH Hematology",                   fn=lambda: _fetch_society_guidelines("https://www.hematology.org/education/clinicians/guidelines-and-quality-care", "hematology.org"))
     all_urls += _load_source("ACG Gastroenterology",             fn=lambda: _fetch_society_guidelines("https://gi.org/guidelines/", "gi.org/guidelines"))
+    # AMBIGUO (2026-07-29, no confirmado como WAF): la URL es correcta (está
+    # enlazada desde la propia home de gastro.org), pero /clinical-guidance/
+    # específicamente cuelga hasta timeout con el UA bot del proyecto, y da
+    # HTTP 502 (error de gateway upstream) incluso con UA de navegador normal
+    # — mientras que la home (/) responde 200 con ambos UA. Parece un
+    # problema puntual/transitorio de esa página en el servidor de AGA, no
+    # un bug de la URL. Se deja tal cual (no hay URL alternativa verificada).
     all_urls += _load_source("AGA Gastroenterology",             fn=lambda: _fetch_society_guidelines("https://gastro.org/clinical-guidance/", "gastro.org"))
     all_urls += _load_source("ACOG Obstetrics",                  fn=lambda: _fetch_society_guidelines("https://www.acog.org/clinical", "acog.org/clinical"))
     all_urls += _load_source("RCOG Obstetrics (UK)",             fn=lambda: _fetch_society_guidelines("https://www.rcog.org.uk/guidance/", "rcog.org.uk"))
+    # Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — HTTP 403
+    # tanto en /pediatrics como en la home plana, con UA bot Y con UA de
+    # navegador normal. No evadir.
     all_urls += _load_source("AAP Pediatrics",                   fn=lambda: _fetch_society_guidelines("https://publications.aap.org/pediatrics", "aap.org"))
     all_urls += _load_source("SCCM Critical Care",               fn=lambda: _fetch_society_guidelines("https://www.sccm.org/clinical-resources/guidelines", "sccm.org"))
     all_urls += _load_source("EAU Urology",                      fn=lambda: _fetch_society_guidelines("https://uroweb.org/guidelines", "uroweb.org"))
