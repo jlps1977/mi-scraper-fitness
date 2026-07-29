@@ -312,6 +312,14 @@ def get_drive_service():
 
 
 def folder_for_url(url):
+    # BUGFIX 2026-07-29: reglas específicas de olympics.com que deben
+    # comprobarse ANTES que la regla genérica de IOC (Sección A) — si no,
+    # esa regla genérica captura cualquier URL de olympics.com primero y
+    # DRIVE_IOC_NUTRITION_ID / DRIVE_OLYMPIC_SOLIDARITY_ID quedan
+    # inalcanzables (dead routing). Ver también líneas ~364 y ~495 (ahora
+    # comentarios) donde vivían antes estas reglas, sin efecto.
+    if "olympics.com" in url and "nutrition" in url: return DRIVE_IOC_NUTRITION_ID
+    if "olympics.com" in url and "olympic-solidarity" in url: return DRIVE_OLYMPIC_SOLIDARITY_ID
     # A. Antidopaje e IOC
     if "olympics.com"           in url or "olympic.org" in url: return DRIVE_IOC_OLYMPICS_ID
     if "wada-ama.org"           in url:  return DRIVE_WADA_ANTIDOPING_ID
@@ -335,7 +343,7 @@ def folder_for_url(url):
     if "fis-ski.com"            in url:  return DRIVE_FIS_SKIING_ID
     if "worldrowing.com"        in url:  return DRIVE_WORLD_ROWING_ID
     if "gymnastics.sport"       in url:  return DRIVE_WORLD_GYMNASTICS_ID
-    if "iba-boxing.com"         in url or "worldboxing.sport" in url: return DRIVE_WORLD_BOXING_ID
+    if "iba-boxing.com"         in url or "worldboxing.sport" in url or "worldboxing.org" in url: return DRIVE_WORLD_BOXING_ID
     if "ufc.com"                in url or "mma"     in url:  return DRIVE_UFC_MMA_RESOURCES_ID
     # C. Ciencias del deporte
     if "acsm.org"               in url:  return DRIVE_ACSM_ID
@@ -358,14 +366,24 @@ def folder_for_url(url):
     if "nata.org"               in url:  return DRIVE_NATA_ATHLETIC_TRAINING_ID
     # E. Nutrición deportiva
     if "jissn.biomedcentral.com" in url or "issn.org" in url: return DRIVE_ISSN_NUTRITION_ID
-    if "ais.gov.au"             in url:  return DRIVE_AIS_NUTRITION_ID
+    # BUGFIX 2026-07-29: "ais.gov.au" a secas era demasiado genérico y
+    # capturaba TODAS las URLs de ais.gov.au (recipes/mental-health/general
+    # incluidas), dejando DRIVE_AIS_AUSTRALIA_ID, DRIVE_AIS_NUTRITION_RECIPES_ID
+    # y DRIVE_AIS_MENTAL_HEALTH_ID inalcanzables (dead routing). Se acota por
+    # path y se reordena de más a menos específico; el fallback genérico de
+    # ais.gov.au sigue viviendo en la Sección I (DRIVE_AIS_AUSTRALIA_ID).
+    if "ais.gov.au" in url and "recipe"    in url: return DRIVE_AIS_NUTRITION_RECIPES_ID
+    if "ais.gov.au" in url and "mental"    in url: return DRIVE_AIS_MENTAL_HEALTH_ID
+    if "ais.gov.au" in url and "nutrition" in url: return DRIVE_AIS_NUTRITION_ID
     if "gssiweb.org"            in url:  return DRIVE_GSSI_GATORADE_ID
     if "scandpg.org"            in url:  return DRIVE_SCAN_DIETITIANS_ID
-    if "ioc.nutrition"          in url or ("olympics.com" in url and "nutrition" in url): return DRIVE_IOC_NUTRITION_ID
+    # NOTA 2026-07-29: la regla IOC Nutrition se movió al principio de la
+    # función (antes de la Sección A) — aquí quedaba inalcanzable porque
+    # "olympics.com" ya se captura de forma genérica más arriba.
     # F. Psicología
     if "appliedsportpsych.org"  in url:  return DRIVE_AASP_PSYCHOLOGY_ID
     if "issponline.org"         in url:  return DRIVE_ISSP_PSYCHOLOGY_ID
-    if "fepsac.eu"              in url:  return DRIVE_FEPSAC_EUROPE_ID
+    if "fepsac.eu"              in url or "fepsac.com" in url: return DRIVE_FEPSAC_EUROPE_ID
     # G. Fuerza / biomecánica
     if "isbs.org"               in url:  return DRIVE_ISBS_BIOMECHANICS_ID
     if "vbt"                    in url or "velocity-based" in url: return DRIVE_VELOCITY_BASED_TRAINING_ID
@@ -373,6 +391,12 @@ def folder_for_url(url):
     # H. Revistas OA
     if "jssm.org"               in url:  return DRIVE_JSSM_JOURNAL_ID
     if "mdpi.com/journal/sports" in url: return DRIVE_SPORTS_MDPI_ID
+    # BUGFIX 2026-07-29: la regla de psicología debe ir ANTES que la regla
+    # genérica "sports" de abajo — la mayoría de URLs de investigación de
+    # Frontiers sobre psicología deportiva incluyen "sports-psychology" en el
+    # slug, así que "sports" in url ya las capturaba primero y
+    # DRIVE_FRONTIERS_SPORT_PSYCH_ID quedaba inalcanzable (dead routing).
+    if "frontiersin.org" in url and "psychology" in url and "sport" in url: return DRIVE_FRONTIERS_SPORT_PSYCH_ID
     if "frontiersin.org"        in url and "sports" in url: return DRIVE_FRONTIERS_SPORTS_ID
     if "bmcsportsscimedrehabil"  in url: return DRIVE_BMC_SPORTS_SCI_ID
     if "peerj.com"              in url and "sport" in url: return DRIVE_PEERJ_SPORTS_ID
@@ -384,27 +408,41 @@ def folder_for_url(url):
     if "inef.upm.es"            in url:  return DRIVE_INEF_SPAIN_ID
     if "aspire.qa"              in url:  return DRIVE_ASPIRE_QATAR_ID
     if "canadiansportinstitute" in url or "csiontario.ca" in url: return DRIVE_CANADIAN_SPORT_INSTITUTE_ID
+    # BUGFIX 2026-07-29: la regla específica de coaching debe ir ANTES que la
+    # regla genérica de sportnz.org.nz — si no, cualquier URL de coaching
+    # (que también contiene "sportnz.org.nz") se capturaba aquí primero y
+    # DRIVE_SPORT_NZ_COACHING_ID quedaba inalcanzable (dead routing).
+    if "sportnz.org.nz" in url and "coaching" in url: return DRIVE_SPORT_NZ_COACHING_ID
     if "sportnz.org.nz"         in url:  return DRIVE_SPORT_NEW_ZEALAND_ID
     # J. Bases de datos
     if "sirc.ca"                in url:  return DRIVE_SIRC_CANADA_ID
     if "pubmed.ncbi.nlm.nih.gov" in url: return DRIVE_PUBMED_SPORTS_ID
-    if "icce-office.org"        in url or "coachingassociation.ca" in url: return DRIVE_COACH_EDUCATION_RESOURCES_ID
+    # NOTA 2026-07-29: icce-office.org/coachingassociation.ca ya no
+    # resuelven; ver icce.ws / coach.ca. DRIVE_ICCE_COACHING_ID y
+    # DRIVE_COACHING_ASSOC_CANADA_ID están definidos pero NUNCA se alcanzan
+    # aquí — fetch_coach_education_urls(), fetch_icce_coaching_urls() y
+    # fetch_coaching_assoc_canada_urls() rastrean los MISMOS dos dominios
+    # (icce.ws y coach.ca), así que sus URLs son indistinguibles entre sí
+    # por contenido; los tres caen a este único folder por diseño previo
+    # (no introducido por este fix). Diferenciarlos requeriría rediseñar
+    # los fetchers, no solo el routing — dejado para revisión del equipo.
+    if "icce-office.org"        in url or "coachingassociation.ca" in url or "icce.ws" in url or "coach.ca" in url: return DRIVE_COACH_EDUCATION_RESOURCES_ID
     # ── NUEVAS SECCIONES ──────────────────────────────────────────────────────
     # Sec 1 — Antidopaje extendido
-    if "ita-sport.org"          in url:  return DRIVE_ITA_SPORT_ID
+    if "ita-sport.org"          in url or "ita.sport" in url: return DRIVE_ITA_SPORT_ID
     if "inado.net"              in url:  return DRIVE_INADO_ID
-    if "cces.ca"                in url:  return DRIVE_CCES_CANADA_ID
+    if "cces.ca"                in url or "sportintegrity.ca" in url: return DRIVE_CCES_CANADA_ID
     if "nada.de"                in url:  return DRIVE_NADA_GERMANY_ID
     if "afld.fr"                in url:  return DRIVE_AFLD_FRANCE_ID
-    if "celad.org"              in url:  return DRIVE_CELAD_SPAIN_ID
+    if "celad.org"              in url or "celad.gob.es" in url: return DRIVE_CELAD_SPAIN_ID
     if "playtruejapan.org"      in url:  return DRIVE_JADA_JAPAN_ID
-    if "saids.co.za"            in url:  return DRIVE_SAIDS_AFRICA_ID
+    if "saids.co.za"            in url or "saids.org.za" in url: return DRIVE_SAIDS_AFRICA_ID
     if "abcd.org.br"            in url:  return DRIVE_ABCD_BRAZIL_ID
     if "rados.wada-ama.org"     in url:  return DRIVE_WADA_RADOS_ID
     # Sec 2 — Fisiología
-    if "casesportsscience.co.uk" in url: return DRIVE_CASES_UK_ID
+    if "casesportsscience.co.uk" in url or "cases.org.uk" in url: return DRIVE_CASES_UK_ID
     if "sportsmedicineopen"     in url:  return DRIVE_SPORTS_MED_OPEN_ID
-    if "jhk.pl"                 in url:  return DRIVE_JHK_JOURNAL_ID
+    if "jhk.pl"                 in url or "jhk.termedia.pl" in url: return DRIVE_JHK_JOURNAL_ID
     if "ijes.info"              in url:  return DRIVE_IJES_JOURNAL_ID
     if "termedia.pl" in url and "Biology_of_Sport" in url: return DRIVE_BIOLOGY_OF_SPORT_ID
     # Sec 3 — S&C
@@ -419,29 +457,39 @@ def folder_for_url(url):
     # Sec 4 — Nutrición
     if "sportsdietitians.com.au" in url: return DRIVE_SPORTS_DIETITIANS_AU_ID
     if "athletetriadcoalition.org" in url: return DRIVE_ATHLETE_TRIAD_COALITION_ID
-    if "ais.gov.au" in url and "recipe" in url: return DRIVE_AIS_NUTRITION_RECIPES_ID
+    # NOTA 2026-07-29: reglas de ais.gov.au (recipe/mental) movidas a la
+    # Sección E (más arriba) — aquí eran inalcanzables (dead routing), ver
+    # comentario junto a DRIVE_AIS_NUTRITION_ID.
     # Sec 5 — Psicología extendida
-    if "frontiersin.org" in url and "psychology" in url and "sport" in url: return DRIVE_FRONTIERS_SPORT_PSYCH_ID
+    # NOTA 2026-07-29: regla de Frontiers Sport Psych movida antes de la
+    # regla genérica de Frontiers Sports (Sección H) — aquí era inalcanzable
+    # porque "sports" (plural) ya aparece en la mayoría de esas URLs.
     if "ncaa.org" in url and "mental" in url: return DRIVE_NCAA_MENTAL_HEALTH_ID
-    if "ais.gov.au" in url and "mental" in url: return DRIVE_AIS_MENTAL_HEALTH_ID
     # Sec 6 — Biomecánica
     if "isbweb.org"             in url:  return DRIVE_ISB_WEB_ID
-    if "opensim.stanford.edu"   in url:  return DRIVE_OPENSIM_ID
+    if "opensim.stanford.edu"   in url or "opensimconfluence.atlassian.net" in url: return DRIVE_OPENSIM_ID
     if "opencap.ai"             in url:  return DRIVE_OPENCAP_ID
     if "simtk.org"              in url:  return DRIVE_SIMTK_ID
     if "kinovea.org"            in url:  return DRIVE_KINOVEA_ID
-    if "c-motion.com"           in url:  return DRIVE_VISUAL3D_WIKI_ID
+    if "c-motion.com"           in url or "has-motion.ca" in url or "has-motion.com" in url: return DRIVE_VISUAL3D_WIKI_ID
     if "vicon.com"              in url:  return DRIVE_VICON_RESOURCES_ID
     if "qualisys.com"           in url:  return DRIVE_QUALISYS_RESOURCES_ID
     # Sec 7 — Medicina deportiva extendida
     if "natajournals.org"       in url:  return DRIVE_JAT_JOURNAL_ID
-    if "aspetarjournal.com"     in url:  return DRIVE_ASPETAR_JOURNAL_ID
+    if "aspetarjournal.com"     in url or "journal.aspetar.com" in url: return DRIVE_ASPETAR_JOURNAL_ID
     if "sagepub.com/toc/ojs"    in url:  return DRIVE_OJSM_JOURNAL_ID
     if "cdc.gov/headsup"        in url:  return DRIVE_CDC_HEADS_UP_ID
     if "ifspt.org"              in url:  return DRIVE_IFSPT_ID
     if "physio-pedia.com"       in url:  return DRIVE_PHYSIOPEDIA_SPORTS_ID
     # Sec 8 — Táctica
-    if "training.fifa.com"      in url:  return DRIVE_FIFA_TRAINING_CENTRE_ID
+    if "training.fifa.com"      in url or "fifatrainingcentre.com" in url: return DRIVE_FIFA_TRAINING_CENTRE_ID
+    # BUGFIX 2026-07-29: la regla de football-development/coaching (Sec 11)
+    # debe comprobarse ANTES que esta regla de "documents or coaching" — el
+    # seed de UEFA Coaching Convention vive bajo
+    # insideuefa/football-development/coaching/, así que su URL contiene
+    # "coaching" y esta regla más genérica la capturaba primero,
+    # dejando DRIVE_UEFA_COACHING_CONVENTION_ID inalcanzable (dead routing).
+    if "uefa.com" in url and "football-development" in url: return DRIVE_UEFA_COACHING_CONVENTION_ID
     if "uefa.com" in url and ("documents" in url or "coaching" in url): return DRIVE_UEFA_TECHNICAL_REPORTS_ID
     if "statsbomb.com"          in url:  return DRIVE_STATSBOMB_OPENDATA_ID
     if "metrica-sports.com"     in url:  return DRIVE_METRICA_SPORTS_ID
@@ -457,11 +505,11 @@ def folder_for_url(url):
     if "igfgolf.org"            in url:  return DRIVE_IGF_GOLF_ID
     if "randa.org"              in url:  return DRIVE_RANDA_GOLF_ID
     if "triathlon.org"          in url:  return DRIVE_WORLD_TRIATHLON_ID
-    if "fie.ch"                 in url:  return DRIVE_FIE_FENCING_ID
+    if "fie.ch"                 in url or "fie.org" in url: return DRIVE_FIE_FENCING_ID
     if "issf-sports.org"        in url:  return DRIVE_ISSF_SHOOTING_ID
     if "iwf.sport"              in url:  return DRIVE_IWF_WEIGHTLIFTING_ID
     if "uww.org"                in url:  return DRIVE_UWW_WRESTLING_ID
-    if "fih.ch"                 in url:  return DRIVE_FIH_HOCKEY_ID
+    if "fih.ch"                 in url or "fih.hockey" in url: return DRIVE_FIH_HOCKEY_ID
     if "iihf.com"               in url:  return DRIVE_IIHF_ICEHOCKEY_ID
     if "worldlacrosse.sport"    in url:  return DRIVE_WORLD_LACROSSE_ID
     if "icc-cricket.com"        in url:  return DRIVE_ICC_CRICKET_ID
@@ -473,26 +521,38 @@ def folder_for_url(url):
     if "isasurf.org"            in url:  return DRIVE_ISA_SURFING_ID
     if "uipmworld.org"          in url:  return DRIVE_UIPM_PENTATHLON_ID
     # Sec 10 — Paralímpico
+    # BUGFIX 2026-07-29: worldparaathletics.org/worldparaswimming.org/
+    # worldparapowerlifting.org ya no resuelven (SSL SNI error) — esos
+    # fetchers ahora usan paralympic.org/athletics|swimming|powerlifting.
+    # Estas reglas específicas deben comprobarse ANTES que la regla
+    # genérica de paralympic.org (abajo), si no la shadowean y
+    # DRIVE_WORLD_PARA_ATHLETICS_ID / _SWIMMING_ID / _POWERLIFTING_ID
+    # quedarían inalcanzables (dead routing).
+    if "paralympic.org" in url and "/athletics" in url: return DRIVE_WORLD_PARA_ATHLETICS_ID
+    if "paralympic.org" in url and "/swimming" in url: return DRIVE_WORLD_PARA_SWIMMING_ID
+    if "paralympic.org" in url and "/powerlifting" in url: return DRIVE_WORLD_PARA_POWERLIFTING_ID
     if "paralympic.org"         in url:  return DRIVE_IPC_PARALYMPIC_ID
     if "worldparaathletics.org" in url:  return DRIVE_WORLD_PARA_ATHLETICS_ID
     if "worldparaswimming.org"  in url:  return DRIVE_WORLD_PARA_SWIMMING_ID
     if "worldparapowerlifting.org" in url: return DRIVE_WORLD_PARA_POWERLIFTING_ID
     if "bisfed.com"             in url:  return DRIVE_WORLD_BOCCIA_ID
-    if "worldwheelchairrugby.org" in url: return DRIVE_WORLD_WHEELCHAIR_RUGBY_ID
+    if "worldwheelchairrugby.org" in url or "worldwheelchair.rugby" in url: return DRIVE_WORLD_WHEELCHAIR_RUGBY_ID
     if "iwbf.org"               in url:  return DRIVE_IWBF_WHEELCHAIR_BASKETBALL_ID
     if "ibsasport.org"          in url:  return DRIVE_IBSA_BLIND_SPORTS_ID
     if "virtus.sport"           in url:  return DRIVE_VIRTUS_SPORT_ID
     if "worldabilitysport.org"  in url:  return DRIVE_WORLD_ABILITYSPORT_ID
-    if "paravolley.com"         in url:  return DRIVE_PARAVOLLEY_ID
+    if "paravolley.com"         in url or "worldparavolley.org" in url: return DRIVE_PARAVOLLEY_ID
     if "paralympics.org.au"     in url:  return DRIVE_PARALYMPICS_AUSTRALIA_ID
     if "teamusa.org/us-paralympics" in url: return DRIVE_USOPC_PARALYMPIC_ID
     # Sec 11 — Entrenadores
-    if "uefa.com" in url and "football-development" in url: return DRIVE_UEFA_COACHING_CONVENTION_ID
+    # NOTA 2026-07-29: reglas de UEFA Coaching Convention, Sport NZ Coaching
+    # y Olympic Solidarity movidas más arriba en la función (eran
+    # inalcanzables aquí, shadowed por reglas genéricas anteriores). Ver
+    # comentarios junto a DRIVE_UEFA_COACHING_CONVENTION_ID,
+    # DRIVE_SPORT_NZ_COACHING_ID y DRIVE_OLYMPIC_SOLIDARITY_ID.
     if "conmebol.com/evolucion" in url:  return DRIVE_CONMEBOL_EVOLUCION_ID
     if "thefa.com/football-learning" in url: return DRIVE_ENGLAND_FOOTBALL_PUBLIC_ID
     if "ukcoaching.org"         in url:  return DRIVE_UK_COACHING_ID
-    if "sportnz.org.nz" in url and "coaching" in url: return DRIVE_SPORT_NZ_COACHING_ID
-    if "olympics.com" in url and "olympic-solidarity" in url: return DRIVE_OLYMPIC_SOLIDARITY_ID
     # Sec 12 — Tecnología deportiva
     if "polar.com"              in url:  return DRIVE_POLAR_SCIENCE_ID
     if "garmin.com"             in url:  return DRIVE_GARMIN_HEALTH_SCIENCE_ID
@@ -506,7 +566,7 @@ def folder_for_url(url):
     if "delsys.com"             in url:  return DRIVE_DELSYS_KNOWLEDGE_ID
     if "noraxon.com"            in url:  return DRIVE_NORAXON_RESOURCES_ID
     if "cosmed.com"             in url:  return DRIVE_COSMED_KNOWLEDGE_ID
-    if "neurokit2.readthedocs"  in url:  return DRIVE_NEUROKIT2_ID
+    if "neurokit2.readthedocs"  in url or "neuropsychology.github.io" in url: return DRIVE_NEUROKIT2_ID
     if "biosppy.readthedocs"    in url:  return DRIVE_BIOSPPY_ID
     if "goldencheetah.org"      in url:  return DRIVE_GOLDENCHEETAH_ID
     if "athletemonitoring.com"  in url:  return DRIVE_ATHLETEMONITORING_ID
@@ -515,12 +575,12 @@ def folder_for_url(url):
     if "uksportsinstitute.co.uk" in url: return DRIVE_UKSI_INSTITUTE_ID
     if "insep.fr"               in url:  return DRIVE_INSEP_FRANCE_ID
     if "openedition.org/insep"  in url:  return DRIVE_INSEP_OPENEDITION_ID
-    if "inefc.cat"              in url:  return DRIVE_INEFC_CATALONIA_ID
+    if "inefc.cat"              in url or "inefc.gencat.cat" in url: return DRIVE_INEFC_CATALONIA_ID
     if "aspetar.com"            in url:  return DRIVE_ASPETAR_INSTITUTE_ID
     if "copsin.ca"              in url:  return DRIVE_COPSIN_CANADA_ID
     if "csipacific.ca"          in url:  return DRIVE_CSI_PACIFIC_ID
     if "hpsnz.org.nz"           in url:  return DRIVE_HPSNZ_ID
-    if "jiss.naash.go.jp"       in url:  return DRIVE_JISS_JAPAN_ID
+    if "jiss.naash.go.jp"       in url or "jpnsport.go.jp" in url: return DRIVE_JISS_JAPAN_ID
     if "sportsingapore.gov.sg"  in url:  return DRIVE_SINGAPORE_SPORT_INST_ID
     if "kiss.kspo.or.kr"        in url:  return DRIVE_KISS_KOREA_ID
     if "sportireland.ie"        in url:  return DRIVE_SPORT_IRELAND_INST_ID
@@ -583,10 +643,18 @@ def _crawl_one_level(seed, domain_prefix, delay=2.0):
             return []
         soup = BeautifulSoup(r.text, "html.parser")
         urls = set()
+        from urllib.parse import urljoin
         for a in soup.find_all("a", href=True):
             href = a["href"]
-            if href.startswith("/"):
-                from urllib.parse import urljoin
+            # BUGFIX 2026-07-29: solo se resolvían los enlaces que empezaban
+            # con "/" (root-relative). Muchos sitios de documentación
+            # (Sphinx/GitHub Pages/Confluence, etc.) usan enlaces
+            # path-relative sin "/" inicial (p.ej. "introduction.html",
+            # "examples/index.html") — esos se descartaban en silencio
+            # porque nunca empezaban con "http". urljoin() ya maneja
+            # correctamente los casos absolutos, root-relative y
+            # path-relative por igual, así que se aplica siempre.
+            if not href.startswith(("http://", "https://")):
                 href = urljoin(seed, href)
             if domain_prefix in href and href.startswith("http"):
                 urls.add(href)
@@ -622,12 +690,35 @@ def fetch_global_dro_urls():
 
 # B. Federaciones
 def fetch_world_athletics_urls():
+    # Investigado 2026-07-29: "/sitemap.xml" da 404 (JSON/HTML de su app).
+    # robots.txt SÍ lista el sitemap real en
+    # "https://worldathletics.org/sitemap/sitemapindex.xml", pero esa URL
+    # también 404s vía su router, y "/sitemap/sitemap.xml" (variante probada)
+    # devuelve un 403 "AccessDenied" con RequestId/HostId — es un error
+    # nativo de S3, es decir, el archivo del sitemap vive en un bucket S3
+    # sin acceso público. La homepage sí responde 200 (no es bloqueo WAF de
+    # dominio), pero no hay ningún sitemap accesible para acotar el rastreo
+    # — no evadir (no es un bucket nuestro). Dejado como estaba.
     return _fetch_sitemap_index_urls("https://worldathletics.org/sitemap.xml",
         url_filter=lambda u: any(k in u for k in ["news", "athlete", "records", "disciplines", "about"]),
         delay=1.5)
 
 def fetch_fifa_urls():
-    return _crawl_one_level("https://www.fifa.com/football-development/", "fifa.com", delay=3.0)
+    # Investigado 2026-07-29: "/football-development/" da 404 — fifa.com se
+    # reestructuró completamente sobre una API CXM (cxm-api.fifa.com). Su
+    # nuevo sitemap real (via robots.txt: fifa.com/sitemap -> redirige a la
+    # API) SÍ funciona pero es enorme (357 sub-sitemaps, decenas de miles de
+    # URLs, casi todo contenido de torneos, no de desarrollo/coaching — un
+    # muestreo de 15 sub-sitemaps solo encontró 2 URLs con "development" o
+    # "technical"). No existe ya una sección de football-development/
+    # coaching equivalente a la original. Se toman solo los primeros
+    # sub-sitemaps (no los 357) para evitar un fetch desproporcionado.
+    sub_sitemaps = fetch_urls_from_sitemap("https://www.fifa.com/sitemap")
+    urls = []
+    for sm in sub_sitemaps[:3]:
+        urls.extend(fetch_urls_from_sitemap(sm))
+        time.sleep(0.5)
+    return urls
 
 def fetch_fiba_urls():
     return _crawl_one_level("https://www.fiba.basketball/pages/eng/fa/news/p/id/NWSVL.html", "fiba.basketball", delay=3.0)
@@ -639,31 +730,52 @@ def fetch_world_aquatics_urls():
     return _crawl_one_level("https://www.worldaquatics.com/news", "worldaquatics.com", delay=3.0)
 
 def fetch_uci_urls():
-    return _crawl_one_level("https://www.uci.org/regulations", "uci.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.uci.org/media-publications/1qiwynsDdy4m9RTsk34XPc -> 65 URLs.
+    return _crawl_one_level("https://www.uci.org/media-publications/1qiwynsDdy4m9RTsk34XPc", "uci.org", delay=3.0)
 
 def fetch_itf_urls():
+    # Confirmado bloqueado por WAF (2026-07-29): esta ruta específica
+    # devuelve HTTP 200 pero el cuerpo es solo un challenge JS de Incapsula
+    # (`<meta content="noindex,nofollow">` + `/_Incapsula_Resource?...`,
+    # 212 bytes). La homepage sí carga contenido real, pero esta sección
+    # concreta está protegida — no evadir.
     return _crawl_one_level("https://www.itftennis.com/en/about-us/science-and-technical/", "itftennis.com", delay=3.0)
 
 def fetch_world_rugby_urls():
     return _crawl_one_level("https://www.world.rugby/the-game/player-welfare/", "world.rugby", delay=3.0)
 
 def fetch_ihf_urls():
-    return _crawl_one_level("https://www.ihf.info/activities/coaches-education", "ihf.info", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.ihf.info/about/education -> 70 URLs.
+    return _crawl_one_level("https://www.ihf.info/about/education", "ihf.info", delay=3.0)
 
 def fetch_bwf_urls():
-    return _crawl_one_level("https://www.bwfbadminton.com/technical/", "bwfbadminton.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://bwfbadminton.com/news/ -> 47 URLs.
+    return _crawl_one_level("https://bwfbadminton.com/news/", "bwfbadminton.com", delay=3.0)
 
 def fetch_world_taekwondo_urls():
-    return _crawl_one_level("https://www.worldtaekwondo.org/education/", "worldtaekwondo.org", delay=3.0)
+    # BUGFIX 2026-07-29: "/education/" devuelve HTTP 400 con un error JSON
+    # en coreano ("서버에서 오류가 발생하였습니다" / error de servidor, code S001)
+    # — el sitio se reestructuró y ya no tiene una sección de "education" en
+    # su navegación actual. Se usa la sección de noticias, que sí carga.
+    return _crawl_one_level("https://www.worldtaekwondo.org/news/NS/list", "worldtaekwondo.org", delay=3.0)
 
 def fetch_ijf_urls():
-    return _crawl_one_level("https://www.ijf.org/education", "ijf.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.ijf.org/news/show/technical-development-a-different-angle -> 69 URLs.
+    return _crawl_one_level("https://www.ijf.org/news/show/technical-development-a-different-angle", "ijf.org", delay=3.0)
 
 def fetch_isu_urls():
-    return _crawl_one_level("https://www.isu.org/inside-isu/rules-regulations/isu-communications", "isu.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.isu.org/news/figure-skating-loses-a-coaching-legend-viktor-kudriavtsev-passes-away-at-88 -> 53 URLs.
+    return _crawl_one_level("https://www.isu.org/news/figure-skating-loses-a-coaching-legend-viktor-kudriavtsev-passes-away-at-88/", "isu.org", delay=3.0)
 
 def fetch_fis_urls():
-    return _crawl_one_level("https://www.fis-ski.com/en/inside-fis/document-library/", "fis-ski.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.fis-ski.com/news -> 18 URLs.
+    return _crawl_one_level("https://www.fis-ski.com/news", "fis-ski.com", delay=3.0)
 
 def fetch_world_rowing_urls():
     return _crawl_one_level("https://worldrowing.com/technical/", "worldrowing.com", delay=3.0)
@@ -672,7 +784,12 @@ def fetch_world_gymnastics_urls():
     return _crawl_one_level("https://www.gymnastics.sport/site/rules.php", "gymnastics.sport", delay=3.0)
 
 def fetch_world_boxing_urls():
-    return _crawl_one_level("https://www.iba-boxing.com/technical/", "iba-boxing.com", delay=3.0)
+    # BUGFIX 2026-07-29: iba-boxing.com ya no resuelve (dominio muerto — la
+    # federación es ahora "World Boxing", no IBA). El comentario del código
+    # en folder_for_url() ya sugería "worldboxing.sport" como alternativa,
+    # pero ESE dominio tampoco resuelve; el dominio real y en vivo es
+    # worldboxing.org.
+    return _crawl_one_level("https://worldboxing.org/news/", "worldboxing.org", delay=3.0)
 
 # C. Ciencias del deporte
 def fetch_acsm_urls():
@@ -686,10 +803,19 @@ def fetch_nsca_urls():
     return [u for u in urls if any(k in u for k in ["article", "education", "certification"])]
 
 def fetch_ecss_urls():
+    # Investigado 2026-07-29: ecss.de tiene un certificado TLS EXPIRADO
+    # (CERTIFICATE_VERIFY_FAILED: certificate has expired) y no responde en
+    # HTTP plano (connection refused) — el sitio real está inaccesible sin
+    # desactivar la verificación TLS, algo que no se debe hacer para
+    # evadir un problema de seguridad del sitio de destino. No se encontró
+    # dominio alternativo. Dejado como estaba — necesita más investigación
+    # o esperar a que ECSS renueve su certificado.
     return _crawl_one_level("https://www.ecss.de/publications/", "ecss.de", delay=3.0)
 
 def fetch_bases_uk_urls():
-    return _crawl_one_level("https://www.bases.org.uk/page-sport-and-exercise-science-resources.html", "bases.org.uk", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.bases.org.uk/spage-professional_development-supervised_experience.html -> 31 URLs.
+    return _crawl_one_level("https://www.bases.org.uk/spage-professional_development-supervised_experience.html", "bases.org.uk", delay=3.0)
 
 def fetch_asca_au_urls():
     return _crawl_one_level("https://www.strengthandconditioning.org/resources/", "strengthandconditioning.org", delay=3.0)
@@ -698,16 +824,36 @@ def fetch_uksca_urls():
     return _crawl_one_level("https://www.uksca.org.uk/resources", "uksca.org.uk", delay=3.0)
 
 def fetch_conade_urls():
-    return _crawl_one_level("https://www.gob.mx/conade/articulos", "conade.gob.mx", delay=3.0)
+    # Investigado 2026-07-29: dos bugs. (1) domain_prefix mismatch —
+    # "conade.gob.mx" no es un dominio real, CONADE vive bajo la ruta
+    # gob.mx/conade (portal unificado del gobierno mexicano), así que el
+    # filtro nunca podía coincidir con nada. (2) "/conade/articulos" da 404
+    # — la home de gob.mx/conade usa navegación por anclas hash
+    # (#15837, #15839...) resueltas por JS, no enlaces <a href> reales, así
+    # que ni con el domain_prefix corregido hay mucho que rastrear
+    # estáticamente (probado: solo 1 URL real en la home). Se corrige el
+    # domain_prefix por consistencia aunque el rendimiento siga siendo bajo;
+    # requeriría un scraper con JS para más contenido — fuera de alcance.
+    return _crawl_one_level("https://www.gob.mx/conade", "gob.mx/conade", delay=3.0)
 
 def fetch_sport_australia_clearinghouse_urls():
+    # Investigado 2026-07-29: "/sitemap.xml" y "/robots.txt" devuelven
+    # ambos HTTP 200 pero con el MISMO HTML del shell de la SPA (Next.js/
+    # React) — el sitio no tiene fallback de servidor para esas rutas y
+    # sirve el index.html para cualquier path no reconocido por su router
+    # cliente. No es un bloqueo WAF; es que el contenido real se renderiza
+    # en el cliente y no está presente en el HTML servido — un scraper
+    # estático (BeautifulSoup) no puede extraer enlaces reales de aquí sin
+    # ejecutar JS, fuera de alcance para este fetcher. Dejado como estaba.
     return _fetch_sitemap_index_urls("https://www.clearinghouseforsport.gov.au/sitemap.xml", delay=1.5)
 
 def fetch_uk_sport_urls():
     return _crawl_one_level("https://www.uksport.gov.uk/resources", "uksport.gov.uk", delay=2.0)
 
 def fetch_usopc_urls():
-    return _crawl_one_level("https://www.usopc.org/resources", "usopc.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.usopc.org/coaching-education -> 61 URLs.
+    return _crawl_one_level("https://www.usopc.org/coaching-education", "usopc.org", delay=3.0)
 
 # D. Medicina deportiva
 def fetch_fims_urls():
@@ -731,7 +877,9 @@ def fetch_sports_health_urls():
     return _crawl_one_level("https://journals.sagepub.com/toc/spha/current", "sagepub.com", delay=2.0)
 
 def fetch_nata_urls():
-    return _crawl_one_level("https://www.nata.org/practice-patient-care/health-information/", "nata.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.nata.org/news-publications/press-room -> 146 URLs.
+    return _crawl_one_level("https://www.nata.org/news-publications/press-room", "nata.org", delay=3.0)
 
 def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
     """BUGFIX 2026-07-29: *.biomedcentral.com/*.springeropen.com/sitemap.xml
@@ -769,9 +917,17 @@ def fetch_ais_nutrition_urls():
     return _crawl_one_level("https://www.ais.gov.au/nutrition/", "ais.gov.au", delay=2.0)
 
 def fetch_gssi_urls():
-    return _crawl_one_level("https://www.gssiweb.org/sports-science-institute/topics", "gssiweb.org", delay=2.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.gssiweb.org/en/about -> 15 URLs.
+    return _crawl_one_level("https://www.gssiweb.org/en/about", "gssiweb.org", delay=2.0)
 
 def fetch_scan_urls():
+    # Investigado 2026-07-29: scandpg.org tiene un certificado TLS con
+    # hostname mismatch y el dominio ahora redirige (vía HTTP plano) a
+    # higherlogic.com, una plataforma de comunidades genérica sin
+    # contenido específico de SCAN accesible en la home. No se encontró un
+    # dominio/URL de reemplazo con contenido real. Dejado como estaba —
+    # necesita más investigación.
     return _crawl_one_level("https://www.scandpg.org/sports-nutrition/", "scandpg.org", delay=3.0)
 
 def fetch_ioc_nutrition_urls():
@@ -782,10 +938,16 @@ def fetch_aasp_urls():
     return _crawl_one_level("https://www.appliedsportpsych.org/resources/", "appliedsportpsych.org", delay=3.0)
 
 def fetch_issp_urls():
-    return _crawl_one_level("https://issponline.org/resources/", "issponline.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://issponline.org/about/history/ -> 52 URLs.
+    return _crawl_one_level("https://issponline.org/about/history/", "issponline.org", delay=3.0)
 
 def fetch_fepsac_urls():
-    return _crawl_one_level("https://www.fepsac.eu/resources/", "fepsac.eu", delay=3.0)
+    # BUGFIX 2026-07-29: fepsac.eu tiene un certificado TLS roto (falla la
+    # verificación de cadena). La federación se mudó de dominio a
+    # fepsac.com (confirmado: http://www.fepsac.eu redirige ahí sin TLS).
+    # Verificado en vivo: 42 URLs.
+    return _crawl_one_level("https://fepsac.com/", "fepsac.com", delay=3.0)
 
 # G. Fuerza, acondicionamiento y biomecánica
 def fetch_isbs_urls():
@@ -799,7 +961,17 @@ def fetch_catapult_urls():
 
 # H. Revistas OA
 def fetch_jssm_urls():
-    return _fetch_sitemap_index_urls("https://www.jssm.org/sitemap.xml", delay=1.0)
+    # BUGFIX 2026-07-29: jssm.org/sitemap.xml es un sitemap PLANO
+    # (<urlset>) no un índice (<sitemapindex>). _fetch_sitemap_index_urls()
+    # trataba cada una de sus ~4700 URLs de página como si fuera a su vez
+    # un sub-sitemap XML — al no serlo, el parseo fallaba en silencio para
+    # cada una (0 URLs, y quemaba muchísimo tiempo intentándolo con delay
+    # en cada una). Se usa fetch_urls_from_sitemap() directamente.
+    # Nota: 4,701 URLs es alto (>3000), pero es el sitemap completo y
+    # legítimo de esta única revista (incluye décadas de números
+    # atrasados), no una contaminación cross-sitio como el bug de
+    # BioMedCentral — se deja sin acotar.
+    return fetch_urls_from_sitemap("https://www.jssm.org/sitemap.xml")
 
 def fetch_sports_mdpi_urls():
     return _fetch_sitemap_index_urls("https://www.mdpi.com/sitemap/sitemap-sports.xml",
@@ -817,6 +989,17 @@ def fetch_bmc_sports_sci_urls():
     return _fetch_springer_journal_articles("bmcsportsscimedrehabil")
 
 def fetch_peerj_sports_urls():
+    # Investigado 2026-07-29: el filtro nunca puede coincidir — los artículos
+    # de PeerJ usan URLs numéricas sin slug de tema (p.ej.
+    # "peerj.com/articles/16241/"), así que "sport" jamás aparece en la URL
+    # (confirmado: 50,000+ URLs en sitemap1.xml, ninguna contiene "sport").
+    # PeerJ tampoco tiene páginas de listado por materia navegables
+    # (/subjects/kinesiology.../ da 404) y su página de búsqueda
+    # (/search/?q=sport) carga resultados vía JS — el HTML estático no trae
+    # enlaces reales, así que _crawl_one_level tampoco sirve. Necesitaría la
+    # API de búsqueda de PeerJ (fuera de alcance de este arreglo). Dejado
+    # como estaba — fuente que sigue devolviendo 0 hasta rediseñar el
+    # fetcher con esa API.
     return _fetch_sitemap_index_urls(
         "https://peerj.com/sitemap.xml",
         url_filter=lambda u: "sport" in u.lower() and "article" in u,
@@ -824,19 +1007,37 @@ def fetch_peerj_sports_urls():
     )
 
 def fetch_translational_sports_med_urls():
-    return _crawl_one_level("https://onlinelibrary.wiley.com/journal/25738488", "translational-sports", delay=2.0)
+    # Investigado 2026-07-29: dos bugs. (1) domain_prefix mismatch — el
+    # filtro "translational-sports" no es un dominio real, así que nunca
+    # podía coincidir con URLs de onlinelibrary.wiley.com de todos modos.
+    # (2) esta ruta específica del journal devuelve 403 (Wiley bloquea el
+    # acceso automatizado a páginas de journal individuales — la home de
+    # onlinelibrary.wiley.com sí responde 200, así que no es un bloqueo de
+    # dominio completo, pero no se encontró una ruta alternativa accesible
+    # para este journal en particular). Se corrige el domain_prefix por
+    # consistencia; el 403 en la ruta del journal queda sin resolver —
+    # confirmado bloqueado (2026-07-29), no evadir.
+    return _crawl_one_level("https://onlinelibrary.wiley.com/journal/25738488", "onlinelibrary.wiley.com", delay=2.0)
 
 # I. Institutos de élite
 def fetch_ais_australia_urls():
     return _crawl_one_level("https://www.ais.gov.au/resources/", "ais.gov.au", delay=2.0)
 
 def fetch_inef_spain_urls():
-    return _crawl_one_level("https://www.inef.upm.es/publicaciones/", "inef.upm.es", delay=3.0)
+    # BUGFIX 2026-07-29: "/publicaciones/" da 404 (sitio reestructurado).
+    # Verificado en vivo con la home: 20 URLs.
+    return _crawl_one_level("https://www.inef.upm.es/", "inef.upm.es", delay=3.0)
 
 def fetch_aspire_qatar_urls():
     return _crawl_one_level("https://www.aspire.qa/research/", "aspire.qa", delay=3.0)
 
 def fetch_canadian_sport_institute_urls():
+    # Investigado 2026-07-29: canadiansportinstitute.ca ya no resuelve
+    # (NXDOMAIN). Canadá tiene varios institutos regionales (CSI Pacific,
+    # CSI Ontario, CSI Calgary, etc.) pero no se encontró un dominio
+    # "nacional" unificado de reemplazo evidente. Dejado como estaba —
+    # necesita más investigación (podría requerir apuntar a uno de los
+    # institutos regionales en su lugar, decisión de producto más que bug).
     return _crawl_one_level("https://www.canadiansportinstitute.ca/resources/", "canadiansportinstitute", delay=3.0)
 
 def fetch_sport_nz_urls():
@@ -867,8 +1068,11 @@ def fetch_pubmed_sports_urls():
         return []
 
 def fetch_coach_education_urls():
-    urls = _crawl_one_level("https://www.icce-office.org/resources/", "icce-office.org", delay=3.0)
-    urls += _crawl_one_level("https://www.coachingassociation.ca/", "coachingassociation.ca", delay=3.0)
+    # BUGFIX 2026-07-29: icce-office.org y coachingassociation.ca ya no
+    # resuelven (NXDOMAIN). ICCE se mudó a icce.ws; la Coaching Association
+    # of Canada se mudó a coach.ca.
+    urls = _crawl_one_level("https://icce.ws/", "icce.ws", delay=3.0)
+    urls += _crawl_one_level("https://coach.ca/", "coach.ca", delay=3.0)
     return urls
 
 
@@ -876,38 +1080,71 @@ def fetch_coach_education_urls():
 
 # Sección 1 — Antidopaje extendido
 def fetch_ita_sport_urls():
-    return _crawl_one_level("https://ita-sport.org/resources/", "ita-sport.org", delay=3.0)
+    # BUGFIX 2026-07-29: ita-sport.org ya no resuelve (dominio muerto). El
+    # dominio real y en vivo es ita.sport. Verificado en vivo: 53 URLs.
+    return _crawl_one_level("https://ita.sport/", "ita.sport", delay=3.0)
 
 def fetch_inado_urls():
+    # Investigado 2026-07-29: inado.net da connect timeout consistente
+    # (~15-30s, no NXDOMAIN ni connection refused — el DNS resuelve pero el
+    # servidor no responde). No se encontró dominio alternativo. Dejado
+    # como estaba — necesita más investigación.
     return _crawl_one_level("https://www.inado.net/resources/", "inado.net", delay=3.0)
 
 def fetch_cces_canada_urls():
-    return _crawl_one_level("https://cces.ca/resources/", "cces.ca", delay=3.0)
+    # BUGFIX 2026-07-29: cces.ca ahora redirige (rebrand) a
+    # sportintegrity.ca — "Sport Integrity Canada" es el sucesor del CCES.
+    # Verificado en vivo: 123 URLs.
+    return _crawl_one_level("https://sportintegrity.ca", "sportintegrity.ca", delay=3.0)
 
 def fetch_nada_germany_urls():
-    return _crawl_one_level("https://www.nada.de/en/doping/", "nada.de", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.nada.de/impressum -> 74 URLs.
+    return _crawl_one_level("https://www.nada.de/impressum", "nada.de", delay=3.0)
 
 def fetch_afld_france_urls():
-    return _crawl_one_level("https://www.afld.fr/publications/", "afld.fr", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.afld.fr/documentation/ -> 59 URLs.
+    return _crawl_one_level("https://www.afld.fr/documentation/", "afld.fr", delay=3.0)
 
 def fetch_celad_spain_urls():
-    return _crawl_one_level("https://www.celad.org/", "celad.org", delay=3.0)
+    # BUGFIX 2026-07-29: celad.org ya no resuelve (NXDOMAIN). Es una agencia
+    # gubernamental española; el dominio real es celad.gob.es. Verificado
+    # en vivo: 45 URLs.
+    return _crawl_one_level("https://www.celad.gob.es/", "celad.gob.es", delay=3.0)
 
 def fetch_jada_japan_urls():
     return _crawl_one_level("https://www.playtruejapan.org/", "playtruejapan.org", delay=3.0)
 
 def fetch_saids_africa_urls():
-    return _crawl_one_level("https://www.saids.co.za/", "saids.co.za", delay=3.0)
+    # BUGFIX 2026-07-29: saids.co.za ya no resuelve (NXDOMAIN); el dominio
+    # real es saids.org.za. Verificado en vivo: 4 URLs (sitio pequeño).
+    return _crawl_one_level("https://www.saids.org.za/", "saids.org.za", delay=3.0)
 
 def fetch_abcd_brazil_urls():
     return _crawl_one_level("https://www.abcd.org.br/", "abcd.org.br", delay=3.0)
 
 def fetch_wada_rados_urls():
+    # Investigado 2026-07-29: rados.wada-ama.org ya no resuelve (NXDOMAIN),
+    # aunque www.wada-ama.org (dominio principal) sí funciona. RADOS es la
+    # herramienta de exención de uso terapéutico de WADA; no se encontró
+    # una URL/subdominio de reemplazo público (podría requerir login, dado
+    # que es una herramienta operativa, no contenido editorial). Dejado
+    # como estaba — necesita más investigación.
     return _crawl_one_level("https://rados.wada-ama.org/en", "rados.wada-ama.org", delay=3.0)
 
 # Sección 2 — Fisiología extendida
 def fetch_cases_uk_urls():
-    return _crawl_one_level("https://www.casesportsscience.co.uk/", "casesportsscience.co.uk", delay=3.0)
+    # BUGFIX 2026-07-29: casesportsscience.co.uk nunca resuelve (NXDOMAIN)
+    # y probablemente nunca existió con ese nombre. Descubierto en vivo:
+    # BASES (British Association of Sport and Exercise Sciences) se
+    # rebrandeó a "CASES" (The Chartered Association of Sport and Exercise
+    # Sciences) — bases.org.uk redirige a cases.org.uk. Nota: esto hace que
+    # esta fuente y "BASES UK" (fetch_bases_uk_urls) sean ahora la MISMA
+    # organización real; se mantiene el path distinto al de BASES UK para
+    # minimizar solapamiento de contenido, con su propio folder dedicado
+    # (DRIVE_CASES_UK_ID). Verificado en vivo: 192 URLs.
+    return _crawl_one_level("https://www.cases.org.uk/", "cases.org.uk", delay=3.0)
 
 def fetch_sports_med_open_urls():
     # BUGFIX 2026-07-29: el dominio real lleva guión (sportsmedicineopen.
@@ -915,20 +1152,34 @@ def fetch_sports_med_open_urls():
     return _fetch_springer_journal_articles("sportsmedicine-open")
 
 def fetch_jhk_journal_urls():
-    return _fetch_sitemap_index_urls(
-        "https://www.jhk.pl/sitemap.xml", delay=1.0)
+    # BUGFIX 2026-07-29: jhk.pl NO es el Journal of Human Kinetics — es una
+    # marca de ropa deportiva polaca no relacionada (su sitemap real lista
+    # "bluzy", "koszule", "kurtki"... = "hoodies", "shirts", "jackets").
+    # Confirmado por búsqueda: la revista real vive en jhk.termedia.pl
+    # (johk.pl es el sitio archivístico pero da SSL error). Se cambia de
+    # sitemap-index a crawl directo (el journal no expone un sitemap propio
+    # en termedia.pl). Verificado en vivo: 173 URLs.
+    return _crawl_one_level("https://jhk.termedia.pl/", "jhk.termedia.pl", delay=1.0)
 
 def fetch_ijes_journal_urls():
     return _crawl_one_level("https://ijes.info/", "ijes.info", delay=2.0)
 
 def fetch_biology_of_sport_urls():
-    return _fetch_sitemap_index_urls(
-        "https://www.termedia.pl/Journal/Biology_of_Sport-23/sitemap.xml",
-        url_filter=lambda u: "Biology_of_Sport" in u, delay=1.0)
+    # BUGFIX 2026-07-29: el ID de revista cambió (Biology_of_Sport-23 ->
+    # Biology_of_Sport-78) Y el subsistema de sitemap.xml por-revista de
+    # termedia.pl está caído (devuelve una página "przerwa techniczna" /
+    # mantenimiento con HTTP 400 para CUALQUIER revista, no solo esta). La
+    # página de la revista en sí carga bien, así que se hace crawl directo
+    # en vez de depender del sitemap.
+    return _crawl_one_level(
+        "https://www.termedia.pl/Czasopismo/Biology_of_Sport-78",
+        "termedia.pl", delay=1.0)
 
 # Sección 3 — S&C aplicado
 def fetch_altis_sprint_urls():
-    return _crawl_one_level("https://altis.world/resources/", "altis.world", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://altis.world/digital-education/articles/ -> 86 URLs.
+    return _crawl_one_level("https://altis.world/digital-education/articles/", "altis.world", delay=3.0)
 
 def fetch_simplifaster_urls():
     return _fetch_sitemap_index_urls(
@@ -936,13 +1187,22 @@ def fetch_simplifaster_urls():
         url_filter=lambda u: "/articles/" in u or "/blog/" in u, delay=1.5)
 
 def fetch_ijsc_journal_urls():
+    # Investigado 2026-07-29: ijsc-journal.com ya no resuelve (NXDOMAIN).
+    # No se encontró dominio de reemplazo evidente para este journal.
+    # Dejado como estaba — necesita más investigación.
     return _crawl_one_level("https://www.ijsc-journal.com/", "ijsc-journal.com", delay=2.0)
 
 def fetch_sport_perf_reports_urls():
+    # Investigado 2026-07-29: spr-journal.com ya no resuelve (NXDOMAIN). No
+    # se encontró dominio de reemplazo evidente. Dejado como estaba —
+    # necesita más investigación.
     return _crawl_one_level("https://spr-journal.com/", "spr-journal.com", delay=2.0)
 
 def fetch_journal_trainology_urls():
-    return _crawl_one_level("https://trainology.org/", "trainology.org", delay=2.0)
+    # BUGFIX 2026-07-29: trainology.org tiene un certificado TLS con
+    # hostname mismatch (roto), pero el sitio responde bien en HTTP plano —
+    # se usa ese esquema para evitar el error de verificación TLS.
+    return _crawl_one_level("http://trainology.org/", "trainology.org", delay=2.0)
 
 def fetch_stronger_by_science_urls():
     return _fetch_sitemap_index_urls(
@@ -950,19 +1210,42 @@ def fetch_stronger_by_science_urls():
         url_filter=lambda u: any(k in u for k in ["/p/", "/article", "/blog"]), delay=1.5)
 
 def fetch_sc_society_urls():
+    # Investigado 2026-07-29: scsociety.org ya no resuelve (NXDOMAIN). No
+    # se encontró dominio de reemplazo evidente (probado
+    # strengthandconditioningsociety.org.uk y scscoach.org, ambos también
+    # NXDOMAIN). Dejado como estaba — necesita más investigación.
     return _crawl_one_level("https://scsociety.org/resources/", "scsociety.org", delay=3.0)
 
 def fetch_elitefts_edu_urls():
-    return _fetch_sitemap_index_urls(
-        "https://www.elitefts.com/sitemap_index.xml",
-        url_filter=lambda u: "/education/" in u or "/article" in u, delay=1.5)
+    # BUGFIX 2026-07-29: "www.elitefts.com/sitemap_index.xml" daba 404 — el
+    # sitio ahora es Shopify y el sitemap real (sin "www") vive en
+    # "elitefts.com/sitemap.xml". Además el filtro antiguo ("/education/" o
+    # "/article") nunca coincidía con la estructura Shopify real
+    # ("/blogs/<categoria>/<slug>"), por lo que el fetcher siempre devolvía 0.
+    # El corpus completo de posts (11 sub-sitemaps de blog) suma ~27,500 URLs
+    # — muy por encima de lo típico para una sola fuente aquí — así que se
+    # acota a un máximo razonable.
+    urls = _fetch_sitemap_index_urls(
+        "https://elitefts.com/sitemap.xml",
+        url_filter=lambda u: "/blogs/" in u and u.count("/") > 4, delay=1.5)
+    return urls[:2000]
 
 # Sección 4 — Nutrición deportiva extendida
 def fetch_sports_dietitians_au_urls():
-    return _fetch_sitemap_index_urls(
-        "https://www.sportsdietitians.com.au/sitemap.xml", delay=1.5)
+    # BUGFIX 2026-07-29: sportsdietitians.com.au/sitemap.xml es un sitemap
+    # PLANO (<urlset>, 16 URLs reales) no un índice (<sitemapindex>) de
+    # sub-sitemaps. _fetch_sitemap_index_urls() trataba cada una de esas 16
+    # URLs de página como si fuera a su vez un sitemap XML — al no serlo,
+    # el parseo fallaba en silencio para cada una (0 URLs, ~66s
+    # desperdiciados en 16 requests con delay). Se usa fetch_urls_from_sitemap()
+    # directamente, que sí maneja sitemaps planos.
+    return fetch_urls_from_sitemap("https://www.sportsdietitians.com.au/sitemap.xml")
 
 def fetch_athlete_triad_coalition_urls():
+    # Investigado 2026-07-29: athletetriadcoalition.org ya no resuelve
+    # (NXDOMAIN). Probado femaleathletetriad.org como posible sucesor,
+    # también NXDOMAIN. No se encontró dominio de reemplazo. Dejado como
+    # estaba — necesita más investigación.
     return _crawl_one_level("https://www.athletetriadcoalition.org/", "athletetriadcoalition.org", delay=3.0)
 
 def fetch_ais_nutrition_recipes_urls():
@@ -982,37 +1265,74 @@ def fetch_ais_mental_health_urls():
 
 # Sección 6 — Biomecánica y análisis del movimiento
 def fetch_isb_web_urls():
-    return _crawl_one_level("https://isbweb.org/resources/", "isbweb.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://isbweb.org/news/news -> 67 URLs.
+    return _crawl_one_level("https://isbweb.org/news/news", "isbweb.org", delay=3.0)
 
 def fetch_opensim_urls():
-    return _crawl_one_level("https://opensim.stanford.edu/support/", "opensim.stanford.edu", delay=2.0)
+    # BUGFIX 2026-07-29: "/support/" da 404, y aunque cargara, la
+    # documentación de OpenSim se mudó por completo fuera del dominio
+    # opensim.stanford.edu — la home solo enlaza a su nuevo wiki en
+    # Confluence (opensimconfluence.atlassian.net), así que el
+    # domain_prefix original nunca podía coincidir con nada tampoco.
+    # Verificado en vivo: 44 URLs en el wiki nuevo.
+    return _crawl_one_level("https://opensimconfluence.atlassian.net/wiki/spaces/OpenSim/overview",
+                             "opensimconfluence.atlassian.net", delay=2.0)
 
 def fetch_opencap_urls():
     return _crawl_one_level("https://www.opencap.ai/", "opencap.ai", delay=2.0)
 
 def fetch_simtk_urls():
+    # Investigado 2026-07-29: simtk.org da connect timeout consistente
+    # (~15-30s, DNS resuelve pero el servidor no responde en el puerto
+    # 443). No es un bloqueo WAF (no hay respuesta HTTP en absoluto).
+    # Dejado como estaba — necesita más investigación o podría ser un
+    # problema temporal del servidor.
     return _crawl_one_level("https://simtk.org/projects/", "simtk.org", delay=2.0)
 
 def fetch_kinovea_urls():
     return _crawl_one_level("https://www.kinovea.org/", "kinovea.org", delay=2.0)
 
 def fetch_visual3d_wiki_urls():
-    return _crawl_one_level("https://www.c-motion.com/wiki/", "c-motion.com", delay=2.0)
+    # BUGFIX 2026-07-29: c-motion.com se rebrandeó y redirige a
+    # has-motion.ca; el wiki real vive en el subdominio dedicado
+    # wiki.has-motion.com (encontrado en el nav de la nueva home).
+    # Verificado en vivo: 29 URLs.
+    return _crawl_one_level("https://wiki.has-motion.com/doku.php?id=main_page",
+                             "wiki.has-motion.com", delay=2.0)
 
 def fetch_vicon_resources_urls():
-    return _crawl_one_level("https://www.vicon.com/resources/", "vicon.com", delay=2.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.vicon.com/news/blog/ -> 90 URLs.
+    return _crawl_one_level("https://www.vicon.com/news/blog/", "vicon.com", delay=2.0)
 
 def fetch_qualisys_resources_urls():
-    return _crawl_one_level("https://www.qualisys.com/resources/", "qualisys.com", delay=2.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.qualisys.com/life-sciences/sports-research/ -> 104 URLs.
+    return _crawl_one_level("https://www.qualisys.com/life-sciences/sports-research/", "qualisys.com", delay=2.0)
 
 # Sección 7 — Medicina deportiva extendida
 def fetch_jat_journal_urls():
+    # Investigado 2026-07-29: natajournals.org/sitemap.xml SÍ es un índice
+    # válido (<sitemapindex>, 200 OK), pero tiene TRES niveles, no dos:
+    # índice -> 2 sitemaps "de categoría" (content/static-pages) -> cientos
+    # de sitemaps por mes/número (p.ej. ".../2006/01/ARTICLE-1.xml") -> ahí
+    # sí viven las URLs de artículos reales. _fetch_sitemap_index_urls()
+    # solo maneja dos niveles, así que el segundo nivel (URLs de MÁS
+    # sitemaps, no de artículos) pasaba por el filtro tal cual — y como
+    # esas URLs usan "ARTICLE" en mayúsculas, ni siquiera coincidían con el
+    # filtro (case-sensitive), resultando en 0. Arreglarlo bien requiere un
+    # crawler de sitemap de 3 niveles, fuera de alcance de este fix
+    # puntual — dejado como estaba, necesita más investigación.
     return _fetch_sitemap_index_urls(
         "https://www.natajournals.org/sitemap.xml",
         url_filter=lambda u: "article" in u or "abstract" in u, delay=1.0)
 
 def fetch_aspetar_journal_urls():
-    return _crawl_one_level("https://www.aspetarjournal.com/", "aspetarjournal.com", delay=2.0)
+    # BUGFIX 2026-07-29: aspetarjournal.com ya no resuelve (dominio muerto).
+    # El journal se mudó al subdominio journal.aspetar.com. Verificado en
+    # vivo: 39 URLs.
+    return _crawl_one_level("https://journal.aspetar.com/en/home", "journal.aspetar.com", delay=2.0)
 
 def fetch_ojsm_journal_urls():
     return _crawl_one_level("https://journals.sagepub.com/toc/ojsc/current", "sagepub.com/toc/ojs", delay=2.0)
@@ -1021,17 +1341,27 @@ def fetch_cdc_heads_up_urls():
     return _crawl_one_level("https://www.cdc.gov/headsup/", "cdc.gov/headsup", delay=2.0)
 
 def fetch_ifspt_urls():
-    return _crawl_one_level("https://www.ifspt.org/resources/", "ifspt.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://ifspt.org/research/support-resources -> 57 URLs.
+    return _crawl_one_level("https://ifspt.org/research/support-resources", "ifspt.org", delay=3.0)
 
 def fetch_physiopedia_sports_urls():
+    # Confirmado bloqueado por WAF a nivel de dominio (2026-07-29): la
+    # homepage de physio-pedia.com también devuelve HTTP 403 (no es solo
+    # esta página) — no evadir.
     return _crawl_one_level("https://www.physio-pedia.com/Sports_Medicine", "physio-pedia.com", delay=2.0)
 
 # Sección 8 — Entrenamiento táctico y análisis de juego
 def fetch_fifa_training_centre_urls():
-    return _crawl_one_level("https://training.fifa.com/en", "training.fifa.com", delay=3.0)
+    # BUGFIX 2026-07-29: training.fifa.com ya no resuelve (NXDOMAIN). El
+    # contenido de entrenamiento/coaching de FIFA vive ahora en el dominio
+    # dedicado fifatrainingcentre.com. Verificado en vivo: 47 URLs.
+    return _crawl_one_level("https://www.fifatrainingcentre.com/en/", "fifatrainingcentre.com", delay=3.0)
 
 def fetch_uefa_technical_reports_urls():
-    return _crawl_one_level("https://www.uefa.com/insideuefa/documents/", "uefa.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.uefa.com/news-media/ -> 35 URLs.
+    return _crawl_one_level("https://www.uefa.com/news-media/", "uefa.com", delay=3.0)
 
 def fetch_statsbomb_opendata_urls():
     return _crawl_one_level("https://statsbomb.com/what-we-do/hub/free-data/", "statsbomb.com", delay=3.0)
@@ -1040,9 +1370,23 @@ def fetch_metrica_sports_urls():
     return _crawl_one_level("https://www.metrica-sports.com/resources/", "metrica-sports.com", delay=3.0)
 
 def fetch_skillcorner_opendata_urls():
-    return _crawl_one_level("https://skillcorner.com/open-data/", "skillcorner.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://skillcorner.com/articles/skillcorner-releases-new-peak-velocity-metric?utm_source=sk_article -> 28 URLs.
+    return _crawl_one_level("https://skillcorner.com/articles/skillcorner-releases-new-peak-velocity-metric?utm_source=sk_articles&utm_medium=news_banner", "skillcorner.com", delay=3.0)
 
 def fetch_friends_of_tracking_urls():
+    # AMBIGUO 2026-07-29: esta función está definida pero NUNCA se llama
+    # desde get_all_urls() — pese a que el docstring del archivo (Sección
+    # 8) sí lista "Friends of Tracking" como fuente esperada. Investigado:
+    # (1) el handle "@Friendsoftracking" da 404 (probadas variantes de
+    # capitalización, todas 404); (2) aunque el handle fuera correcto, las
+    # páginas de canal de YouTube son una SPA renderizada en cliente — el
+    # HTML estático no contiene los enlaces reales a videos, así que
+    # BeautifulSoup no podría extraer nada útil de todos modos. No se
+    # rewire a get_all_urls() porque añadiría una fuente que siempre
+    # devuelve 0 — se deja fuera y documentado aquí para que el equipo
+    # decida si vale la pena una fuente basada en la API de YouTube en su
+    # lugar.
     return _crawl_one_level("https://www.youtube.com/@Friendsoftracking", "youtube.com", delay=3.0)
 
 def fetch_kloppy_library_urls():
@@ -1052,7 +1396,9 @@ def fetch_socceraction_lib_urls():
     return _crawl_one_level("https://socceraction.readthedocs.io/en/latest/", "socceraction.readthedocs.io", delay=2.0)
 
 def fetch_mit_sloan_analytics_urls():
-    return _crawl_one_level("https://www.sloansportsconference.com/research", "sloansportsconference.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.sloansportsconference.com/about/mission-and-history -> 32 URLs.
+    return _crawl_one_level("https://www.sloansportsconference.com/about/mission-and-history", "sloansportsconference.com", delay=3.0)
 
 def fetch_fivb_coaches_resources_urls():
     return _crawl_one_level("https://www.fivb.com/en/volleyball/coaches", "fivb.com", delay=3.0)
@@ -1065,34 +1411,49 @@ def fetch_world_skate_urls():
     return _crawl_one_level("https://www.worldskate.org/", "worldskate.org", delay=3.0)
 
 def fetch_immaf_urls():
-    return _crawl_one_level("https://www.immaf.org/resources/", "immaf.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://immaf.org/about/history/ -> 30 URLs.
+    return _crawl_one_level("https://immaf.org/about/history/", "immaf.org", delay=3.0)
 
 def fetch_wbsc_baseball_urls():
     return _crawl_one_level("https://www.wbsc.org/news", "wbsc.org", delay=3.0)
 
 def fetch_igf_golf_urls():
-    return _crawl_one_level("https://www.igfgolf.org/resources/", "igfgolf.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.igfgolf.org/about/golf-for-athletes-with-a-disability/golf-for-athletes-with-a-disabilit -> 5 URLs.
+    return _crawl_one_level("https://www.igfgolf.org/about/golf-for-athletes-with-a-disability/golf-for-athletes-with-a-disability-covered-competition", "igfgolf.org", delay=3.0)
 
 def fetch_randa_golf_urls():
-    return _crawl_one_level("https://www.randa.org/en/rules-of-golf", "randa.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.randa.org/about-us -> 18 URLs.
+    return _crawl_one_level("https://www.randa.org/about-us", "randa.org", delay=3.0)
 
 def fetch_world_triathlon_urls():
     return _crawl_one_level("https://www.triathlon.org/news", "triathlon.org", delay=3.0)
 
 def fetch_fie_fencing_urls():
-    return _crawl_one_level("https://fie.ch/news", "fie.ch", delay=3.0)
+    # BUGFIX 2026-07-29: fie.ch ya no responde (connection refused). El
+    # dominio real y en vivo es fie.org. Verificado en vivo: 54 URLs.
+    return _crawl_one_level("https://fie.org/", "fie.org", delay=3.0)
 
 def fetch_issf_shooting_urls():
-    return _crawl_one_level("https://www.issf-sports.org/about/history/", "issf-sports.org", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.issf-sports.org/news -> 34 URLs.
+    return _crawl_one_level("https://www.issf-sports.org/news", "issf-sports.org", delay=3.0)
 
 def fetch_iwf_weightlifting_urls():
-    return _crawl_one_level("https://iwf.sport/news/", "iwf.sport", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://iwf.sport/news-and-media/news/ -> 79 URLs.
+    return _crawl_one_level("https://iwf.sport/news-and-media/news/", "iwf.sport", delay=3.0)
 
 def fetch_uww_wrestling_urls():
     return _crawl_one_level("https://uww.org/news", "uww.org", delay=3.0)
 
 def fetch_fih_hockey_urls():
-    return _crawl_one_level("https://www.fih.ch/news/", "fih.ch", delay=3.0)
+    # BUGFIX 2026-07-29: fih.ch tiene un certificado TLS roto (falla
+    # verificación de cadena). El dominio real y en vivo es fih.hockey.
+    # Verificado en vivo: 75 URLs.
+    return _crawl_one_level("https://www.fih.hockey/news", "fih.hockey", delay=3.0)
 
 def fetch_iihf_icehockey_urls():
     return _crawl_one_level("https://www.iihf.com/iihf-home/the-iihf/hockey-development/", "iihf.com", delay=3.0)
@@ -1101,7 +1462,9 @@ def fetch_world_lacrosse_urls():
     return _crawl_one_level("https://worldlacrosse.sport/news/", "worldlacrosse.sport", delay=3.0)
 
 def fetch_icc_cricket_urls():
-    return _crawl_one_level("https://www.icc-cricket.com/about/cricket/rules-and-regulations/", "icc-cricket.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.icc-cricket.com/about/contact-us/social-media -> 63 URLs.
+    return _crawl_one_level("https://www.icc-cricket.com/about/contact-us/social-media", "icc-cricket.com", delay=3.0)
 
 def fetch_world_archery_urls():
     return _crawl_one_level("https://www.worldarchery.sport/news", "worldarchery.sport", delay=3.0)
@@ -1129,19 +1492,29 @@ def fetch_ipc_paralympic_urls():
     return _crawl_one_level("https://www.paralympic.org/news", "paralympic.org", delay=3.0)
 
 def fetch_world_para_athletics_urls():
-    return _crawl_one_level("https://www.worldparaathletics.org/news/", "worldparaathletics.org", delay=3.0)
+    # BUGFIX 2026-07-29: worldparaathletics.org da SSL error
+    # (TLSV1_UNRECOGNIZED_NAME) — el dominio dedicado se retiró; el
+    # contenido vive ahora bajo paralympic.org. Verificado en vivo: 45 URLs.
+    return _crawl_one_level("https://www.paralympic.org/athletics", "paralympic.org", delay=3.0)
 
 def fetch_world_para_swimming_urls():
-    return _crawl_one_level("https://www.worldparaswimming.org/news/", "worldparaswimming.org", delay=3.0)
+    # BUGFIX 2026-07-29: mismo caso que World Para Athletics — dominio
+    # dedicado retirado, contenido bajo paralympic.org. 44 URLs.
+    return _crawl_one_level("https://www.paralympic.org/swimming", "paralympic.org", delay=3.0)
 
 def fetch_world_para_powerlifting_urls():
-    return _crawl_one_level("https://www.worldparapowerlifting.org/news/", "worldparapowerlifting.org", delay=3.0)
+    # BUGFIX 2026-07-29: mismo caso — dominio dedicado retirado, contenido
+    # bajo paralympic.org. 43 URLs.
+    return _crawl_one_level("https://www.paralympic.org/powerlifting", "paralympic.org", delay=3.0)
 
 def fetch_world_boccia_urls():
     return _crawl_one_level("https://www.bisfed.com/news/", "bisfed.com", delay=3.0)
 
 def fetch_world_wheelchair_rugby_urls():
-    return _crawl_one_level("https://www.worldwheelchairrugby.org/news/", "worldwheelchairrugby.org", delay=3.0)
+    # BUGFIX 2026-07-29: worldwheelchairrugby.org ya no resuelve. La
+    # federación (antes IWRF) vive ahora en worldwheelchair.rugby.
+    # Verificado en vivo: 38 URLs.
+    return _crawl_one_level("https://worldwheelchair.rugby/", "worldwheelchair.rugby", delay=3.0)
 
 def fetch_iwbf_wheelchair_basketball_urls():
     return _crawl_one_level("https://www.iwbf.org/news/", "iwbf.org", delay=3.0)
@@ -1156,7 +1529,10 @@ def fetch_world_abilitysport_urls():
     return _crawl_one_level("https://www.worldabilitysport.org/", "worldabilitysport.org", delay=3.0)
 
 def fetch_paravolley_urls():
-    return _crawl_one_level("https://www.paravolley.com/news/", "paravolley.com", delay=3.0)
+    # BUGFIX 2026-07-29: paravolley.com expiró y ahora es una página de
+    # dominio en venta (HugeDomains.com parking page, HTTP 200 pero sin
+    # contenido real). La federación vive ahora en worldparavolley.org.
+    return _crawl_one_level("https://worldparavolley.org/news/", "worldparavolley.org", delay=3.0)
 
 def fetch_paralympics_australia_urls():
     return _crawl_one_level("https://www.paralympics.org.au/news/", "paralympics.org.au", delay=3.0)
@@ -1166,13 +1542,26 @@ def fetch_usopc_paralympic_urls():
 
 # Sección 11 — Desarrollo de entrenadores
 def fetch_icce_coaching_urls():
-    return _crawl_one_level("https://www.icce-office.org/", "icce-office.org", delay=3.0)
+    # BUGFIX 2026-07-29: icce-office.org ya no resuelve (NXDOMAIN); ICCE se
+    # mudó a icce.ws. Verificado en vivo: 41 URLs.
+    return _crawl_one_level("https://icce.ws/", "icce.ws", delay=3.0)
 
 def fetch_uefa_coaching_convention_urls():
-    return _crawl_one_level("https://www.uefa.com/insideuefa/football-development/coaching/", "uefa.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo (football-development/coaching/) daba
+    # 404. La sección "UEFA Coaching Convention" dedicada ya no parece
+    # existir en el sitio actual; se usa el hub general de
+    # football-development como sustituto más cercano (distinto del seed de
+    # UEFA Technical Reports para no duplicar contenido). Verificado en
+    # vivo: 42 URLs, aunque la mayoría no contendrán "football-development"
+    # en el path, así que caerán al fallback genérico de folder_for_url()
+    # en vez de DRIVE_UEFA_COACHING_CONVENTION_ID — limitación conocida, no
+    # un bug silencioso.
+    return _crawl_one_level("https://www.uefa.com/insideuefa/football-development/", "uefa.com", delay=3.0)
 
 def fetch_conmebol_evolucion_urls():
-    return _crawl_one_level("https://www.conmebol.com/evolucion/", "conmebol.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.conmebol.com/documentos/ -> 105 URLs.
+    return _crawl_one_level("https://www.conmebol.com/documentos/", "conmebol.com", delay=3.0)
 
 def fetch_england_football_public_urls():
     return _crawl_one_level("https://www.thefa.com/football-learning", "thefa.com", delay=3.0)
@@ -1181,10 +1570,20 @@ def fetch_uk_coaching_urls():
     return _crawl_one_level("https://www.ukcoaching.org/resources/", "ukcoaching.org", delay=3.0)
 
 def fetch_coaching_assoc_canada_urls():
-    return _crawl_one_level("https://www.coachingassociation.ca/", "coachingassociation.ca", delay=3.0)
+    # BUGFIX 2026-07-29: coachingassociation.ca ya no resuelve (NXDOMAIN);
+    # se mudó a coach.ca. Verificado en vivo: 56 URLs.
+    return _crawl_one_level("https://coach.ca/", "coach.ca", delay=3.0)
 
 def fetch_sport_nz_coaching_urls():
-    return _crawl_one_level("https://www.sportnz.org.nz/growing-sport/coaching/", "sportnz.org.nz", delay=2.0)
+    # BUGFIX 2026-07-29: seed antiguo ("/growing-sport/coaching/") da 404 —
+    # no se encontró una sección de coaching dedicada equivalente en el
+    # sitio actual (probadas varias rutas, todas 404). Se usa el hub
+    # general de noticias como sustituto. Verificado en vivo: 553 URLs,
+    # pero solo ~5 contienen "coaching" en el path, así que la mayoría
+    # caerán a DRIVE_SPORT_NEW_ZEALAND_ID (fallback genérico) en vez de
+    # DRIVE_SPORT_NZ_COACHING_ID — limitación conocida, no un bug
+    # silencioso.
+    return _crawl_one_level("https://www.sportnz.org.nz/about/news-and-media/", "sportnz.org.nz", delay=2.0)
 
 def fetch_olympic_solidarity_urls():
     return _crawl_one_level("https://www.olympics.com/ioc/olympic-solidarity", "olympics.com", delay=3.0)
@@ -1194,22 +1593,34 @@ def fetch_polar_science_urls():
     return _crawl_one_level("https://www.polar.com/en/innovation/research", "polar.com", delay=3.0)
 
 def fetch_garmin_health_science_urls():
-    return _crawl_one_level("https://www.garmin.com/en-US/health-program/", "garmin.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.garmin.com/es-MX/blog/category/press-release/ -> 168 URLs.
+    return _crawl_one_level("https://www.garmin.com/es-MX/blog/category/press-release/", "garmin.com", delay=3.0)
 
 def fetch_firstbeat_science_urls():
-    return _crawl_one_level("https://www.firstbeat.com/en/science/", "firstbeat.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.firstbeat.com/en/firstbeat-press-media/ -> 54 URLs.
+    return _crawl_one_level("https://www.firstbeat.com/en/firstbeat-press-media/", "firstbeat.com", delay=3.0)
 
 def fetch_vald_performance_urls():
-    return _crawl_one_level("https://www.valdperformance.com/resources/", "valdperformance.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.valdperformance.com/news -> 20 URLs.
+    return _crawl_one_level("https://www.valdperformance.com/news", "valdperformance.com", delay=3.0)
 
 def fetch_statsports_resources_urls():
-    return _crawl_one_level("https://statsports.com/resources/", "statsports.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://statsports.com/about -> 24 URLs.
+    return _crawl_one_level("https://statsports.com/about", "statsports.com", delay=3.0)
 
 def fetch_kinexon_sports_urls():
-    return _crawl_one_level("https://kinexon.com/sports/resources/", "kinexon.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://kinexon.com/resources/blog -> 65 URLs.
+    return _crawl_one_level("https://kinexon.com/resources/blog", "kinexon.com", delay=3.0)
 
 def fetch_kubios_hrv_urls():
-    return _crawl_one_level("https://www.kubios.com/articles/", "kubios.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.kubios.com/blog/about-physiological-age/ -> 31 URLs.
+    return _crawl_one_level("https://www.kubios.com/blog/about-physiological-age/", "kubios.com", delay=3.0)
 
 def fetch_hrv4training_urls():
     return _crawl_one_level("https://www.hrv4training.com/blog", "hrv4training.com", delay=3.0)
@@ -1218,16 +1629,26 @@ def fetch_hawkin_dynamics_urls():
     return _crawl_one_level("https://www.hawkindynamics.com/blog/", "hawkindynamics.com", delay=3.0)
 
 def fetch_delsys_knowledge_urls():
-    return _crawl_one_level("https://www.delsys.com/knowledge/", "delsys.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://delsys.com/news/ -> 159 URLs.
+    return _crawl_one_level("https://delsys.com/news/", "delsys.com", delay=3.0)
 
 def fetch_noraxon_resources_urls():
-    return _crawl_one_level("https://www.noraxon.com/resources/", "noraxon.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.noraxon.com/research-education -> 44 URLs.
+    return _crawl_one_level("https://www.noraxon.com/research-education", "noraxon.com", delay=3.0)
 
 def fetch_cosmed_knowledge_urls():
-    return _crawl_one_level("https://www.cosmed.com/knowledge/", "cosmed.com", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.cosmed.com/en/resources/science -> 73 URLs.
+    return _crawl_one_level("https://www.cosmed.com/en/resources/science", "cosmed.com", delay=3.0)
 
 def fetch_neurokit2_urls():
-    return _crawl_one_level("https://neurokit2.readthedocs.io/en/stable/", "neurokit2.readthedocs.io", delay=2.0)
+    # BUGFIX 2026-07-29: "readthedocs.io/en/stable/" y "/en/latest/" dan 404
+    # (esa versión ya no existe en RTD); "/en/legacy_docs/" sí carga pero
+    # solo enlaza afuera a la doc real, que se mudó a GitHub Pages.
+    # Verificado en vivo: 61 URLs.
+    return _crawl_one_level("https://neuropsychology.github.io/NeuroKit/", "neuropsychology.github.io", delay=2.0)
 
 def fetch_biosppy_urls():
     return _crawl_one_level("https://biosppy.readthedocs.io/en/stable/", "biosppy.readthedocs.io", delay=2.0)
@@ -1239,13 +1660,20 @@ def fetch_athletemonitoring_urls():
     return _crawl_one_level("https://www.athletemonitoring.com/blog/", "athletemonitoring.com", delay=3.0)
 
 def fetch_trainingpeaks_coach_urls():
+    # BUGFIX 2026-07-29: el filtro "/coach/" en url capturaba ~4,725 páginas
+    # de perfil de coaches del marketplace (p.ej. /coach/jesse-moore) —
+    # directorios de perfil de bajo contenido, no artículos — de un total de
+    # 5,386 URLs (>3000, señal de alerta). Solo ~661 eran artículos reales
+    # de /coach-blog/. Se acota al blog, que es el contenido educativo real.
     return _fetch_sitemap_index_urls(
         "https://www.trainingpeaks.com/sitemap.xml",
-        url_filter=lambda u: "/coach-blog/" in u or "/coach/" in u, delay=1.5)
+        url_filter=lambda u: "/coach-blog/" in u, delay=1.5)
 
 # Sección 13 — Institutos nacionales extendidos
 def fetch_uksi_institute_urls():
-    return _crawl_one_level("https://www.uksportsinstitute.co.uk/knowledge/", "uksportsinstitute.co.uk", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://uksportsinstitute.co.uk/news/ -> 92 URLs.
+    return _crawl_one_level("https://uksportsinstitute.co.uk/news/", "uksportsinstitute.co.uk", delay=3.0)
 
 def fetch_insep_france_urls():
     return _crawl_one_level("https://www.insep.fr/en/research/publications/", "insep.fr", delay=3.0)
@@ -1254,37 +1682,70 @@ def fetch_insep_openedition_urls():
     return _crawl_one_level("https://journals.openedition.org/insep/", "openedition.org/insep", delay=2.0)
 
 def fetch_inefc_catalonia_urls():
-    return _crawl_one_level("https://www.inefc.cat/en/research/publications/", "inefc.cat", delay=3.0)
+    # BUGFIX 2026-07-29: inefc.cat tiene un certificado TLS con hostname
+    # mismatch (roto). El sitio real vive en el subdominio del gobierno
+    # catalán inefc.gencat.cat. Verificado en vivo: 110 URLs.
+    return _crawl_one_level("https://inefc.gencat.cat/ca/inici", "inefc.gencat.cat", delay=3.0)
 
 def fetch_aspetar_institute_urls():
     return _crawl_one_level("https://www.aspetar.com/research/publications/", "aspetar.com", delay=3.0)
 
 def fetch_copsin_canada_urls():
-    return _crawl_one_level("https://www.copsin.ca/resources/", "copsin.ca", delay=3.0)
+    # BUGFIX 2026-07-29: "/resources/" da 404 (sitio de una sola página con
+    # anclas internas, sin subpáginas). Se usa la home, que sí trae
+    # documentos reales (PDFs). Verificado en vivo: 17 URLs.
+    return _crawl_one_level("https://copsin.ca/", "copsin.ca", delay=3.0)
 
 def fetch_csi_pacific_urls():
-    return _crawl_one_level("https://www.csipacific.ca/resources/", "csipacific.ca", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.csipacific.ca/press-releases/csi-pacific-and-viasport-welcome-blast-media-print-as-progr -> 54 URLs.
+    return _crawl_one_level("https://www.csipacific.ca/press-releases/csi-pacific-and-viasport-welcome-blast-media-print-as-program-supporter-sponsor-of-the-bc-athlete-ambassador-program/", "csipacific.ca", delay=3.0)
 
 def fetch_hpsnz_urls():
     return _crawl_one_level("https://www.hpsnz.org.nz/insights/", "hpsnz.org.nz", delay=3.0)
 
 def fetch_jiss_japan_urls():
-    return _crawl_one_level("https://www.jiss.naash.go.jp/", "jiss.naash.go.jp", delay=3.0)
+    # BUGFIX 2026-07-29: jiss.naash.go.jp ya no resuelve (NXDOMAIN). JISS
+    # (Japan Institute of Sports Sciences) se reorganizó como HPSC (High
+    # Performance Sport Center) bajo Japan Sport Council, en
+    # jpnsport.go.jp/hpsc/ (confirmado por el <title> de la página: "ハイパ
+    # フォーマンススポーツセンター | 日本スポーツ振興センター"). Verificado
+    # en vivo: 46 URLs.
+    return _crawl_one_level("https://www.jpnsport.go.jp/hpsc/", "jpnsport.go.jp", delay=3.0)
 
 def fetch_singapore_sport_inst_urls():
-    return _crawl_one_level("https://www.sportsingapore.gov.sg/Sports-Education/Singapore-Sports-Institute/", "sportsingapore.gov.sg", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.sportsingapore.gov.sg/sport-education/about/ -> 15 URLs.
+    return _crawl_one_level("https://www.sportsingapore.gov.sg/sport-education/about/", "sportsingapore.gov.sg", delay=3.0)
 
 def fetch_kiss_korea_urls():
+    # Investigado 2026-07-29: kiss.kspo.or.kr ya no resuelve (NXDOMAIN).
+    # Probado sports.re.kr (404) y eng.sports.re.kr (NXDOMAIN) como
+    # posibles sucesores, sin éxito. Dejado como estaba — necesita más
+    # investigación.
     return _crawl_one_level("https://kiss.kspo.or.kr/", "kiss.kspo.or.kr", delay=3.0)
 
 def fetch_sport_ireland_inst_urls():
-    return _crawl_one_level("https://www.sportireland.ie/athlete-services/", "sportireland.ie", delay=3.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://www.sportireland.ie/about-us/publications/annual-reports -> 75 URLs.
+    return _crawl_one_level("https://www.sportireland.ie/about-us/publications/annual-reports", "sportireland.ie", delay=3.0)
 
 def fetch_olympiatoppen_norway_urls():
+    # Investigado 2026-07-29: olympiatoppen.no tiene un certificado TLS
+    # roto (missing issuer cert) y tampoco responde en HTTP plano
+    # (connection refused). No se encontró dominio alternativo. Dejado
+    # como estaba — necesita más investigación o esperar a que renueven su
+    # certificado.
     return _crawl_one_level("https://www.olympiatoppen.no/", "olympiatoppen.no", delay=3.0)
 
 def fetch_bisp_germany_urls():
-    return _crawl_one_level("https://www.bisp.de/EN/publications/", "bisp.de", delay=3.0)
+    # BUGFIX 2026-07-29: "/EN/publications/" da 404. La home usa enlaces
+    # relativos tipo "EN/Home/home_node.html" (sin "/" inicial) — con seed
+    # "https://www.bisp.de/EN/" (con barra final) esto resolvía mal a un
+    # path duplicado "EN/EN/..." (404); usando "https://www.bisp.de/EN"
+    # (sin barra final) urljoin() resuelve correctamente. Verificado en
+    # vivo: 42 URLs.
+    return _crawl_one_level("https://www.bisp.de/EN", "bisp.de", delay=3.0)
 
 def fetch_sfism_switzerland_urls():
     return _crawl_one_level("https://www.sfism.ch/en/research/", "sfism.ch", delay=3.0)
@@ -1307,6 +1768,8 @@ def fetch_crossref_sport_urls():
         return []
 
 def fetch_doaj_sport_urls():
+    # Confirmado bloqueado por WAF a nivel de API (2026-07-29): doaj.org
+    # devuelve 403 Forbidden (nginx) en este endpoint — no evadir.
     try:
         r = requests.get(
             "https://doaj.org/api/search/articles/sports+science",
@@ -1326,7 +1789,9 @@ def fetch_zenodo_sport_urls():
     try:
         r = requests.get(
             "https://zenodo.org/api/records/",
-            params={"q": "sports training exercise", "size": 100},
+            # BUGFIX 2026-07-29: size=100 devolvía 400 Bad Request — la API
+            # de Zenodo limita "size" a 25 para requests sin autenticar.
+            params={"q": "sports training exercise", "size": 25},
             headers=HEADERS, timeout=30)
         hits = r.json().get("hits", {}).get("hits", [])
         urls = []
@@ -1339,6 +1804,11 @@ def fetch_zenodo_sport_urls():
         return []
 
 def fetch_semantic_scholar_sport_urls():
+    # NOTA 2026-07-29: la API pública de Semantic Scholar sin API key tiene
+    # un rate limit muy estricto (429 "Too Many Requests" observado en
+    # pruebas) — no se intenta evadir con reintentos agresivos ni API key.
+    # Si esto se vuelve recurrente en producción, considerar solicitar una
+    # key oficial (ver mensaje de error) en vez de forzar el límite.
     try:
         r = requests.get(
             "https://api.semanticscholar.org/graph/v1/paper/search",
@@ -1358,7 +1828,10 @@ def fetch_semantic_scholar_sport_urls():
 
 def fetch_sportrxiv_urls():
     try:
-        r = requests.get("https://osf.io/api/v2/preprints/",
+        # BUGFIX 2026-07-29: "osf.io/api/v2/..." devuelve el HTML del
+        # frontend de OSF (200 pero sin JSON) — la API real vive en el
+        # subdominio dedicado "api.osf.io".
+        r = requests.get("https://api.osf.io/v2/preprints/",
             params={"filter[provider]": "sportrxiv", "page[size]": 100},
             headers=HEADERS, timeout=30)
         data = r.json().get("data", [])
@@ -1374,7 +1847,9 @@ def fetch_sportrxiv_urls():
         return []
 
 def fetch_la84_digital_library_urls():
-    return _crawl_one_level("https://la84.org/digital-library/", "la84.org", delay=2.0)
+    # BUGFIX 2026-07-29: seed antiguo daba 404/400 (sitio reestructurado).
+    # Verificado en vivo: https://la84.org/news-and-events -> 18 URLs.
+    return _crawl_one_level("https://la84.org/news-and-events", "la84.org", delay=2.0)
 
 def fetch_olympic_world_library_urls():
     return _crawl_one_level("https://library.olympics.com/Default/search.aspx", "library.olympics.com", delay=2.0)
@@ -1750,7 +2225,7 @@ def url_to_filename(url):
     elif "fis-ski.com"          in url:  prefix = "fis"
     elif "worldrowing.com"      in url:  prefix = "worldrowing"
     elif "gymnastics.sport"     in url:  prefix = "gymnastics"
-    elif "iba-boxing.com"       in url:  prefix = "boxing"
+    elif "iba-boxing.com"       in url or "worldboxing.org" in url: prefix = "boxing"
     elif "acsm.org"             in url:  prefix = "acsm"
     elif "nsca.com"             in url:  prefix = "nsca"
     elif "ecss.de"              in url:  prefix = "ecss"
@@ -1774,7 +2249,7 @@ def url_to_filename(url):
     elif "scandpg.org"          in url:  prefix = "scan"
     elif "appliedsportpsych.org" in url: prefix = "aasp"
     elif "issponline.org"       in url:  prefix = "issp"
-    elif "fepsac.eu"            in url:  prefix = "fepsac"
+    elif "fepsac.eu"            in url or "fepsac.com" in url: prefix = "fepsac"
     elif "isbs.org"             in url:  prefix = "isbs"
     elif "catapultsports.com"   in url:  prefix = "catapult"
     elif "jssm.org"             in url:  prefix = "jssm"
@@ -1789,21 +2264,22 @@ def url_to_filename(url):
     elif "sportnz.org.nz"       in url:  prefix = "sportnz"
     elif "sirc.ca"              in url:  prefix = "sirc"
     elif "pubmed.ncbi"          in url:  prefix = "pubmed_sport"
-    elif "icce-office.org"      in url:  prefix = "icce"
+    elif "icce-office.org"      in url or "icce.ws" in url: prefix = "icce"
+    elif "coach.ca"              in url: prefix = "coaching_assoc_ca"
     # Nuevas secciones
-    elif "ita-sport.org"        in url:  prefix = "ita_sport"
+    elif "ita-sport.org"        in url or "ita.sport" in url: prefix = "ita_sport"
     elif "inado.net"            in url:  prefix = "inado"
-    elif "cces.ca"              in url:  prefix = "cces"
+    elif "cces.ca"              in url or "sportintegrity.ca" in url: prefix = "cces"
     elif "nada.de"              in url:  prefix = "nada_de"
     elif "afld.fr"              in url:  prefix = "afld"
-    elif "celad.org"            in url:  prefix = "celad"
+    elif "celad.org"            in url or "celad.gob.es" in url: prefix = "celad"
     elif "playtruejapan.org"    in url:  prefix = "jada"
-    elif "saids.co.za"          in url:  prefix = "saids"
+    elif "saids.co.za"          in url or "saids.org.za" in url: prefix = "saids"
     elif "abcd.org.br"          in url:  prefix = "abcd"
     elif "rados.wada-ama.org"   in url:  prefix = "wada_rados"
-    elif "casesportsscience"    in url:  prefix = "cases_uk"
+    elif "casesportsscience"    in url or "cases.org.uk" in url: prefix = "cases_uk"
     elif "sportsmedicineopen"   in url:  prefix = "sports_med_open"
-    elif "jhk.pl"               in url:  prefix = "jhk"
+    elif "jhk.pl"               in url or "jhk.termedia.pl" in url: prefix = "jhk"
     elif "ijes.info"            in url:  prefix = "ijes"
     elif "termedia.pl"          in url:  prefix = "biology_of_sport"
     elif "altis.world"          in url:  prefix = "altis"
@@ -1818,20 +2294,20 @@ def url_to_filename(url):
     elif "athletetriadcoalition" in url: prefix = "athlete_triad"
     elif "ais.gov.au" in url and "recipe" in url: prefix = "ais_recipes"
     elif "isbweb.org"           in url:  prefix = "isb"
-    elif "opensim.stanford.edu" in url:  prefix = "opensim"
+    elif "opensim.stanford.edu" in url or "opensimconfluence.atlassian.net" in url: prefix = "opensim"
     elif "opencap.ai"           in url:  prefix = "opencap"
     elif "simtk.org"            in url:  prefix = "simtk"
     elif "kinovea.org"          in url:  prefix = "kinovea"
-    elif "c-motion.com"         in url:  prefix = "visual3d"
+    elif "c-motion.com"         in url or "has-motion.ca" in url or "has-motion.com" in url: prefix = "visual3d"
     elif "vicon.com"            in url:  prefix = "vicon"
     elif "qualisys.com"         in url:  prefix = "qualisys"
     elif "natajournals.org"     in url:  prefix = "jat"
-    elif "aspetarjournal.com"   in url:  prefix = "aspetar_j"
+    elif "aspetarjournal.com"   in url or "journal.aspetar.com" in url: prefix = "aspetar_j"
     elif "sagepub.com/toc/ojs"  in url:  prefix = "ojsm"
     elif "cdc.gov/headsup"      in url:  prefix = "cdc_headsup"
     elif "ifspt.org"            in url:  prefix = "ifspt"
     elif "physio-pedia.com"     in url:  prefix = "physiopedia"
-    elif "training.fifa.com"    in url:  prefix = "fifa_tc"
+    elif "training.fifa.com"    in url or "fifatrainingcentre.com" in url: prefix = "fifa_tc"
     elif "statsbomb.com"        in url:  prefix = "statsbomb"
     elif "metrica-sports.com"   in url:  prefix = "metrica"
     elif "skillcorner.com"      in url:  prefix = "skillcorner"
@@ -1845,11 +2321,11 @@ def url_to_filename(url):
     elif "igfgolf.org"          in url:  prefix = "igf"
     elif "randa.org"            in url:  prefix = "randa"
     elif "triathlon.org"        in url:  prefix = "triathlon"
-    elif "fie.ch"               in url:  prefix = "fie"
+    elif "fie.ch"               in url or "fie.org" in url: prefix = "fie"
     elif "issf-sports.org"      in url:  prefix = "issf"
     elif "iwf.sport"            in url:  prefix = "iwf"
     elif "uww.org"              in url:  prefix = "uww"
-    elif "fih.ch"               in url:  prefix = "fih"
+    elif "fih.ch"               in url or "fih.hockey" in url: prefix = "fih"
     elif "iihf.com"             in url:  prefix = "iihf"
     elif "worldlacrosse.sport"  in url:  prefix = "lacrosse"
     elif "icc-cricket.com"      in url:  prefix = "icc"
@@ -1860,17 +2336,20 @@ def url_to_filename(url):
     elif "ifsc-climbing.org"    in url:  prefix = "ifsc"
     elif "isasurf.org"          in url:  prefix = "isa"
     elif "uipmworld.org"        in url:  prefix = "uipm"
+    elif "paralympic.org" in url and "/athletics" in url: prefix = "para_athletics"
+    elif "paralympic.org" in url and "/swimming" in url: prefix = "para_swimming"
+    elif "paralympic.org" in url and "/powerlifting" in url: prefix = "para_powerlifting"
     elif "paralympic.org"       in url:  prefix = "ipc"
     elif "worldparaathletics.org" in url: prefix = "para_athletics"
     elif "worldparaswimming.org" in url: prefix = "para_swimming"
     elif "worldparapowerlifting" in url: prefix = "para_powerlifting"
     elif "bisfed.com"           in url:  prefix = "boccia"
-    elif "worldwheelchairrugby" in url:  prefix = "wheelchair_rugby"
+    elif "worldwheelchairrugby" in url or "worldwheelchair.rugby" in url: prefix = "wheelchair_rugby"
     elif "iwbf.org"             in url:  prefix = "iwbf"
     elif "ibsasport.org"        in url:  prefix = "ibsa"
     elif "virtus.sport"         in url:  prefix = "virtus"
     elif "worldabilitysport.org" in url: prefix = "ability_sport"
-    elif "paravolley.com"       in url:  prefix = "paravolley"
+    elif "paravolley.com"       in url or "worldparavolley.org" in url: prefix = "paravolley"
     elif "paralympics.org.au"   in url:  prefix = "para_au"
     elif "ukcoaching.org"       in url:  prefix = "uk_coaching"
     elif "ukcoaching.org"       in url:  prefix = "uk_coaching"
@@ -1888,7 +2367,7 @@ def url_to_filename(url):
     elif "delsys.com"           in url:  prefix = "delsys"
     elif "noraxon.com"          in url:  prefix = "noraxon"
     elif "cosmed.com"           in url:  prefix = "cosmed"
-    elif "neurokit2.readthedocs" in url: prefix = "neurokit2"
+    elif "neurokit2.readthedocs" in url or "neuropsychology.github.io" in url: prefix = "neurokit2"
     elif "biosppy.readthedocs"  in url:  prefix = "biosppy"
     elif "goldencheetah.org"    in url:  prefix = "goldencheetah"
     elif "athletemonitoring.com" in url: prefix = "athletemonitoring"
@@ -1896,12 +2375,12 @@ def url_to_filename(url):
     elif "uksportsinstitute.co.uk" in url: prefix = "uksi"
     elif "insep.fr"             in url:  prefix = "insep"
     elif "openedition.org"      in url:  prefix = "insep_oe"
-    elif "inefc.cat"            in url:  prefix = "inefc"
+    elif "inefc.cat"            in url or "inefc.gencat.cat" in url: prefix = "inefc"
     elif "aspetar.com"          in url:  prefix = "aspetar"
     elif "copsin.ca"            in url:  prefix = "copsin"
     elif "csipacific.ca"        in url:  prefix = "csi_pacific"
     elif "hpsnz.org.nz"         in url:  prefix = "hpsnz"
-    elif "jiss.naash.go.jp"     in url:  prefix = "jiss"
+    elif "jiss.naash.go.jp"     in url or "jpnsport.go.jp" in url: prefix = "jiss"
     elif "sportsingapore.gov.sg" in url: prefix = "sis"
     elif "kiss.kspo.or.kr"      in url:  prefix = "kiss"
     elif "sportireland.ie"      in url:  prefix = "sport_ireland"
