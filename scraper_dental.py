@@ -277,6 +277,12 @@ def folder_for_url(url):
     # porque comparten host con reglas más amplias definidas más abajo.
     if "ada.org/resources/practice/practice-management" in url: return DRIVE_ADA_PRACTICE_MGMT_ID
     if "ada.org/resources/practice/legal-and-regulatory/infection" in url: return DRIVE_ADA_INFECTION_CONTROL_ID
+    # BUGFIX 2026-07-29: ruta nueva de infección/esterilización (ver
+    # fetch_ada_practice_mgmt_urls... no, ver el fetcher lambda "ADA
+    # Infection Control & Sterilization" en get_all_urls) — sin este
+    # override caería en la regla genérica de x-rays/oral-health-topics de
+    # abajo con el DRIVE_ID equivocado.
+    if "ada.org/resources/ada-library/oral-health-topics/infection-control-and-sterilization" in url: return DRIVE_ADA_INFECTION_CONTROL_ID
     if "ada.org/resources/research"      in url: return DRIVE_ADA_EVIDENCE_GUIDELINES_ID
     if "ada.org/resources/ada-library/oral-health-topics/x-rays" in url: return DRIVE_ADA_RADIATION_GUIDANCE_ID
     if "ada.org/publications/cdt"        in url: return DRIVE_ADA_CDT_METADATA_ID
@@ -284,6 +290,12 @@ def folder_for_url(url):
     if "nidcr.nih.gov/health-info"       in url: return DRIVE_NIDCR_HEALTH_INFO_ID
     if "3shape.com"                      in url: return DRIVE_3SHAPE_DENTAL_ID
     if "exocad.com"                      in url: return DRIVE_EXOCAD_DENTAL_ID
+    # BUGFIX 2026-07-29: DRIVE_CDC_ORAL_PUBLIC_ID era inalcanzable — la regla
+    # genérica de CDC Oral DX ("cdc.gov" + "oralhealth"/"oral-health" en
+    # cualquier parte de la URL) siempre matcheaba primero para CUALQUIER URL
+    # de cdc.gov/oral-health/, incluida la sub-sección "prevention" que usa
+    # fetch_cdc_oral_public_urls. Override específico antes de esa regla.
+    if "cdc.gov/oral-health/prevention" in url: return DRIVE_CDC_ORAL_PUBLIC_ID
 
     # A. Organismos internacionales
     if "fdiworlddental.org"        in url: return DRIVE_FDI_WORLD_DENTAL_ID
@@ -311,7 +323,7 @@ def folder_for_url(url):
     if "aaoms.org"                 in url: return DRIVE_AAOMS_GUIDELINES_ID
     if "iadt-dentaltrauma.org"     in url: return DRIVE_IADT_TRAUMA_ID
     if "efp.org"                   in url: return DRIVE_EFP_EUROPE_ID
-    if "eapd.gr"                   in url: return DRIVE_EAPD_EUROPE_ID
+    if "eapd.gr" in url or "eapd.eu" in url: return DRIVE_EAPD_EUROPE_ID
     if "aaoinfo.org"               in url: return DRIVE_AAO_ORTHODONTICS_ID
     if "aaomr.org"                 in url: return DRIVE_AAOMR_RADIOLOGY_ID
     if "aaom.com"                  in url: return DRIVE_AAOM_ORAL_MEDICINE_ID
@@ -321,7 +333,12 @@ def folder_for_url(url):
     if "benthamopen.com" in url and "dental" in url: return DRIVE_OPEN_DENTISTRY_JOURNAL_ID
     if "hindawi.com/journals/ijd"  in url: return DRIVE_INTL_J_DENTISTRY_ID
     if "frontiersin.org" in url and ("dental" in url or "dentistry" in url): return DRIVE_FRONTIERS_DENTAL_ID
-    if "nature.com/bdjo"           in url: return DRIVE_BDJ_OPEN_ID
+    # BUGFIX 2026-07-29: DRIVE_BDJ_OPEN_ID era inalcanzable — los artículos
+    # reales de BDJ Open en nature.com usan la ruta genérica
+    # /articles/s41405-<año>-<n>-<n> (sin "bdjo" en el path); "s41405" es el
+    # identificador de revista de Nature para BDJ Open (confirmado en vivo
+    # con los sub-sitemaps propios de la revista).
+    if "nature.com/bdjo" in url or "nature.com/articles/s41405" in url: return DRIVE_BDJ_OPEN_ID
     if "thieme-connect.com" in url and "dental" in url: return DRIVE_EUROPEAN_J_DENTISTRY_ID
     if "journals.sagepub.com" in url and "jdr" in url: return DRIVE_J_DENTAL_RESEARCH_OA_ID
     if "link.springer.com/journal/784" in url: return DRIVE_CLINICAL_ORAL_INVEST_OA_ID
@@ -336,14 +353,14 @@ def folder_for_url(url):
     if "europepmc.org"             in url: return DRIVE_EUROPE_PMC_DENTAL_ID
     # F. Diagnóstico y radiología
     if "radiopaedia.org" in url and ("dental" in url or "tooth" in url or "oral" in url or "jaw" in url): return DRIVE_RADIOPAEDIA_DENTAL_ID
-    if "cdc.gov" in url and "oralhealth" in url: return DRIVE_CDC_ORAL_DX_ID
+    if "cdc.gov" in url and ("oralhealth" in url or "oral-health" in url): return DRIVE_CDC_ORAL_DX_ID
     if "atlasofpathology" in url or "pathologyoutlines.com" in url: return DRIVE_ORAL_PATHOLOGY_ATLAS_ID
     # G. Farmacología y materiales
     if "dailymed.nlm.nih.gov"      in url: return DRIVE_DAILYMED_DENTAL_ID
     if "fda.gov" in url and "dental" in url: return DRIVE_FDA_DENTAL_DEVICES_ID
     if "eudamed.ec.europa.eu"      in url: return DRIVE_EUDAMED_IVD_DENTAL_ID
     if "invima.gov.co"             in url: return DRIVE_INVIMA_DENTAL_COL_ID
-    if "cofepris.gob.mx"           in url: return DRIVE_COFEPRIS_DENTAL_MEX_ID
+    if "gob.mx/cofepris"            in url: return DRIVE_COFEPRIS_DENTAL_MEX_ID
     # H. Especialidades
     if "aae.org/dental-professionals" in url: return DRIVE_AAE_ENDO_RESOURCES_ID
     if "perio.org/clinical"        in url: return DRIVE_AAP_PERIO_RESOURCES_ID
@@ -354,7 +371,7 @@ def folder_for_url(url):
     if "aaoms.org/education"       in url: return DRIVE_AAOMFS_SURGERY_ID
     if "escd.org"                  in url: return DRIVE_ESCD_COSMETIC_DENTAL_ID
     # I. Control de infecciones
-    if "cdc.gov" in url and "infectioncontrol" in url: return DRIVE_CDC_INFECTION_DENTAL_ID
+    if "cdc.gov" in url and ("infectioncontrol" in url or "dental-infection-control" in url): return DRIVE_CDC_INFECTION_DENTAL_ID
     if "osha.gov" in url and "dental" in url: return DRIVE_OSHA_DENTAL_ID
     if "osap.org"                  in url: return DRIVE_OSAP_DENTAL_ID
     if "ecdc.europa.eu"            in url: return DRIVE_ECDC_ORAL_BIOSAFETY_ID
@@ -366,7 +383,10 @@ def folder_for_url(url):
     if "minsalud.gov.co" in url and "3100" in url: return DRIVE_RESO3100_COLOMBIA_ID
     # K. Educación al paciente
     if "mouthhealthy.org"          in url: return DRIVE_MOUTHHEALTHY_ADA_ID
-    if "cdc.gov/oralhealth"        in url: return DRIVE_CDC_ORAL_PUBLIC_ID
+    # (regla de CDC Oral Public movida arriba como override específico —
+    # ver "BUGFIX 2026-07-29" cerca del inicio de la función; esta línea
+    # genérica quedaba inalcanzable porque la regla de CDC Oral DX más
+    # arriba siempre matcheaba primero)
     if "who.int" in url and ("oral" in url or "dental" in url): return DRIVE_WHO_ORAL_PUBLIC_ID
     if "paho.org"                  in url: return DRIVE_PAHO_ORAL_PUBLIC_ID
     if "nhs.uk" in url and "dental" in url: return DRIVE_NHS_DENTAL_PATIENT_ID
@@ -514,9 +534,21 @@ def fetch_urls_from_sitemap(url):
 
 
 def _fetch_sitemap_index_urls(index_url, url_filter=None, delay=0.5):
-    sub_sitemaps = fetch_urls_from_sitemap(index_url)
+    entries = fetch_urls_from_sitemap(index_url)
+    # BUGFIX 2026-07-29: esta función asumía que index_url siempre es un
+    # <sitemapindex> de dos niveles (lista de sub-sitemaps .xml que hay que
+    # volver a descargar). Pero varios sitios (ada.org, mouthhealthy.org,
+    # nidcr.nih.gov) publican su sitemap.xml como <urlset> PLANO — ya son las
+    # URLs finales de páginas reales. Al no detectarlo, el código anterior
+    # intentaba re-descargar cada una de esas ~700-1700 páginas reales COMO SI
+    # fuera un sitemap XML (ET.ParseError → regex fallback → [] casi siempre),
+    # generando cientos/miles de requests inútiles y timeouts de facto sin
+    # devolver nunca resultados. Heurística: las entradas de un sitemapindex
+    # real deben terminar en .xml; si no es así, ya son URLs finales.
+    if entries and not any(e.lower().endswith(".xml") for e in entries[:20]):
+        return [u for u in entries if not url_filter or url_filter(u)]
     all_urls = []
-    for sm in sub_sitemaps:
+    for sm in entries:
         urls = fetch_urls_from_sitemap(sm)
         if url_filter:
             urls = [u for u in urls if url_filter(u)]
@@ -534,7 +566,14 @@ def _crawl_one_level(seed, domain_prefix, delay=2.0):
         urls = set()
         for a in soup.find_all("a", href=True):
             href = a["href"]
-            if href.startswith("/"):
+            # BUGFIX 2026-07-29: solo se resolvían hrefs que empezaban con "/"
+            # (root-relative). Muchos sitios (p.ej. cora.org.ar, 3D Slicer
+            # Docs/readthedocs) usan hrefs relativos SIN slash inicial
+            # ("institucional", "user_guide/about.html") que antes se
+            # descartaban silenciosamente porque ni contenían el
+            # domain_prefix ni empezaban con "http". Se resuelve con urljoin
+            # cualquier href que no sea ya absoluto.
+            if not href.startswith(("http://", "https://")):
                 from urllib.parse import urljoin
                 href = urljoin(seed, href)
             if domain_prefix in href and href.startswith("http"):
@@ -562,7 +601,9 @@ def extract_inline_content(inline_str):
 
 # A. Organismos internacionales
 def fetch_fdi_urls():
-    return _crawl_one_level("https://www.fdiworlddental.org/oral-health", "fdiworlddental.org", delay=3.0)
+    # BUGFIX 2026-07-29: /oral-health 404 (reestructuración del sitio); la
+    # página de recursos vigente es "looking-more-resources-oral-health".
+    return _crawl_one_level("https://www.fdiworlddental.org/looking-more-resources-oral-health", "fdiworlddental.org", delay=3.0)
 
 def fetch_who_oral_urls():
     return _crawl_one_level("https://www.who.int/health-topics/oral-health", "who.int", delay=3.0)
@@ -570,6 +611,12 @@ def fetch_who_oral_urls():
 def fetch_paho_oral_urls():
     return _crawl_one_level("https://www.paho.org/en/topics/oral-health", "paho.org", delay=3.0)
 
+# NOTA 2026-07-29: /resources 404. La portada de iapd.org solo enlaza a un
+# "Member Resource Hub" con gate de membresía y a la sección de
+# certificados de entrenamiento (ambos con contenido público limitado/
+# gated) — no se encontró una página pública de recursos clínicos
+# equivalente y confiable; se deja tal cual con este TODO en vez de
+# apuntar a contenido gated de bajo valor.
 def fetch_iapd_urls():
     return _crawl_one_level("https://www.iapd.org/resources", "iapd.org", delay=3.0)
 
@@ -587,7 +634,9 @@ def fetch_cda_canada_urls():
     return _crawl_one_level("https://www.cda-adc.ca/en/oral_health/", "cda-adc.ca", delay=3.0)
 
 def fetch_adc_australia_urls():
-    return _crawl_one_level("https://www.ada.org.au/Dental-Professionals/Clinical-Resources", "ada.org.au", delay=3.0)
+    # BUGFIX 2026-07-29: /Dental-Professionals/Clinical-Resources 404 (sitio
+    # rediseñado); recursos ahora en ada.org.au/resources.
+    return _crawl_one_level("https://ada.org.au/resources", "ada.org.au", delay=3.0)
 
 def fetch_seoc_spain_urls():
     return _crawl_one_level("https://www.seoc.es/publicaciones/", "seoc.es", delay=3.0)
@@ -596,18 +645,31 @@ def fetch_coem_spain_urls():
     return _crawl_one_level("https://www.coem.org.es/pacientes/", "coem.org.es", delay=3.0)
 
 def fetch_cfo_brasil_urls():
-    return _crawl_one_level("https://cfo.org.br/resolucoes/", "cfo.org.br", delay=3.0)
+    # BUGFIX 2026-07-29: /resolucoes/ 404 (sitio movió resoluciones al
+    # subdominio de transparencia); domain_prefix "cfo.org.br" sigue
+    # sirviendo (transparencia.cfo.org.br lo contiene como substring).
+    return _crawl_one_level("https://transparencia.cfo.org.br/atos-normativos/", "cfo.org.br", delay=3.0)
 
+# NOTA 2026-07-29: cmd.org.mx da NXDOMAIN (confirmado con resolución DNS
+# independiente vía Cloudflare DoH, no es solo un bloqueo/timeout local) —
+# el dominio ya no existe. No se encontró un dominio de reemplazo verificado
+# para "CMD México" en el tiempo disponible; se deja tal cual con este TODO
+# en vez de adivinar una URL sin verificar en vivo.
 def fetch_cmd_mexico_urls():
     return _crawl_one_level("https://www.cmd.org.mx/publicaciones/", "cmd.org.mx", delay=3.0)
 
 def fetch_nzda_urls():
-    return _crawl_one_level("https://www.nzda.org.nz/dentists/clinical-resources/", "nzda.org.nz", delay=3.0)
+    # BUGFIX 2026-07-29: /dentists/clinical-resources/ 404; recursos públicos
+    # ahora en /public/resources.
+    return _crawl_one_level("https://www.nzda.org.nz/public/resources", "nzda.org.nz", delay=3.0)
 
 # C. Guías clínicas
 def fetch_sdcep_urls():
     return _crawl_one_level("https://www.sdcep.org.uk/published-guidance/", "sdcep.org.uk", delay=2.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# nice.org.uk devuelve 403 tanto para este sitemap como para la homepage;
+# no es una URL rota.
 def fetch_nice_oral_urls():
     return _fetch_sitemap_index_urls(
         "https://www.nice.org.uk/sitemap.xml",
@@ -619,32 +681,50 @@ def fetch_aapd_guidelines_urls():
         "https://www.aapd.org/research/oral-health-policies--recommendations/",
         "aapd.org", delay=3.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# aae.org devuelve 403 con un query-param de bot-challenge (?ki-cf-botcl=1)
+# incluso para la home; no es una URL rota.
 def fetch_aae_urls():
     return _crawl_one_level("https://www.aae.org/dental-professionals/treatment-guidelines/", "aae.org", delay=3.0)
 
 def fetch_aap_perio_urls():
-    return _crawl_one_level("https://www.perio.org/clinical-guidance/", "perio.org", delay=3.0)
+    # BUGFIX 2026-07-29: /clinical-guidance/ 404; contenido clínico/científico
+    # ahora vive bajo /research-science/.
+    return _crawl_one_level("https://www.perio.org/research-science/", "perio.org", delay=3.0)
 
 def fetch_aaoms_urls():
     return _crawl_one_level("https://www.aaoms.org/dental-professionals/clinical-resources/", "aaoms.org", delay=3.0)
 
 def fetch_iadt_urls():
-    return _crawl_one_level("https://www.iadt-dentaltrauma.org/professional-resources/", "iadt-dentaltrauma.org", delay=3.0)
+    # BUGFIX 2026-07-29: /professional-resources/ 404; guías vigentes en
+    # /guidelines-and-resources/.
+    return _crawl_one_level("https://iadt-dentaltrauma.org/guidelines-and-resources/", "iadt-dentaltrauma.org", delay=3.0)
 
 def fetch_efp_urls():
     return _crawl_one_level("https://www.efp.org/publications/", "efp.org", delay=3.0)
 
 def fetch_eapd_urls():
-    return _crawl_one_level("https://www.eapd.gr/publications/", "eapd.gr", delay=3.0)
+    # BUGFIX 2026-07-29: eapd.gr está retirado — HTTP devuelve 410 Gone y
+    # HTTPS falla el handshake TLS (SSLEOFError) incluso resolviendo DNS
+    # correctamente; la organización migró a eapd.eu (confirmado en vivo,
+    # HTTP 200). domain_prefix actualizado junto con las reglas de ruteo.
+    return _crawl_one_level("https://www.eapd.eu/posts/category/publications", "eapd.eu", delay=3.0)
 
 def fetch_aao_ortho_urls():
-    return _crawl_one_level("https://www.aaoinfo.org/research/", "aaoinfo.org", delay=3.0)
+    # BUGFIX 2026-07-29: /research/ 404; recursos ahora en /resources/.
+    return _crawl_one_level("https://aaoinfo.org/resources/", "aaoinfo.org", delay=3.0)
 
+# NOTA 2026-07-29: /resources 404 (confirmado en vivo). Se buscaron
+# reemplazos en la portada de aaomr.org pero solo aparecen páginas .aspx de
+# "Awards" sin contenido clínico real — no se encontró un reemplazo confiable
+# para verificar en vivo antes de fecha límite; se deja tal cual con este TODO.
 def fetch_aaomr_urls():
     return _crawl_one_level("https://www.aaomr.org/resources", "aaomr.org", delay=3.0)
 
 def fetch_aaom_urls():
-    return _crawl_one_level("https://www.aaom.com/resources", "aaom.com", delay=3.0)
+    # BUGFIX 2026-07-29: /resources 404; reemplazado por
+    # /clinical-practice-statements (contenido clínico equivalente).
+    return _crawl_one_level("https://www.aaom.com/clinical-practice-statements", "aaom.com", delay=3.0)
 
 # D. Revistas OA
 def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
@@ -678,6 +758,9 @@ def _fetch_springer_journal_articles(journal_slug, max_pages=20, delay=2.0):
 def fetch_bmc_oral_health_urls():
     return _fetch_springer_journal_articles("bmcoralhealth")
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# mdpi.com (Akamai) devuelve 403 "Access Denied" tanto para este sitemap
+# como para la homepage y la página de la revista; no es una URL rota.
 def fetch_mdpi_dentistry_urls():
     return _fetch_sitemap_index_urls(
         "https://www.mdpi.com/sitemap/sitemap-dentistry.xml",
@@ -689,6 +772,10 @@ def fetch_open_dentistry_journal_urls():
         "https://www.benthamopen.com/TODENTJ/home/",
         "benthamopen.com", delay=2.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# hindawi.com devuelve 403 tanto para este sitemap como para la homepage;
+# su robots.txt además declara explícitamente "Disallow: /" para GPTBot y
+# Google-Extended. No es una URL rota.
 def fetch_intl_j_dentistry_urls():
     return _fetch_sitemap_index_urls(
         "https://www.hindawi.com/sitemap.xml",
@@ -696,16 +783,40 @@ def fetch_intl_j_dentistry_urls():
         delay=1.0)
 
 def fetch_frontiers_dental_urls():
+    # BUGFIX 2026-07-29: frontiersin.org/sitemap.xml solo indexa "research
+    # topics"/magazines (5 sub-sitemaps, sin URLs de artículos reales) — el
+    # sitemap de artículos real está en otra ruta, publicada en su propio
+    # robots.txt.
     return _fetch_sitemap_index_urls(
-        "https://www.frontiersin.org/sitemap.xml",
+        "https://www.frontiersin.org/articles/sitemap-index.xml",
         url_filter=lambda u: ("dental" in u or "dentistry" in u) and "article" in u,
         delay=1.0)
 
+def _fetch_nature_journal_urls(journal_slug, delay=1.0):
+    """BUGFIX 2026-07-29: igual que el bug de BioMed Central (ver
+    _fetch_springer_journal_articles) pero en nature.com: su sitemap.xml es
+    un índice GLOBAL de ~39,875 sub-sitemaps (todas las revistas Nature,
+    confirmado en vivo) — caminarlo entero es inviable (>20h solo en delays)
+    y además el filtro por leaf-URL ("bdjo" in u) nunca matcheaba porque los
+    artículos reales usan URLs genéricas /articles/s41405-xxx sin el slug de
+    la revista. Nature SÍ nombra sus sub-sitemaps por revista
+    (nature.com/<journal_slug>/sitemap/YYYY/M/articles.xml), así que se
+    filtra la lista de sub-sitemaps por ese slug ANTES de descargarlos
+    (~127 meses para bdjopen) en vez de recorrer los ~39,875 completos.
+    """
+    try:
+        top = fetch_urls_from_sitemap("https://www.nature.com/sitemap.xml")
+    except Exception:
+        return []
+    journal_sitemaps = [u for u in top if f"/{journal_slug}/sitemap/" in u]
+    urls = []
+    for sm in journal_sitemaps:
+        urls.extend(fetch_urls_from_sitemap(sm))
+        time.sleep(delay)
+    return urls
+
 def fetch_bdj_open_urls():
-    return _fetch_sitemap_index_urls(
-        "https://www.nature.com/sitemap.xml",
-        url_filter=lambda u: "bdjo" in u and "article" in u,
-        delay=1.5)
+    return _fetch_nature_journal_urls("bdjopen")
 
 # E. Bases de datos API (inline records)
 def fetch_pubmed_dental_urls():
@@ -751,6 +862,9 @@ def fetch_crossref_dental_urls():
     except Exception:
         return []
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# doaj.org/api/... devuelve 403 (nginx) para v1, v2 y v3 del endpoint de
+# búsqueda por igual; no es un problema de versión de API.
 def fetch_doaj_dental_urls():
     try:
         r = requests.get(
@@ -786,6 +900,13 @@ def fetch_zenodo_dental_urls():
     except Exception:
         return []
 
+# NOTA 2026-07-29: confirmado en vivo — api.semanticscholar.org devuelve
+# 429 "Too Many Requests... apply for a key for higher rate limits" sin API
+# key. No es un bug de código (el manejo de "sin datos" ya es correcto);
+# es un rate-limit externo de la API pública sin autenticación. Afecta
+# también a fetch_ai_dentistry_urls y fetch_digital_workflow_dental_urls
+# (mismo endpoint). No se agrega retry/backoff para no presionar más el
+# límite compartido; se deja tal cual.
 def fetch_semantic_scholar_dental_urls():
     try:
         r = requests.get(
@@ -806,11 +927,16 @@ def fetch_semantic_scholar_dental_urls():
         return []
 
 def fetch_europe_pmc_dental_urls():
+    # BUGFIX 2026-07-29: la query mezclaba texto libre con un campo mal
+    # formado ("MeSH:D003786" no es sintaxis válida de Europe PMC) —
+    # confirmado en vivo, esa query devolvía hitCount=0 aunque el endpoint
+    # respondía 200. Se reemplaza por texto libre que sí matchea (pageSize
+    # sigue acotando el resultado a 200 igual que antes).
     try:
         r = requests.get(
             "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
-            params={"query": "dentistry oral health MeSH:D003786", "format": "json",
-                    "pageSize": 200, "resultType": "lite"},
+            params={"query": 'dentistry OR "oral health" OR periodontal OR endodontic OR orthodontic',
+                    "format": "json", "pageSize": 200, "resultType": "lite"},
             headers=HEADERS, timeout=30)
         results = r.json().get("resultList", {}).get("result", [])
         urls = []
@@ -824,6 +950,10 @@ def fetch_europe_pmc_dental_urls():
         return []
 
 # F. Diagnóstico y radiología oral
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# radiopaedia.org devuelve 406 tanto para estos artículos como para la
+# homepage (consistente con su política pública "[NO AI TRAIN]" ya
+# documentada en el docstring del archivo); no es una URL rota.
 def fetch_radiopaedia_dental_urls():
     seeds = [
         "https://radiopaedia.org/articles/dental-caries",
@@ -837,45 +967,92 @@ def fetch_radiopaedia_dental_urls():
     return urls
 
 def fetch_cdc_oral_dx_urls():
-    return _crawl_one_level("https://www.cdc.gov/oralhealth/", "cdc.gov/oralhealth", delay=2.0)
+    # BUGFIX 2026-07-29: CDC reestructuró /oralhealth/ (sin guion) a
+    # /oral-health/ (con guion) — confirmado en vivo, el path viejo 200 pero
+    # sus enlaces internos ya son todos /oral-health/..., por lo que el
+    # domain_prefix viejo ("cdc.gov/oralhealth") nunca matcheaba nada.
+    return _crawl_one_level("https://www.cdc.gov/oral-health/index.html", "cdc.gov/oral-health", delay=2.0)
 
+# NOTA 2026-07-29: /oralcavity.html devuelve 503 de forma consistente
+# (2 intentos en momentos distintos) mientras que la homepage del mismo
+# dominio responde 200 — no es un bloqueo a nivel de dominio, parece un
+# problema puntual de esa página específica (sobrecarga del server o
+# rechazo dirigido). No se encontró una ruta de reemplazo verificada en el
+# tiempo disponible; se deja tal cual con este TODO.
 def fetch_oral_pathology_atlas_urls():
     urls = _crawl_one_level("https://www.pathologyoutlines.com/oralcavity.html", "pathologyoutlines.com", delay=2.0)
     return urls
 
 # G. Farmacología y materiales dentales
 def fetch_dailymed_dental_urls():
-    try:
-        r = requests.get(
-            "https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json",
-            params={"drug_name": "lidocaine dental", "pagesize": 100},
-            headers=HEADERS, timeout=30)
-        items = r.json().get("data", [])
-        urls = []
-        for it in items:
-            setid = it.get("setid", "")
-            title = it.get("title", "")
-            urls.append(f"https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid={setid}|DAILYMED_DENTAL|{json.dumps({'title': title})}")
+    # BUGFIX 2026-07-29: drug_name="lidocaine dental" no matchea nada — la
+    # API busca por nombre de fármaco, y "lidocaine dental" no es un nombre
+    # real (confirmado en vivo: 0 resultados con ese string combinado, pero
+    # "lidocaine" solo devuelve 10). Se cambia a una lista de fármacos
+    # dentales reales, igual que ya hace fetch_rxnorm_dental_urls.
+    drugs = ["lidocaine", "articaine", "chlorhexidine", "benzocaine",
+             "sodium fluoride", "clindamycin", "amoxicillin", "eugenol"]
+    urls = []
+    for name in drugs:
+        try:
+            r = requests.get(
+                "https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json",
+                params={"drug_name": name, "pagesize": 20},
+                headers=HEADERS, timeout=30)
+            items = r.json().get("data", [])
+            for it in items:
+                setid = it.get("setid", "")
+                title = it.get("title", "")
+                urls.append(f"https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid={setid}|DAILYMED_DENTAL|{json.dumps({'title': title})}")
+            time.sleep(0.5)
+        except Exception:
+            pass
+    if urls:
         return urls
-    except Exception:
-        return _crawl_one_level("https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=dental", "dailymed.nlm.nih.gov", delay=2.0)
+    return _crawl_one_level("https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=dental", "dailymed.nlm.nih.gov", delay=2.0)
 
 def fetch_fda_dental_devices_urls():
-    return _crawl_one_level("https://www.fda.gov/medical-devices/dental-devices", "fda.gov/medical-devices/dental", delay=2.0)
+    # BUGFIX 2026-07-29: /medical-devices/dental-devices 404; FDA anidó la
+    # página bajo /products-and-medical-procedures/. domain_prefix relajado
+    # a "fda.gov/medical-devices" (sigue acotado, ya no exige el sufijo
+    # exacto "/dental" pegado que no aparece en la nueva ruta).
+    return _crawl_one_level(
+        "https://www.fda.gov/medical-devices/products-and-medical-procedures/dental-devices",
+        "fda.gov/medical-devices", delay=2.0)
 
 def fetch_cofepris_dental_urls():
-    return _crawl_one_level("https://www.gob.mx/cofepris/acciones-y-programas/dispositivos-medicos", "cofepris.gob.mx", delay=3.0)
+    # BUGFIX 2026-07-29: domain/seed mismatch — el seed vive en www.gob.mx
+    # (COFEPRIS fue consolidado bajo el portal gob.mx, y el dominio legado
+    # "cofepris.gob.mx" ahora es solo un alias que redirige 301 a
+    # gob.mx/cofepris, confirmado en vivo). El filtro de dominio anterior
+    # ("cofepris.gob.mx") nunca podía matchear ningún link real de esa
+    # página porque todos los enlaces internos son gob.mx/..., así que la
+    # función devolvía 0 URLs de forma estructural.
+    return _crawl_one_level("https://www.gob.mx/cofepris/acciones-y-programas/dispositivos-medicos", "gob.mx/cofepris", delay=3.0)
 
+# NOTA 2026-07-29: /dispositivos-medicos/ da 404 (confirmado en vivo); la
+# home de invima.gov.co sí responde 200 pero no se encontró una ruta de
+# reemplazo verificada para dispositivos médicos en el tiempo disponible.
+# El docstring del archivo ya documenta a INVIMA como fuente con CAPTCHA
+# conocido ("sin CAPTCHA (INVIMA)") — se deja tal cual, sin evadir nada.
 def fetch_invima_dental_urls():
     return _crawl_one_level("https://www.invima.gov.co/dispositivos-medicos/", "invima.gov.co", delay=3.0)
 
 # H. Especialidades
 def fetch_iti_implantology_urls():
-    return _crawl_one_level("https://www.iti.org/academy/online-education/", "iti.org", delay=3.0)
+    # BUGFIX 2026-07-29: /academy/online-education/ 404; guías de tratamiento
+    # vigentes en /resources/treatment-guides/.
+    return _crawl_one_level("https://iti.org/resources/treatment-guides/", "iti.org", delay=3.0)
 
 def fetch_eao_implantology_urls():
-    return _crawl_one_level("https://www.eao.org/publications/", "eao.org", delay=3.0)
+    # BUGFIX 2026-07-29: /publications/ 404; contenido científico ahora en
+    # /scientific-resources/.
+    return _crawl_one_level("https://eao.org/scientific-resources/", "eao.org", delay=3.0)
 
+# Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no evadir.
+# prosthodontics.org devuelve HTTP 200 pero el body es un stub de challenge
+# de Imperva/Incapsula ("Request unsuccessful. Incapsula incident ID..."),
+# sin contenido real — no es una URL rota, es un bloqueo disfrazado de 200.
 def fetch_acp_prosthodontics_urls():
     return _crawl_one_level("https://www.prosthodontics.org/resources/", "prosthodontics.org", delay=3.0)
 
@@ -884,29 +1061,55 @@ def fetch_escd_urls():
 
 # I. Control de infecciones
 def fetch_cdc_infection_dental_urls():
+    # BUGFIX 2026-07-29: /oralhealth/infectioncontrol/ 404 — CDC movió este
+    # contenido a una ruta completamente nueva de primer nivel
+    # (/dental-infection-control/), no solo el guion de oral-health.
+    # Confirmado en vivo vía el nav real de cdc.gov/oral-health/.
     return _crawl_one_level(
-        "https://www.cdc.gov/oralhealth/infectioncontrol/",
-        "cdc.gov/oralhealth/infectioncontrol", delay=2.0)
+        "https://www.cdc.gov/dental-infection-control/hcp/index.html",
+        "cdc.gov/dental-infection-control", delay=2.0)
 
+# NOTA 2026-07-29: /dental/ 404 (confirmado en vivo). Se revisó la homepage
+# de osha.gov buscando "dental"/"dentist" y no aparece ninguna página de
+# industria dedicada actual — parece que OSHA retiró su hub específico de
+# odontología. No se encontró reemplazo verificado; se deja tal cual.
 def fetch_osha_dental_urls():
     return _crawl_one_level("https://www.osha.gov/dental/", "osha.gov/dental", delay=2.0)
 
 def fetch_osap_dental_urls():
-    return _crawl_one_level("https://www.osap.org/resources/", "osap.org", delay=3.0)
+    # BUGFIX 2026-07-29: /resources/ 404; reemplazado por /policies-guidelines
+    # (contenido de guías/políticas equivalente).
+    return _crawl_one_level("https://www.osap.org/policies-guidelines", "osap.org", delay=3.0)
 
 # J. Gestión y codificación
 def fetch_ada_practice_mgmt_urls():
     return _crawl_one_level("https://www.ada.org/resources/practice/practice-management", "ada.org/resources/practice", delay=2.0)
 
 def fetch_dental_economics_urls():
+    # NOTA 2026-07-29: el único sub-sitemap indexado (sections.xml) solo
+    # expone 1 URL de categoría ("practice/practice-management-software"),
+    # no artículos — robots.txt de dentaleconomics.com no lista ningún otro
+    # sitemap de artículos. BUGFIX menor: el filtro exigía "/practice-
+    # management/" con slash de cierre, que no matchea el sufijo real
+    # "-software"; se amplía el match aunque el rendimiento de esta fuente
+    # seguirá siendo bajo (sitemap del sitio es estructuralmente delgado).
     return _fetch_sitemap_index_urls(
         "https://www.dentaleconomics.com/sitemap.xml",
-        url_filter=lambda u: any(k in u for k in ["/practice-management/", "/clinical/", "/products/"]),
+        url_filter=lambda u: any(k in u for k in ["practice-management", "/clinical/", "/products/"]),
         delay=1.5)
 
 def fetch_nhs_bsa_dental_urls():
-    return _crawl_one_level("https://www.nhsbsa.nhs.uk/dental-services", "nhsbsa.nhs.uk/dental", delay=2.0)
+    # BUGFIX 2026-07-29: /dental-services 404; ruta vigente es
+    # /nhs-dental-services (prefijo "nhs-" agregado).
+    return _crawl_one_level("https://www.nhsbsa.nhs.uk/nhs-dental-services", "nhsbsa.nhs.uk/dental", delay=2.0)
 
+# NOTA 2026-07-29: ambos seeds están rotos y no se encontró reemplazo
+# verificado — dof.gob.mx/busqueda_detalle.php redirige (incluso sin
+# verificación TLS) a su propia página de error (Error_BS.php), y
+# gob.mx/salud/articulos/normas-oficiales-mexicanas-de-salud-bucal da 404
+# (confirmado en vivo con el mismo User-Agent que usa el scraper). Se
+# revisó la portada de gob.mx/salud sin encontrar un enlace directo a
+# NOM-013; se deja tal cual con este TODO en vez de adivinar.
 def fetch_nom013_mexico_urls():
     urls = _crawl_one_level("https://www.dof.gob.mx/busqueda_detalle.php?codigo=NOM-013", "dof.gob.mx", delay=3.0)
     urls += _crawl_one_level("https://www.gob.mx/salud/articulos/normas-oficiales-mexicanas-de-salud-bucal", "gob.mx/salud", delay=3.0)
@@ -920,7 +1123,9 @@ def fetch_mouthhealthy_urls():
         delay=1.5)
 
 def fetch_cdc_oral_public_urls():
-    return _crawl_one_level("https://www.cdc.gov/oralhealth/basics/", "cdc.gov/oralhealth", delay=2.0)
+    # BUGFIX 2026-07-29: /oralhealth/basics/ 404; el guion nuevo + sección
+    # "prevention" es el equivalente vigente para público general.
+    return _crawl_one_level("https://www.cdc.gov/oral-health/prevention/index.html", "cdc.gov/oral-health", delay=2.0)
 
 def fetch_who_oral_public_urls():
     return _crawl_one_level("https://www.who.int/news-room/fact-sheets/detail/oral-health", "who.int", delay=3.0)
@@ -929,9 +1134,14 @@ def fetch_paho_oral_public_urls():
     return _crawl_one_level("https://www.paho.org/en/topics/oral-health", "paho.org", delay=3.0)
 
 def fetch_nhs_dental_patient_urls():
+    # BUGFIX 2026-07-29: filtro "oral" in u sin límite de palabra matcheaba
+    # substrings dentro de palabras no relacionadas (confirmado en vivo:
+    # ".../femoral-hernia-repair/recovery/" pasaba el filtro por "femORAL").
+    # Esto inflaba el conteo (4467, marcado HUGE) con contenido no-dental.
+    # Se usa \b de regex para exigir la palabra completa.
     return _fetch_sitemap_index_urls(
         "https://www.nhs.uk/sitemap.xml",
-        url_filter=lambda u: "dental" in u or "teeth" in u or "oral" in u,
+        url_filter=lambda u: re.search(r"\b(dental|teeth|oral)\b", u) is not None,
         delay=1.5)
 
 # L. Tecnología dental
@@ -955,10 +1165,21 @@ def fetch_ai_dentistry_urls():
         return []
 
 def fetch_cbct_resources_urls():
+    # NOTA 2026-07-29: aaomr.org/resources/cbct 404 — mismo problema que
+    # fetch_aaomr_urls, sin reemplazo confiable encontrado (ver TODO ahí).
     urls = _crawl_one_level("https://www.aaomr.org/resources/cbct", "aaomr.org", delay=2.0)
-    urls += _crawl_one_level("https://www.efp.org/publications/position-papers/", "efp.org", delay=3.0)
+    # BUGFIX 2026-07-29: efp.org/publications/position-papers/ 404;
+    # /publications/ (sin el sub-path) sí funciona y tiene contenido real.
+    urls += _crawl_one_level("https://www.efp.org/publications/", "efp.org", delay=3.0)
     return urls
 
+# NOTA 2026-07-29: jdentaled.org (Journal of Dental Education) redirige
+# (confirmado en vivo, con verificación TLS deshabilitada solo para
+# diagnóstico porque su cert está roto) a
+# adea.org/home/publications/journal-of-dental-educationtopic/cad-cam, que
+# a su vez da 404 — el contenido fue absorbido por ADEA pero esa ruta
+# específica no existe. No se encontró un reemplazo verificado en adea.org
+# en el tiempo disponible; se deja tal cual con este TODO.
 def fetch_cad_cam_dental_urls():
     return _crawl_one_level("https://www.jdentaled.org/topic/cad-cam", "jdentaled.org", delay=2.0)
 
@@ -995,31 +1216,60 @@ def fetch_kcl_dental_urls():
     return _crawl_one_level("https://www.kcl.ac.uk/dentistry/research", "kcl.ac.uk/dentistry", delay=2.0)
 
 def fetch_ucl_eastman_urls():
-    return _crawl_one_level("https://www.ucl.ac.uk/eastman/research/", "ucl.ac.uk/eastman", delay=2.0)
+    # BUGFIX 2026-07-29: /eastman/research/ 404 (UCL reestructuró el
+    # instituto bajo /eastman-dental-institute/, confirmado en vivo). El
+    # domain_prefix "ucl.ac.uk/eastman" sigue sirviendo (substring de
+    # "eastman-dental-institute").
+    return _crawl_one_level("https://www.ucl.ac.uk/eastman-dental-institute/", "ucl.ac.uk/eastman", delay=2.0)
 
+# NOTA 2026-07-29: feo.unam.mx da NXDOMAIN (confirmado con resolución DNS
+# independiente vía Cloudflare DoH) — el subdominio ya no existe. No se
+# encontró un dominio de reemplazo verificado para la Facultad de
+# Odontología UNAM en el tiempo disponible; se deja tal cual con este TODO.
 def fetch_unam_estomatologia_urls():
     return _crawl_one_level("https://www.feo.unam.mx/investigacion/", "unam.mx", delay=3.0)
 
 # N. Repositorios OA y preprints
 def fetch_medrxiv_dental_urls():
+    # BUGFIX 2026-07-29: "dentistry" se pasaba donde la API de biorxiv.org
+    # espera un rango de fechas (confirmado en vivo: la API responde
+    # {"messages":[{"status":"Both dates must be in yyyy-mm-dd format"}]} y
+    # devuelve collection vacía) — este endpoint no soporta filtrar por
+    # categoría en la URL, solo por rango de fechas + cursor de paginación.
+    # Se cambia a un rango de fechas real, igual que fetch_biorxiv_dental_urls,
+    # escaneando más páginas (los preprints de odontología son una fracción
+    # pequeña del total, con solo ~300 escaneados antes no aparecía ninguno;
+    # con ~2000 sí aparecen coincidencias reales, confirmado en vivo).
+    keywords = ["dental", "dentistry", "oral health", "periodont", "tooth",
+                "craniofacial", "odontogenesis", "orthodont", "endodont"]
+    urls = []
     try:
-        r = requests.get(
-            "https://api.biorxiv.org/details/medrxiv/dentistry/0/100",
-            headers=HEADERS, timeout=30)
-        data = r.json().get("collection", [])
-        urls = []
-        for it in data:
-            doi = it.get("doi", "")
-            title = it.get("title", "")
-            abstract = it.get("abstract", "")
-            urls.append(f"https://www.medrxiv.org/content/{doi}v1|MEDRXIV_DENTAL|{json.dumps({'title': title, 'doi': doi, 'abstract': abstract[:500]})}")
-        return urls
+        for page in range(0, 20):
+            r = requests.get(
+                f"https://api.biorxiv.org/details/medrxiv/2023-01-01/2026-07-25/{page*100}",
+                headers=HEADERS, timeout=30)
+            items = r.json().get("collection", [])
+            if not items:
+                break
+            for it in items:
+                title = (it.get("title") or "").lower()
+                if any(k in title for k in keywords):
+                    doi = it.get("doi", "")
+                    urls.append(f"https://www.medrxiv.org/content/{doi}v1|MEDRXIV_DENTAL|"
+                                f"{json.dumps({'title': it.get('title', ''), 'doi': doi, 'abstract': (it.get('abstract') or '')[:500]})}")
+            time.sleep(1.0)
     except Exception:
-        return _crawl_one_level("https://www.medrxiv.org/collection/dentistry", "medrxiv.org", delay=2.0)
+        pass
+    if urls:
+        return urls
+    return _crawl_one_level("https://www.medrxiv.org/collection/dentistry", "medrxiv.org", delay=2.0)
 
 def fetch_osf_dental_urls():
+    # BUGFIX 2026-07-29: la API de OSF vive en el subdominio api.osf.io, no
+    # en osf.io/api/... — la URL vieja devolvía la SPA web (HTML) en vez de
+    # JSON, así que r.json() fallaba silenciosamente. Confirmado en vivo.
     try:
-        r = requests.get("https://osf.io/api/v2/nodes/",
+        r = requests.get("https://api.osf.io/v2/nodes/",
             params={"filter[tags]": "dentistry", "page[size]": 100},
             headers=HEADERS, timeout=30)
         data = r.json().get("data", [])
@@ -1034,8 +1284,11 @@ def fetch_osf_dental_urls():
         return []
 
 def fetch_figshare_dental_urls():
+    # BUGFIX 2026-07-29: este endpoint de búsqueda de Figshare exige POST, no
+    # GET — confirmado en vivo (GET con body devolvía 404 "predicate mismatch
+    # for view ArticlesPublicView (request_method = POST)").
     try:
-        r = requests.get(
+        r = requests.post(
             "https://api.figshare.com/v2/articles/search",
             json={"search_for": "dental oral health dentistry", "page_size": 100},
             headers=HEADERS, timeout=30)
@@ -1240,10 +1493,15 @@ def fetch_imss_procedimiento_urls():
 
 # 14. Repositorios y preprints — bioRxiv / DataCite / arXiv
 def fetch_biorxiv_dental_urls():
+    # BUGFIX 2026-07-29: solo escaneaba 3 páginas (300 preprints) de un total
+    # de ~108,875 en ese rango de fechas (confirmado en vivo) — dentistería
+    # es una fracción minúscula de bioRxiv (mayormente biología/genómica), así
+    # que 300 muestras casi siempre da 0 coincidencias por título. Se sube a
+    # 20 páginas (2000 preprints) para una probabilidad razonable de match.
     keywords = ["dental", "dentistry", "oral microbiome", "periodont", "tooth", "craniofacial", "odontogenesis"]
     urls = []
     try:
-        for page in range(0, 3):
+        for page in range(0, 20):
             r = requests.get(f"https://api.biorxiv.org/details/biorxiv/2025-01-01/2026-07-25/{page*100}",
                               headers=HEADERS, timeout=30)
             items = r.json().get("collection", [])
@@ -1437,8 +1695,12 @@ def get_all_urls():
         "https://adm.org.mx/descargas.php", "adm.org.mx", delay=5.0))
     all_urls += _load_source("CORA Argentina", fn=lambda: _crawl_one_level(
         "https://www.cora.org.ar/", "cora.org.ar", delay=5.0))
+    # BUGFIX 2026-07-29: la raíz "/" es solo un stub <meta http-equiv=refresh>
+    # sin ningún <a href> real (confirmado en vivo, 0 enlaces) que redirige
+    # client-side a /inicio/ — requests no sigue refreshes de meta tag, así
+    # que había que apuntar directo a /inicio/ (87 enlaces reales ahí).
     all_urls += _load_source("Colegio Dentistas Chile", fn=lambda: _crawl_one_level(
-        "https://www.colegiodentistas.cl/", "colegiodentistas.cl", delay=5.0))
+        "http://www.colegiodentistas.cl/inicio/", "colegiodentistas.cl", delay=5.0))
 
     # 3. Guías clínicas
     all_urls += _load_source("ADA Evidence-Based Guidelines", fn=lambda: _crawl_one_level(
@@ -1455,6 +1717,10 @@ def get_all_urls():
         "https://www.medicinaoral.com/odo/indice.htm", "medicinaoral.com", delay=3.0))
     all_urls += _load_source("J Oral Maxillofac Research", fn=lambda: _crawl_one_level(
         "https://www.ejomr.org/", "ejomr.org", delay=3.0))
+    # Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no
+    # evadir. sciencedirect.com devuelve 403 para las 3 revistas de esta
+    # sección (mismo resultado con UA de scraper y de navegador normal);
+    # no son URLs rotas.
     all_urls += _load_source("J Dental Sciences", fn=lambda: _crawl_one_level(
         "https://www.sciencedirect.com/journal/journal-of-dental-sciences", "sciencedirect.com", delay=5.0))
     all_urls += _load_source("J Oral Biology & Craniofacial Research", fn=lambda: _crawl_one_level(
@@ -1472,6 +1738,11 @@ def get_all_urls():
     all_urls += _load_source("OpenAIRE Dental",           fn=fetch_openaire_dental_urls)
 
     # 6. Diagnóstico, radiología y patología
+    # NOTA 2026-07-29: /iowaprotocols/oral-cavity-lesions 404 (confirmado en
+    # vivo). Se revisó la home de medicine.uiowa.edu buscando el recurso
+    # "Iowa Protocols" y no aparece en el nav visible — parece un recurso
+    # legado retirado, no solo reorganizado. No se encontró un reemplazo
+    # verificado en el tiempo disponible; se deja tal cual con este TODO.
     all_urls += _load_source("Univ Iowa — Oral Cavity Lesions", fn=lambda: _crawl_one_level(
         "https://medicine.uiowa.edu/iowaprotocols/oral-cavity-lesions", "medicine.uiowa.edu", delay=3.0))
     all_urls += _load_source("Oral Cancer Foundation", fn=lambda: _crawl_one_level(
@@ -1487,6 +1758,10 @@ def get_all_urls():
     all_urls += _load_source("openFDA Device Recall (dental)", fn=fetch_openfda_recall_dental_urls)
     all_urls += _load_source("RxNorm Dental",             fn=fetch_rxnorm_dental_urls)
     all_urls += _load_source("PubChem Dental",            fn=fetch_pubchem_dental_urls)
+    # NOTA 2026-07-29: esta página de programa 404 (confirmado en vivo).
+    # No se encontró un reemplazo confiable en nist.gov en el tiempo
+    # disponible (la búsqueda del sitio no expone una página equivalente
+    # obvia); se deja tal cual con este TODO.
     all_urls += _load_source("NIST Dental Materials", fn=lambda: _crawl_one_level(
         "https://www.nist.gov/programs-projects/dental-and-medical-materials", "nist.gov", delay=3.0))
 
@@ -1507,15 +1782,22 @@ def get_all_urls():
         "gov.uk", delay=2.5))
     all_urls += _load_source("PAHO IRIS — IPC Dental", fn=lambda: _crawl_one_level(
         "https://iris.paho.org/", "iris.paho.org", delay=2.5))
+    # BUGFIX 2026-07-29: /resources/practice/legal-and-regulatory/... 404;
+    # ADA reorganizó este contenido bajo /resources/ada-library/oral-health-
+    # topics/ (confirmado en vivo, encontrado en el nav real de
+    # ada.org/resources/ada-library/oral-health-topics). domain_prefix
+    # actualizado junto con el override de ruteo (ver folder_for_url).
     all_urls += _load_source("ADA Infection Control & Sterilization", fn=lambda: _crawl_one_level(
-        "https://www.ada.org/resources/practice/legal-and-regulatory/infection-control-and-sterilization",
-        "ada.org/resources/practice", delay=5.0))
+        "https://www.ada.org/resources/ada-library/oral-health-topics/infection-control-and-sterilization",
+        "ada.org/resources/ada-library", delay=5.0))
 
     # 10. Codificación, facturación y gestión
     all_urls += _load_source("CMS HCPCS Quarterly Update", fn=lambda: _crawl_one_level(
         "https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system/quarterly-update",
         "cms.gov", delay=2.5))
     all_urls += _load_source("NLM HCPCS API",             fn=fetch_nlm_hcpcs_urls)
+    # Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no
+    # evadir. hhs.gov devuelve 403 para ambas rutas HIPAA; no son URLs rotas.
     all_urls += _load_source("HHS HIPAA Security Rule", fn=lambda: _crawl_one_level(
         "https://www.hhs.gov/hipaa/for-professionals/security/index.html", "hhs.gov", delay=2.5))
     all_urls += _load_source("HHS HIPAA Privacy Rule", fn=lambda: _crawl_one_level(
@@ -1533,6 +1815,12 @@ def get_all_urls():
         "https://www.dentalhealth.org/oral-health-information", "dentalhealth.org", delay=5.0))
     all_urls += _load_source("Healthdirect Australia — Dental", fn=lambda: _crawl_one_level(
         "https://www.healthdirect.gov.au/dental-health", "healthdirect.gov.au", delay=3.0))
+    # NOTA 2026-07-29: esta página (y una ruta alternativa /healthyliving/
+    # teeth probada como reemplazo) devuelven 500 de forma consistente,
+    # mientras que la homepage del dominio responde 200 — parece un error
+    # puntual del lado del sitio en varias páginas de contenido, no un
+    # bloqueo de dominio. No se encontró una ruta funcional en el tiempo
+    # disponible; se deja tal cual con este TODO.
     all_urls += _load_source("Better Health Channel — Teeth", fn=lambda: _crawl_one_level(
         "https://www.betterhealth.vic.gov.au/health/conditionsandtreatments/teeth-and-mouth",
         "betterhealth.vic.gov.au", delay=3.0))
@@ -1554,10 +1842,16 @@ def get_all_urls():
         "https://open-ortho.org/resources/", "open-ortho.org", delay=3.0))
     all_urls += _load_source("3D Slicer Docs", fn=lambda: _crawl_one_level(
         "https://slicer.readthedocs.io/", "slicer.readthedocs.io", delay=1.5))
+    # NOTA 2026-07-29: docs.monai.io da NXDOMAIN/SERVFAIL (confirmado con
+    # resolución DNS independiente vía Cloudflare DoH) — igual que monai.io
+    # (dominio raíz, probado como alternativa). No se encontró una URL de
+    # reemplazo verificada en el tiempo disponible; se deja tal cual.
     all_urls += _load_source("MONAI Docs", fn=lambda: _crawl_one_level(
         "https://docs.monai.io/", "docs.monai.io", delay=1.5))
     all_urls += _load_source("ITK-SNAP Docs", fn=lambda: _crawl_one_level(
         "https://www.itksnap.org/pmwiki/pmwiki.php", "itksnap.org", delay=2.0))
+    # Confirmado bloqueado por WAF a nivel de dominio (2026-07-29) — no
+    # evadir. opendental.com/manual/ devuelve 403; no es una URL rota.
     all_urls += _load_source("Open Dental Software Manual (propietario)", fn=lambda: _crawl_one_level(
         "https://www.opendental.com/manual/", "opendental.com", delay=5.0))
 
@@ -1566,18 +1860,36 @@ def get_all_urls():
         "https://www.ddshub.nih.gov/", "ddshub.nih.gov", delay=2.5))
     all_urls += _load_source("Karolinska — Dept. Dental Medicine", fn=lambda: _crawl_one_level(
         "https://ki.se/en/dentmed", "ki.se", delay=3.0))
+    # NOTA 2026-07-29: el endpoint responde (verb=Identify) pero rechaza
+    # verify=True por SSLCertVerificationError — el server SÍ resuelve DNS y
+    # responde 202 con verify=False, pero deshabilitar verificación TLS no es
+    # un fix apropiado para dejar en un scraper desatendido (distinto de un
+    # bloqueo WAF/CAPTCHA, es un problema de certificado del lado de ellos).
+    # Se deja tal cual, sin evadir la verificación TLS.
     all_urls += _load_source("Karolinska Open Archive (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
         "https://openarchive.ki.se/server/oai/request", max_records=200))
+    # NOTA 2026-07-29: el endpoint responde 400 "Invalids parameters" tanto
+    # con verb=Identify solo como con verb=ListRecords+metadataPrefix=oai_dc
+    # (los params que sí usa _fetch_oai_pmh) y con /server/oai/request
+    # también da 404 — no se encontró una combinación de params/ruta que
+    # funcione en el tiempo disponible; se deja tal cual con este TODO.
     all_urls += _load_source("UNAM Repositorio Institucional (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
         "https://repositorio.unam.mx/oai/request", max_records=200))
+    # BUGFIX 2026-07-29: /oai/request (sin "/server/") devuelve el shell HTML
+    # de la SPA de DSpace 7, no XML OAI-PMH — confirmado en vivo. DSpace 7+
+    # (como Karolinska arriba) expone el protocolo en /server/oai/request.
     all_urls += _load_source("UFES Repositório Institucional (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
-        "https://repositorio.ufes.br/oai/request", max_records=200))
+        "https://repositorio.ufes.br/server/oai/request", max_records=200))
     all_urls += _load_source("UAM Biblos-e Archivo (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
-        "https://repositorio.uam.es/oai/request", max_records=200))
+        "https://repositorio.uam.es/server/oai/request", max_records=200))
     all_urls += _load_source("USP Teses", fn=lambda: _crawl_one_level(
         "https://www.teses.usp.br/", "teses.usp.br", delay=2.5))
+    # NOTA 2026-07-29: incluso con la ruta correcta /server/oai/request,
+    # deepblue.lib.umich.edu devuelve 403 con una interstitial "Just a
+    # moment..." — confirmado bloqueo WAF (Cloudflare) a nivel de dominio; no
+    # evadir.
     all_urls += _load_source("Univ Michigan Deep Blue (OAI-PMH)", fn=lambda: _fetch_oai_pmh(
-        "https://deepblue.lib.umich.edu/oai/request", max_records=200))
+        "https://deepblue.lib.umich.edu/server/oai/request", max_records=200))
 
     # 14. Repositorios abiertos y preprints
     all_urls += _load_source("bioRxiv Dental",            fn=fetch_biorxiv_dental_urls)
@@ -1665,6 +1977,7 @@ def url_to_filename(url):
         prefix = marker.strip("|").lower()
     elif "ada.org/resources/practice/practice-management" in url: prefix = "ada_practice_mgmt"
     elif "ada.org/resources/practice/legal-and-regulatory/infection" in url: prefix = "ada_infection_control"
+    elif "ada.org/resources/ada-library/oral-health-topics/infection-control-and-sterilization" in url: prefix = "ada_infection_control"
     elif "ada.org/resources/research"      in url: prefix = "ada_evidence_guidelines"
     elif "ada.org/resources/ada-library/oral-health-topics/x-rays" in url: prefix = "ada_radiation"
     elif "ada.org/publications/cdt"        in url: prefix = "ada_cdt_metadata"
@@ -1693,7 +2006,7 @@ def url_to_filename(url):
     elif "aaoms.org"               in url: prefix = "aaoms"
     elif "iadt-dentaltrauma.org"   in url: prefix = "iadt"
     elif "efp.org"                 in url: prefix = "efp"
-    elif "eapd.gr"                 in url: prefix = "eapd"
+    elif "eapd.gr" in url or "eapd.eu" in url: prefix = "eapd"
     elif "aaoinfo.org"             in url: prefix = "aao"
     elif "aaomr.org"               in url: prefix = "aaomr"
     elif "aaom.com"                in url: prefix = "aaom"
@@ -1702,7 +2015,7 @@ def url_to_filename(url):
     elif "benthamopen.com"         in url: prefix = "open_dent"
     elif "hindawi.com"             in url: prefix = "hindawi_dent"
     elif "frontiersin.org"         in url: prefix = "frontiers_dent"
-    elif "nature.com/bdjo"         in url: prefix = "bdj_open"
+    elif "nature.com/bdjo" in url or "nature.com/articles/s41405" in url: prefix = "bdj_open"
     elif "pubmed.ncbi"             in url: prefix = "pubmed_dent"
     elif "europepmc.org"           in url: prefix = "europepmc_dent"
     elif "|PUBMED_DENTAL|"         in url: prefix = "pubmed_dent"
@@ -1719,16 +2032,19 @@ def url_to_filename(url):
     elif "pathologyoutlines.com"   in url: prefix = "pathology_oral"
     elif "dailymed.nlm.nih.gov"    in url: prefix = "dailymed_dent"
     elif "fda.gov"                 in url: prefix = "fda_dental"
-    elif "cofepris.gob.mx"         in url: prefix = "cofepris_dent"
+    elif "gob.mx/cofepris"         in url: prefix = "cofepris_dent"
     elif "invima.gov.co"           in url: prefix = "invima_dent"
     elif "iti.org"                 in url: prefix = "iti"
     elif "eao.org"                 in url: prefix = "eao"
     elif "prosthodontics.org"      in url: prefix = "acp"
     elif "escd.org"                in url: prefix = "escd"
     elif "cdc.gov/oralhealth/infectioncontrol" in url: prefix = "cdc_infection_dent"
+    elif "cdc.gov/dental-infection-control" in url: prefix = "cdc_infection_dent"
     elif "osha.gov"                in url: prefix = "osha_dent"
     elif "osap.org"                in url: prefix = "osap"
+    elif "cdc.gov/oral-health/prevention" in url: prefix = "cdc_oral_public"
     elif "cdc.gov/oralhealth"      in url: prefix = "cdc_oral"
+    elif "cdc.gov/oral-health"     in url: prefix = "cdc_oral"
     elif "mouthhealthy.org"        in url: prefix = "mouthhealthy"
     elif "nhs.uk"                  in url: prefix = "nhs_dent"
     elif "nhsbsa.nhs.uk"           in url: prefix = "nhsbsa_dent"
