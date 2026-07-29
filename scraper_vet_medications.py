@@ -133,7 +133,11 @@ SOURCE_POLICIES = [
         "slug": "pisa_agropecuaria",
         "name": "PiSA Agropecuaria",
         "status": "SCRAPE_OK",
-        "url": "https://www.pisaagropecuaria.com.mx/",
+        # BUGFIX 2026-07-29: pisaagropecuaria.com.mx redirige (301) a un
+        # dominio distinto (pisasaludanimal.com.mx); same_domain() rechazaba
+        # todo el contenido real del sitemap por no coincidir. Se usa
+        # directamente el dominio final.
+        "url": "https://pisasaludanimal.com.mx/",
         "reason": "Catalogo publico de fabricante; solo lectura de paginas publicas.",
         "delay": 5.0,
     },
@@ -207,6 +211,26 @@ def fetch_urls_from_sitemap(url):
         return []
 
 
+def _same_scope(url, base_url):
+    """same_domain() más un chequeo de ruta: en portales compartidos (ej.
+    gob.mx, donde TODAS las dependencias federales viven bajo un solo
+    dominio con un sitemap general) el sitemap "/sitemap.xml" resuelto con
+    urljoin ignora la ruta de base_url y devuelve contenido de cualquier
+    dependencia, no de la fuente real. BUGFIX 2026-07-29: detectado con
+    SENASICA y SADER (ambos en gob.mx) devolviendo exactamente las mismas
+    347 URLs de trámites de aviación/banca, ninguna relacionada con
+    veterinaria. Si base_url tiene una ruta propia (no es solo la raíz del
+    dominio), se exige que esa ruta también aparezca en la URL candidata.
+    """
+    if not same_domain(url, base_url):
+        return False
+    base_path = urlparse(base_url).path.strip("/")
+    if not base_path:
+        return True
+    first_segment = base_path.split("/")[0]
+    return f"/{first_segment}" in urlparse(url).path
+
+
 def discover_sitemap_urls(base_url):
     candidates = [
         urljoin(base_url, "/sitemap.xml"),
@@ -223,7 +247,7 @@ def discover_sitemap_urls(base_url):
             page_locs.extend(fetch_urls_from_sitemap(nested_url))
             time.sleep(0.5)
         for loc in page_locs:
-            if loc not in seen and same_domain(loc, base_url) and likely_product_url(loc):
+            if loc not in seen and _same_scope(loc, base_url) and likely_product_url(loc):
                 seen.add(loc)
                 discovered.append(loc)
         if discovered:
