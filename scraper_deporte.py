@@ -612,7 +612,10 @@ def fetch_usada_urls():
     return _crawl_one_level("https://www.usada.org/resources/", "usada.org", delay=3.0)
 
 def fetch_ukad_urls():
-    return _crawl_one_level("https://www.ukad.org.uk/resources", "ukad.org.uk", delay=3.0)
+    # BUGFIX 2026-07-29: /resources daba 404 (sitio Drupal reestructurado);
+    # el sitemap real está en la raíz.
+    urls = fetch_urls_from_sitemap("https://www.ukad.org.uk/sitemap.xml")
+    return [u for u in urls if any(k in u for k in ["resource", "article", "news", "guidance"])]
 
 def fetch_global_dro_urls():
     return _crawl_one_level("https://www.globaldro.com/", "globaldro.com", delay=3.0)
@@ -678,7 +681,9 @@ def fetch_acsm_urls():
         delay=1.5)
 
 def fetch_nsca_urls():
-    return _crawl_one_level("https://www.nsca.com/education/resources/", "nsca.com", delay=3.0)
+    # BUGFIX 2026-07-29: /education/resources/ daba 404 (sitio reestructurado).
+    urls = fetch_urls_from_sitemap("https://www.nsca.com/sitemap.xml")
+    return [u for u in urls if any(k in u for k in ["article", "education", "certification"])]
 
 def fetch_ecss_urls():
     return _crawl_one_level("https://www.ecss.de/publications/", "ecss.de", delay=3.0)
@@ -784,7 +789,10 @@ def fetch_fepsac_urls():
 
 # G. Fuerza, acondicionamiento y biomecánica
 def fetch_isbs_urls():
-    return _crawl_one_level("https://ojs.ub.uni-konstanz.de/cpa/issue/archive", "isbs.org", delay=2.0)
+    # BUGFIX 2026-07-29: el seed (ojs.ub.uni-konstanz.de) no coincidía con el
+    # filtro de dominio ("isbs.org") — nunca podía devolver nada. El archivo
+    # real de proceedings de ISBS vive en el repositorio de NMU.
+    return _crawl_one_level("https://commons.nmu.edu/isbs/", "commons.nmu.edu", delay=2.0)
 
 def fetch_catapult_urls():
     return _crawl_one_level("https://www.catapultsports.com/resources", "catapultsports.com", delay=3.0)
